@@ -1,0 +1,7 @@
+{
+    "require": {
+        "firebase/php-jwt": "^6.11",
+        "phpoffice/phpspreadsheet": "^5.4",
+        "phpmailer/phpmailer": "^7.0"
+    }
+}

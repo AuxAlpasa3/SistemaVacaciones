@@ -1,15 +1,12 @@
 {
-    "bebas neue": {
-        "normal": "bebas_neue_normal_0d548d641c06b989c23912845f4b54e8"
-    },
     "arimo": {
-        "italic": "C:\\xampp\\htdocs\\AlpasaCS\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_italic_815838f7f2b1286b1be65adcb1561bba",
-        "500_italic": "C:\\xampp\\htdocs\\AlpasaCS\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_500_italic_56a5198e364cd89b41970505a68a9c6c",
-        "600_italic": "C:\\xampp\\htdocs\\AlpasaCS\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_600_italic_a980374f618baf4f0b60b75c267f3908",
-        "bold_italic": "C:\\xampp\\htdocs\\AlpasaCS\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_bold_italic_694f2e1bf5ca9639d2fe6ab13d6bf55c",
-        "normal": "C:\\xampp\\htdocs\\AlpasaCS\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_normal_8d0e16021cb20cbc7d67c23731bc9e68",
-        "500": "C:\\xampp\\htdocs\\AlpasaCS\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_500_48d6031af4efbbdc4ab02e70538a5b5b",
-        "600": "C:\\xampp\\htdocs\\AlpasaMulti-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_600_37b8fbba80df90bb5dc7b7c12ca89df6",
+        "italic": "C:\\xampp\\htdocs\\Balpasa2\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_italic_815838f7f2b1286b1be65adcb1561bba",
+        "500_italic": "C:\\xampp\\htdocs\\Balpasa2\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_500_italic_56a5198e364cd89b41970505a68a9c6c",
+        "600_italic": "C:\\xampp\\htdocs\\Balpasa2\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_600_italic_a980374f618baf4f0b60b75c267f3908",
+        "bold_italic": "C:\\xampp\\htdocs\\Balpasa2\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_bold_italic_694f2e1bf5ca9639d2fe6ab13d6bf55c",
+        "normal": "C:\\xampp\\htdocs\\Balpasa2\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_normal_8d0e16021cb20cbc7d67c23731bc9e68",
+        "500": "C:\\xampp\\htdocs\\Balpasa2\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_500_48d6031af4efbbdc4ab02e70538a5b5b",
+        "600": "C:\\xampp\\htdocs\\Balpasa2\\vendor\\dompdf\\dompdf\/lib\/fonts\/arimo_600_37b8fbba80df90bb5dc7b7c12ca89df6",
         "bold": "arimo_bold_a40ad750959ddf0406c28a3f89c6a9ed"
     }
 }

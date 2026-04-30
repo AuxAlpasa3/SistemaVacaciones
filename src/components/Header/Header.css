@@ -1,0 +1,239 @@
+.header {
+    background-color: #eeeeee;
+    padding: 12px 20px;
+    border-bottom: 2px solid #D34C25;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 100;
+    min-height: 56px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    color: #D34C25;
+    transition: background-color 0.2s ease;
+    font-size: 18px;
+}
+
+.menu-toggle:hover {
+    background-color: #f7fafc;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-btn {
+    position: relative;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    color: #D34C25;
+    transition: background-color 0.2s ease;
+    font-size: 18px;
+}
+
+.notification-btn:hover {
+    background-color: #f7fafc;
+}
+
+.notification-btn.user-btn.active {
+    background-color: #e2e8f0;
+    color: #4a5568;
+}
+
+.user-dropdown-container {
+    position: relative;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 6px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    min-width: 260px;
+    z-index: 1000;
+    animation: dropdownFadeIn 0.2s ease-out;
+}
+
+.user-dropdown-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.user-dropdown-avatar {
+    color: #718096;
+    flex-shrink: 0;
+    font-size: 20px;
+}
+
+.user-dropdown-info h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 3px 0;
+}
+
+.user-dropdown-info p {
+    font-size: 11px;
+    color: #718096;
+    margin: 0;
+}
+
+.user-dropdown-divider {
+    height: 1px;
+    background-color: #f1f5f9;
+}
+
+.user-dropdown-menu {
+    padding: 6px 0;
+}
+
+.user-dropdown-item {
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #4a5568;
+    transition: background-color 0.2s ease;
+    text-align: left;
+}
+
+.user-dropdown-item:hover {
+    background-color: #f7fafc;
+}
+
+.user-dropdown-item.logout-item {
+    color: #e53e3e;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 2px;
+}
+
+.user-dropdown-item.logout-item:hover {
+    background-color: #fed7d7;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 10px 16px;
+        min-height: 52px;
+    }
+
+    .header-left {
+        gap: 12px;
+    }
+
+    .header-right {
+        gap: 10px;
+    }
+
+    .menu-toggle, .notification-btn {
+        padding: 5px;
+        font-size: 16px;
+    }
+
+    .user-dropdown {
+        min-width: 240px;
+        right: -8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 8px 12px;
+        min-height: 48px;
+    }
+
+    .header-right {
+        gap: 8px;
+    }
+
+    .menu-toggle, .notification-btn {
+        padding: 4px;
+        font-size: 15px;
+    }
+
+    .user-dropdown {
+        min-width: 220px;
+        right: -8px;
+    }
+
+    .user-dropdown-header {
+        padding: 14px;
+    }
+
+    .user-dropdown-item {
+        padding: 8px 14px;
+    }
+}
+
+@media (max-width: 360px) {
+    .header {
+        padding: 6px 10px;
+        min-height: 44px;
+    }
+
+    .user-dropdown {
+        min-width: 200px;
+        right: -6px;
+    }
+}
+
+.header-extra-compact {
+    padding: 8px 16px !important;
+    min-height: 48px !important;
+}
+
+.header-extra-compact .header-left {
+    gap: 12px !important;
+}
+
+.header-extra-compact .header-right {
+    gap: 10px !important;
+}
+
+.header-extra-compact .menu-toggle,
+.header-extra-compact .notification-btn {
+    padding: 4px !important;
+    font-size: 16px !important;
+}

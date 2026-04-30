@@ -1,0 +1,668 @@
+/* App.css - ESTILOS GLOBALES COMPLETOS ACTUALIZADOS */
+
+/* ===== RESET Y ESTILOS BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
+}
+
+#root {
+  height: 100%;
+  position: relative;
+}
+
+/* ===== VARIABLES GLOBALES ===== */
+:root {
+  /* Sistema de z-index jerárquico */
+  --z-index-select: 1000;
+  --z-index-dropdown-action: 2000;
+  --z-index-modal: 2147483645;
+  --z-index-max: 2147483647;
+  
+  /* Colores para selects */
+  --select-border: #d1d5db;
+  --select-border-hover: #9ca3af;
+  --select-border-focus: #3b82f6;
+  --select-bg: white;
+  --select-text: #1f2937;
+  --select-placeholder: #9ca3af;
+  --select-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --select-shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  --select-option-hover: #f9fafb;
+  --select-option-selected: #eff6ff;
+  --select-option-selected-text: #1d4ed8;
+}
+
+/* ===== LAYOUT PRINCIPAL ===== */
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #fff;
+  transition: margin-left 0.3s ease;
+  position: relative;
+}
+
+/* Cuando sidebar está abierto */
+.main-layout.sidebar-open {
+  margin-left: 250px;
+  width: calc(100% - 250px);
+}
+
+/* ===== ÁREA DE CONTENIDO ===== */
+.content-area {
+  flex: 1;
+  padding: 20px 30px;
+  position: relative;
+  overflow-y: auto;
+  min-height: calc(100vh - 130px);
+  background-color: #fff;
+}
+
+/* ===== HEADER ===== */
+.header {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  flex-shrink: 0;
+  transition: z-index 0.3s ease;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  flex-shrink: 0;
+  transition: z-index 0.3s ease;
+}
+
+
+.required-star {
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+.clear-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+
+.clear-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.dropdown-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--select-bg);
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-top: 4px;
+  box-shadow: var(--select-shadow);
+  z-index: var(--z-index-select);
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.search-input-container {
+  position: relative;
+  padding: 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.search-icon {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--select-placeholder);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 36px;
+  border: 1px solid var(--select-border);
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  background: white;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--select-border-focus);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.loading-indicator {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: var(--select-border-focus);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.options-list {
+  overflow-y: auto;
+  max-height: 250px;
+  padding: 4px 0;
+}
+
+.option-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+  color: var(--select-text);
+}
+
+.option-item:hover {
+  background-color: var(--select-option-hover);
+}
+
+.option-item.selected {
+  background-color: var(--select-option-selected);
+  color: var(--select-option-selected-text);
+  font-weight: 500;
+}
+
+.check-icon {
+  color: #10b981;
+  width: 16px;
+  height: 16px;
+}
+
+.no-results {
+  padding: 16px;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.create-option {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--select-border-focus);
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.create-option:hover {
+  background-color: var(--select-option-selected);
+}
+
+.create-option strong {
+  font-weight: 600;
+}
+
+.creating-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-top-color: var(--select-border-focus);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: auto;
+}
+
+.search-input.force-uppercase {
+  text-transform: uppercase !important;
+}
+
+.select-trigger.disabled {
+  background-color: #f9fafb;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.select-trigger.error {
+  border-color: #ef4444;
+}
+
+.select-trigger.error:focus-within {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.options-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.options-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+  margin: 4px 0;
+}
+
+.options-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.options-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.select-arrow {
+  margin-left: 8px;
+  color: #6b7280;
+  transition: transform 0.2s;
+}
+
+.select-trigger.open .select-arrow {
+  transform: rotate(180deg);
+}
+
+/* Estados de los selects */
+.searchable-select-container.open {
+  z-index: var(--z-index-select);
+}
+
+.select-trigger.loading .selected-value {
+  opacity: 0.7;
+}
+
+.select-trigger.loading::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ===== ESTILOS PARA CONTENIDO DE TABLAS ===== */
+.table-container, .data-table-wrapper {
+  position: relative;
+  z-index: 1 !important;
+}
+
+/* ===== SCROLLBAR PERSONALIZADO ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* ===== MODALES GLOBALES - NUEVOS ESTILOS ===== */
+
+/* Cuando hay modal abierto - aplicado al body */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+/* Deshabilitar header y footer cuando hay modal */
+body.modal-open .header,
+body.modal-open .footer {
+  z-index: 1 !important;
+  opacity: 0.5;
+  filter: blur(1px);
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+/* Overlay base para todos los modales */
+.modal-overlay-base {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: var(--z-index-modal) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Contenido del modal */
+.modal-content-base {
+  position: relative;
+  z-index: calc(var(--z-index-modal) + 1) !important;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  max-width: 95%;
+  max-height: 95vh;
+  overflow-y: auto;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Modal overlay específico para Boletas */
+.boletas-modal-overlay {
+  composes: modal-overlay-base;
+  z-index: var(--z-index-max) !important;
+}
+
+/* Modal content específico para Boletas */
+.boletas-modal-content {
+  composes: modal-content-base;
+  z-index: var(--z-index-max) !important;
+}
+
+/* ===== ANIMACIONES DE MODALES ===== */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-slide-in {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-fade-in {
+  animation: modalFadeIn 0.3s ease-in;
+}
+/* 
+.date-filter-dropdown {
+  z-index: 999999 !important;
+}
+
+.date-filter-overlay {
+  z-index: 999998 !important;
+}
+
+.date-filter-container {
+  z-index: 999999 !important;
+} */
+
+/* Asegurar que los elementos de tabla no interfieran */
+/* .table-container *,
+.data-table-wrapper *,
+.table-scroll *,
+.data-table * {
+  z-index: auto !important;
+} */
+
+/* Solo elementos específicos pueden tener z-index alto */
+/* .table-header {
+  z-index: 10 !important;
+} */
+
+/* Cuando hay modal abierto, el dropdown debe cerrarse */
+body.modal-open .date-filter-dropdown {
+  display: none !important;
+}
+
+body.modal-open .date-filter-overlay {
+  display: none !important;
+}
+/* 
+body.modal-open .date-filter-container.show-dropdown {
+  z-index: 1 !important;
+} */
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablets */
+@media (max-width: 1024px) {
+  .main-layout.sidebar-open {
+    margin-left: 220px;
+    width: calc(100% - 220px);
+  }
+  
+  .content-area {
+    padding: 20px 25px;
+    min-height: calc(100vh - 120px);
+  }
+  
+  .modal-content-base {
+    max-width: 97%;
+  }
+  
+  /* En móvil, el dropdown ocupa toda la pantalla */
+  .date-filter-dropdown {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 400px !important;
+  }
+  
+  /* Selects en móvil */
+  .searchable-select-container {
+    width: 100%;
+  }
+  
+  .dropdown-container {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 70vh;
+    border-radius: 12px 12px 0 0;
+    margin: 0;
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Tablets pequeñas y móviles grandes */
+@media (max-width: 768px) {
+  .main-layout.sidebar-open {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .content-area {
+    padding: 15px 20px;
+    min-height: calc(100vh - 110px);
+  }
+  
+  .modal-content-base {
+    max-width: 98%;
+    border-radius: 8px;
+  }
+  
+  /* Selects en tablets */
+  .select-trigger {
+    min-height: 44px;
+    padding: 12px 14px;
+  }
+  
+  .option-item {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+  
+  .create-option {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+}
+
+/* Móviles */
+@media (max-width: 480px) {
+  .content-area {
+    padding: 12px 15px;
+    min-height: calc(100vh - 100px);
+  }
+  
+  .modal-overlay-base {
+    padding: 10px;
+  }
+  
+  .modal-content-base {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  /* Selects en móviles pequeños */
+  .search-input-container {
+    padding: 16px;
+  }
+}
+
+/* Móviles pequeños */
+@media (max-width: 360px) {
+  .content-area {
+    padding: 10px 12px;
+  }
+}
+
+/* ===== UTILIDADES ===== */
+.no-scroll {
+  overflow: hidden !important;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: calc(var(--z-index-modal) - 1);
+}
+
+.full-width {
+  width: 100%;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Regla para limitar z-index excepto en elementos específicos
+*:not(.modal-overlay-base):not(.modal-content-base):not(.boletas-modal-overlay):not(.boletas-modal-content):not(.date-filter-dropdown):not(.date-filter-overlay):not(.searchable-select-container):not(.dropdown-container) {
+  z-index: auto !important;
+} */
+
+/* Solo estos elementos pueden tener z-index alto */
+.header, .footer, .sidebar {
+  z-index: 1000 !important;
+}
+
+/* Cuando hay modal, reducir aún más */
+body.modal-open .header,
+body.modal-open .footer,
+body.modal-open .sidebar {
+  z-index: 1 !important;
+}
+
+.modal-force-z-index {
+  z-index: var(--z-index-max) !important;
+  position: fixed !important;
+}
+
+.modal-force-z-index > * {
+  z-index: var(--z-index-max) !important;
+  position: relative !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+

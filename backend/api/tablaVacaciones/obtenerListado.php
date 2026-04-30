@@ -1,0 +1,42 @@
+<?php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: access");
+header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
+header("Content-Type: application/json; charset=UTF-8");
+
+include_once '../../db/Connection.php';
+$method = $_SERVER["REQUEST_METHOD"];
+
+try {
+    switch ($method) {
+        case "GET":
+
+           $query = "SELECT IdPersonal, NoEmpleado,concat(Nombre,'',ApPaterno,'',ApMaterno) as NombreCompleto,
+                    Nombre, ApPaterno,ApMaterno,Cargo,Departamento,Empresa,Status, IdUbicacion,NSS,esSupervisor,RutaFoto,Email, Contacto,
+                    IdSupervisor,TipoSangre,FechaCreacion,UsuarioCreacion
+                    From t_personal";
+           $stmt = $Conexion->prepare($query);
+
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+            if (!empty($data)) {
+                http_response_code(200); 
+                echo json_encode(['status' => true, 'data' => $data]);
+            } else {
+                http_response_code(200); 
+                echo json_encode(['status' => false, 'message' => 'No hay información']);
+            }
+            break;
+        default:
+            http_response_code(405); 
+            echo json_encode(['status' => false, 'message' => 'Método no permitido']);
+            break;
+    }
+} catch (\Throwable $th) {
+    http_response_code(500); 
+    echo json_encode(['status' => false, 'message' => 'Error: ' . $th->getMessage()]);
+} finally {
+     $Conexion = null;
+}

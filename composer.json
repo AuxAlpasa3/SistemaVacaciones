@@ -1,12 +1,7 @@
 {
     "require": {
-        "phpoffice/phpword": "^1.4",
-        "phpmailer/phpmailer": "^6.10",
         "dompdf/dompdf": "^3.1",
-        "endroid/qr-code": "^6.0",
-        "setasign/fpdf": "^1.8",
-        "setasign/fpdi": "^2.6",
-        "tecnickcom/tcpdf": "^6.10",
-        "chillerlan/php-qrcode": "^5.0"
+        "phpmailer/phpmailer": "^7.0",
+        "spatie/browsershot": "^5.2"
     }
 }

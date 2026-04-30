@@ -1,0 +1,155 @@
+/* Loading Spinner Component Styles */
+.loading-spinner-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #d94f00 0%, #d950007e 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-spinner-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    animation: backgroundMove 20s linear infinite;
+}
+
+@keyframes backgroundMove {
+    0% {
+        transform: translateX(0) translateY(0);
+    }
+
+    100% {
+        transform: translateX(-10px) translateY(-10px);
+    }
+}
+
+.loading-spinner-content {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+    position: relative;
+    z-index: 1;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.loading-spinner-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.loading-spinner-logo .logo {
+    width: 40px;
+    height: 40px;
+    background-color: #e53e3e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 20px;
+    color: white;
+}
+
+.loading-spinner-logo h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.loading-spinner-icon {
+    margin-bottom: 20px;
+    color: #667eea;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-spinner-text {
+    font-size: 16px;
+    color: #718096;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .loading-spinner-content {
+        padding: 30px;
+        margin: 20px;
+    }
+
+    .loading-spinner-logo .logo {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .loading-spinner-logo h2 {
+        font-size: 20px;
+    }
+
+    .loading-spinner-icon {
+        margin-bottom: 16px;
+    }
+
+    .loading-spinner-text {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .loading-spinner-container {
+        padding: 15px;
+    }
+
+    .loading-spinner-content {
+        padding: 25px;
+    }
+
+    .loading-spinner-logo .logo {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+
+    .loading-spinner-logo h2 {
+        font-size: 18px;
+    }
+
+    .loading-spinner-text {
+        font-size: 13px;
+    }
+}

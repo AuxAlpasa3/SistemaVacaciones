@@ -1,0 +1,310 @@
+/* Estilos para SelectConBusqueda con botón de limpiar */
+
+.select-con-busqueda-container {
+    position: relative;
+    width: 100%;
+}
+
+.select-con-busqueda-input-wrapper {
+    position: relative;
+}
+
+.select-con-busqueda-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.select-con-busqueda-input {
+    width: 100%;
+    padding: 8px 40px 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: white;
+    transition: all 0.2s ease;
+    color: #333;
+    height: 36px;
+    box-sizing: border-box;
+}
+
+.select-con-busqueda-input:focus {
+    outline: none;
+    border-color: #d94f00;
+    box-shadow: 0 0 0 2px rgba(217, 79, 0, 0.1);
+}
+
+.select-con-busqueda-input:disabled {
+    background-color: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+    border-color: #e0e0e0;
+}
+
+.select-con-busqueda-input::placeholder {
+    color: #999;
+}
+
+.select-con-busqueda-icons {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    pointer-events: none;
+}
+
+.search-icon {
+    color: #666;
+    pointer-events: none;
+}
+
+.clear-button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 3px;
+    pointer-events: auto;
+    min-width: 24px;
+    min-height: 24px;
+}
+
+.clear-button:hover {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+}
+
+.clear-button:active {
+    background-color: rgba(255, 68, 68, 0.2);
+}
+
+.clear-button:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+    background-color: transparent;
+}
+
+.clear-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.3);
+}
+
+.select-con-busqueda-dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.select-con-busqueda-options {
+    padding: 4px 0;
+}
+
+.select-con-busqueda-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #333;
+    font-size: 14px;
+}
+
+.select-con-busqueda-option:hover {
+    background-color: #f8f8f8;
+}
+
+.select-con-busqueda-option.selected {
+    background-color: #fff5f0;
+    color: #d94f00;
+    font-weight: 500;
+}
+
+.select-con-busqueda-option.selected:hover {
+    background-color: #ffede4;
+}
+
+.selected-indicator {
+    color: #d94f00;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.select-con-busqueda-no-results {
+    padding: 12px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    font-size: 14px;
+}
+
+.select-con-busqueda-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.select-con-busqueda-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.select-con-busqueda-dropdown::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.select-con-busqueda-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.select-con-busqueda-input.error {
+    border-color: #ff4444;
+    background-color: #fff5f5;
+}
+
+.select-con-busqueda-input.error:focus {
+    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.1);
+}
+
+.select-con-busqueda-input.success {
+    border-color: #28a745;
+}
+
+.select-con-busqueda-input.small {
+    padding: 4px 32px 4px 8px;
+    height: 30px;
+    font-size: 13px;
+}
+
+.select-con-busqueda-input.small + .select-con-busqueda-icons {
+    right: 6px;
+}
+
+.select-con-busqueda-input.small + .select-con-busqueda-icons .clear-button {
+    padding: 2px;
+    min-width: 20px;
+    min-height: 20px;
+}
+
+.select-con-busqueda-input.large {
+    padding: 10px 44px 10px 16px;
+    height: 42px;
+    font-size: 16px;
+}
+
+.select-con-busqueda-input.large + .select-con-busqueda-icons {
+    right: 10px;
+}
+
+.select-con-busqueda-input.large + .select-con-busqueda-icons .clear-button {
+    padding: 6px;
+    min-width: 28px;
+    min-height: 28px;
+}
+
+.select-con-busqueda-input.readonly {
+    background-color: #f9f9f9;
+    color: #666;
+    cursor: default;
+}
+
+.select-con-busqueda-option .badge {
+    background-color: #d94f00;
+    color: white;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .select-con-busqueda-input {
+        font-size: 16px; /* Mejor para móviles */
+    }
+    
+    .select-con-busqueda-dropdown {
+        max-height: 200px;
+    }
+}
+
+/* Estilos para el tema oscuro (opcional) */
+@media (prefers-color-scheme: dark) {
+    .select-con-busqueda-input {
+        background-color: #2d2d2d;
+        border-color: #444;
+        color: #fff;
+    }
+    
+    .select-con-busqueda-input::placeholder {
+        color: #888;
+    }
+    
+    .select-con-busqueda-dropdown {
+        background-color: #2d2d2d;
+        border-color: #444;
+        color: #fff;
+    }
+    
+    .select-con-busqueda-option {
+        color: #fff;
+    }
+    
+    .select-con-busqueda-option:hover {
+        background-color: #3d3d3d;
+    }
+    
+    .select-con-busqueda-option.selected {
+        background-color: #3d2c1e;
+        color: #ff8c42;
+    }
+    
+    .selected-indicator {
+        color: #ff8c42;
+    }
+    
+    .select-con-busqueda-no-results {
+        color: #888;
+    }
+    
+    .search-icon {
+        color: #aaa;
+    }
+    
+    .clear-button {
+        color: #aaa;
+    }
+    
+    .clear-button:hover {
+        color: #ff6b6b;
+        background-color: rgba(255, 107, 107, 0.1);
+    }
+}
