@@ -11,10 +11,7 @@ try {
     switch ($method) {
         case "GET":
 
-           $query = "SELECT IdPersonal, NoEmpleado,concat(Nombre,'',ApPaterno,'',ApMaterno) as NombreCompleto,
-                    Nombre, ApPaterno,ApMaterno,Cargo,Departamento,Empresa,Status, IdUbicacion,NSS,esSupervisor,RutaFoto,Email, Contacto,
-                    IdSupervisor,TipoSangre,FechaCreacion,UsuarioCreacion
-                    From t_personal";
+           $query = "SELECT IdTablaVacaciones, Antiguedad, Dias fROM TablaVacaciones";
            $stmt = $Conexion->prepare($query);
 
             $stmt->execute();

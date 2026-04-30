@@ -21,8 +21,6 @@ export interface Interfacepersonal {
     FechaCreacion: string;
 }
 
-
-
 export interface FiltrosPersonal {
     NoEmpleado: number;
     NombreCompleto: string;

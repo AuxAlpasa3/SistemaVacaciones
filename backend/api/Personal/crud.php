@@ -25,6 +25,29 @@ function formatDateForSQL($date) {
     return date('Y-m-d H:i:s', $timestamp);
 }
 
+// Función para convertir fecha de dd mm aaaa a YYYY-MM-DD
+function convertFechaIngreso($fecha) {
+    if (empty($fecha)) return null;
+    
+    // Si la fecha viene en formato dd mm aaaa
+    if (preg_match('/^(\d{2})\s+(\d{2})\s+(\d{4})$/', $fecha, $matches)) {
+        return $matches[3] . '-' . $matches[2] . '-' . $matches[1];
+    }
+    
+    // Si ya viene en formato YYYY-MM-DD
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+        return $fecha;
+    }
+    
+    // Intentar convertir con strtotime como fallback
+    $timestamp = strtotime($fecha);
+    if ($timestamp !== false) {
+        return date('Y-m-d', $timestamp);
+    }
+    
+    return null;
+}
+
 try {
     switch ($method) {
         case "GET":
@@ -80,12 +103,13 @@ try {
 
             $NoEmpleado = $data['NoEmpleado'];
             $FechaCreacion = date('Y-m-d H:i:s');
+            $FechaIngreso = convertFechaIngreso($data['FechaIngreso'] ?? '');
             $Nombre = mb_strtoupper($data['Nombre']);
             $ApPaterno = isset($data['ApPaterno']) ? mb_strtoupper($data['ApPaterno']) : '';
             $ApMaterno = isset($data['ApMaterno']) ? mb_strtoupper($data['ApMaterno']) : '';
             $Cargo = $data['Cargo'] ?? null;
             $Departamento = $data['Departamento'] ?? null;
-            $Empresa = $data['Empresa'] ?? null;
+            $Empresa = 1; // Siempre será 1
             $Status = $data['Status'] ?? 1;
             $IdUbicacion = $data['IdUbicacion'] ?? null;
             $Email = $data['Email'] ?? null;
@@ -95,17 +119,17 @@ try {
             $NSS = $data['NSS'] ?? null;
             $UsuarioCreacion = $data['UsuarioCreacion'] ?? null;
             $RutaFoto = $data['RutaFoto'] ?? null;
-            $EsSupervisor = $data['EsSupervisor'] ?? 0;
+            $EsSupervisor = isset($data['EsSupervisor']) ? ($data['EsSupervisor'] === 'SI' ? 1 : 0) : 0;
 
             $Conexion->beginTransaction();
 
             try {
                 $query_per = "INSERT INTO t_personal (
-                    NoEmpleado, FechaCreacion, Nombre, ApPaterno, ApMaterno, Cargo, 
+                    NoEmpleado, FechaCreacion, FechaIngreso, Nombre, ApPaterno, ApMaterno, Cargo, 
                     Departamento, Empresa, Status, IdUbicacion, Email, Contacto, 
                     IdSupervisor, TipoSangre, NSS, UsuarioCreacion, RutaFoto, EsSupervisor
                 ) VALUES ( 
-                    :NoEmpleado, :FechaCreacion, :Nombre, :ApPaterno, :ApMaterno, :Cargo, 
+                    :NoEmpleado, :FechaCreacion, :FechaIngreso, :Nombre, :ApPaterno, :ApMaterno, :Cargo, 
                     :Departamento, :Empresa, :Status, :IdUbicacion, :Email, :Contacto, 
                     :IdSupervisor, :TipoSangre, :NSS, :UsuarioCreacion, :RutaFoto, :EsSupervisor
                 )";
@@ -113,12 +137,13 @@ try {
                 $stmt_per = $Conexion->prepare($query_per);
                 $stmt_per->bindParam(":NoEmpleado", $NoEmpleado);
                 $stmt_per->bindParam(":FechaCreacion", $FechaCreacion);
+                $stmt_per->bindParam(":FechaIngreso", $FechaIngreso);
                 $stmt_per->bindParam(":Nombre", $Nombre);
                 $stmt_per->bindParam(":ApPaterno", $ApPaterno);
                 $stmt_per->bindParam(":ApMaterno", $ApMaterno);
                 $stmt_per->bindParam(":Cargo", $Cargo);
                 $stmt_per->bindParam(":Departamento", $Departamento);
-                $stmt_per->bindParam(":Empresa", $Empresa);
+                $stmt_per->bindParam(":Empresa", $Empresa, PDO::PARAM_INT);
                 $stmt_per->bindParam(":Status", $Status);
                 $stmt_per->bindParam(":IdUbicacion", $IdUbicacion);
                 $stmt_per->bindParam(":Email", $Email);
@@ -201,6 +226,11 @@ try {
                 $params[':NoEmpleado'] = $input['NoEmpleado'];
             }
             
+            if (isset($input['FechaIngreso'])) {
+                $update_fields[] = "FechaIngreso = :FechaIngreso";
+                $params[':FechaIngreso'] = convertFechaIngreso($input['FechaIngreso']);
+            }
+            
             if (isset($input['Nombre']) && $input['Nombre'] !== '') {
                 $update_fields[] = "Nombre = :Nombre";
                 $params[':Nombre'] = mb_strtoupper($input['Nombre']);
@@ -226,10 +256,7 @@ try {
                 $params[':Departamento'] = $input['Departamento'];
             }
             
-            if (isset($input['Empresa'])) {
-                $update_fields[] = "Empresa = :Empresa";
-                $params[':Empresa'] = $input['Empresa'];
-            }
+            // Empresa siempre es 1, no se actualiza desde el frontend
             
             if (isset($input['Status'])) {
                 $update_fields[] = "Status = :Status";
@@ -266,12 +293,16 @@ try {
                 $params[':NSS'] = $input['NSS'];
             }
 
+            if (isset($input['RutaFoto'])) {
+                $update_fields[] = "RutaFoto = :RutaFoto";
+                $params[':RutaFoto'] = $input['RutaFoto'];
+            }
+
             if (isset($input['EsSupervisor'])) {
                 $update_fields[] = "EsSupervisor = :EsSupervisor";
                 $params[':EsSupervisor'] = $input['EsSupervisor'] === 'SI' ? 1 : 0;
             }
     
-
             if (empty($update_fields)) {
                 http_response_code(400);
                 echo json_encode(['status' => false, 'message' => 'No hay campos para actualizar']);

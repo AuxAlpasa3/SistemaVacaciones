@@ -14,3 +14,24 @@ export interface InterfaceVacaciones {
     FechaAutoriza?: string;
     UsuarioAutoriza?: string;
 }
+
+export interface FiltrosVacaciones {
+    NoEmpleado: number;
+    NombreCompleto: string;
+    FechaInicioVacaciones: string;
+    FechaFinVacaciones: string;
+    Supervisor: string;
+    FechaIngreso: string;
+    FechaSolicitud: string;
+}
+
+export interface OpcionSelect {
+    id: string | number; 
+    valor: string;
+}
+
+export interface OptionType {
+    value: string;
+    label: string;
+    [key: string]: any;
+}

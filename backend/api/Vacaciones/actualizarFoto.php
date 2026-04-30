@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT
         exit();
     }
 
-    $uploadDir = '../Empleados/empleados/';
+    $uploadDir = '../Personal/Fotografias/';
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT
     $uploadFile = $uploadDir . $fileName;
     
     if (move_uploaded_file($_FILES['foto']['tmp_name'], $uploadFile)) {
-        $rutaGuardar = 'https://intranet.alpasamx.com/AlpasaCS/Empleados/empleados/' . $fileName;
+        $rutaGuardar = 'https://intranet.alpasamx.com/SistemaVacaciones/Personal/Fotografias/' . $fileName;
         
         $query = "UPDATE t_personal SET RutaFoto = :rutaFoto WHERE IdPersonal = :idPersonal";
         $stmt = $Conexion->prepare($query);

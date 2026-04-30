@@ -184,3 +184,20 @@ export const formatDateForServer = (date: Date | string | undefined): string => 
     
     return `${year}-${month}-${day}`;
 };
+
+export const formatDateForDisplay = (dateString: string): string => {
+    if (!dateString) return '';
+    
+    // Si ya está en formato dd/mm/aaaa, regresarlo igual
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+        return dateString;
+    }
+    
+    // Convertir de yyyy-mm-dd a dd/mm/aaaa
+    const [year, month, day] = dateString.split('-');
+    if (year && month && day) {
+        return `${day}/${month}/${year}`;
+    }
+    
+    return dateString;
+};

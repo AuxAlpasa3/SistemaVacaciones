@@ -4,7 +4,7 @@ header("Access-Control-Allow-Headers: access");
 header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
 header("Content-Type: application/json; charset=UTF-8");
 
-include_once '../../../db/Connection.php';
+include_once '../../db/Connection.php';
 
 $method = $_SERVER["REQUEST_METHOD"];
 
@@ -12,28 +12,25 @@ $method = $_SERVER["REQUEST_METHOD"];
 try {
     switch ($method) {
         case "GET":
-            $idAsociado = $_GET['IdPersonal'] ?? null;
-            if (!$idAsociado) {
-                http_response_code(400); 
-                echo json_encode(['status' => false, 'message' => 'Falta el parámetro IdPersonal']);
-                exit;
-            }
 
-
-           $query = "SELECT IdVehiculo,idAsociado, Marca,Modelo,Num_Serie,Placas,Anio,Color,Activo,RutaFoto,LibreUso,
-                        TipoVehiculo FROM t_vehiculos 
-                        WHERE IdAsociado=? AND TipoVehiculo=1";
+           $query = "SELECT DISTINCT(t1.Idpersonal) as IdPersonal, t1.NoEmpleado, 
+                    Concat(t1.Nombre,' ', t1.ApPaterno,' ', t1.ApMaterno) as NombreCompleto, t1.Nombre, t1.ApPaterno, 
+                    t1.ApMaterno, t1.Cargo, t1.Departamento, t1.Empresa, t1.Status, t1.IdUbicacion, t1.RutaFoto, 
+                    t1.Email, t1.Contacto, t1.IdSupervisor, t1.TipoSangre, t1.FechaCreación,  t1.NSS, t1.FechaCreacion,
+                    CASE WHEN t1.EsSupervisor <>1 THEN 'NO' ELSE 'SI' END  as EsSupervisor,TipoSangre,FechaIngreso
+                    From t_personal as t1  
+                    order by t1.noEmpleado";
            $stmt = $Conexion->prepare($query);
-            $stmt->execute([$idAsociado]);
+            $stmt->execute();
             
               $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
             if (!empty($data)) {
-                http_response_code(200);
+                http_response_code(200); // OK
                 echo json_encode(['status' => true, 'data' => $data]);
             } else {
-                http_response_code(200); 
+                http_response_code(200); // OK
                 echo json_encode(['status' => false, 'message' => 'No hay información']);
             }
             break;
