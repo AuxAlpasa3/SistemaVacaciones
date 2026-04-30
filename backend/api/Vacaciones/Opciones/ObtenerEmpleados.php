@@ -2,18 +2,17 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 include_once '../../../db/Connection.php';
-
 try {
-    $query = "SELECT DISTINCT 
-                Cargo as id,
-                Cargo as valor
+    
+    $query = "SELECT 
+                NoEmpleado as id,
+                CONCAT(ISNULL(Nombre, ''), ' ', ISNULL(ApPaterno, ''), ' ', ISNULL(ApMaterno, '')) as valor
             FROM t_personal 
-            WHERE Cargo IS NOT NULL AND Cargo != ''
-            ORDER BY Cargo";
+            WHERE Status = '1'
+            ORDER BY Nombre, ApPaterno, ApMaterno";
     
     $stmt = $Conexion->prepare($query);
     $stmt->execute();
@@ -22,14 +21,14 @@ try {
     
     echo json_encode([
         'status' => true,
-        'message' => 'Cargos obtenidos correctamente',
+        'message' => 'Empleados obtenidos correctamente',
         'data' => $result
     ]);
     
 } catch (Exception $e) {
     echo json_encode([
         'status' => false,
-        'message' => 'Error al obtener cargos: ' . $e->getMessage(),
+        'message' => 'Error al obtener empleados: ' . $e->getMessage(),
         'data' => []
     ]);
 }
