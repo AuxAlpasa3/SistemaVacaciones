@@ -334,6 +334,45 @@ const MemoizedActionButtons = React.memo(({
     </div>
 ));
 
+// Función para formatear fecha a dd mm aaaa
+const formatFechaDisplay = (fecha: string): string => {
+    if (!fecha) return '';
+    try {
+        const date = new Date(fecha);
+        if (isNaN(date.getTime())) return fecha;
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    } catch {
+        return fecha;
+    }
+};
+
+// Función para convertir fecha de dd mm aaaa a formato YYYY-MM-DD para el input date
+const formatFechaForInput = (fecha: string): string => {
+    if (!fecha) return '';
+    try {
+        const parts = fecha.split(' ');
+        if (parts.length === 3) {
+            const [day, month, year] = parts;
+            return `${year}-${month}-${day}`;
+        }
+        const date = new Date(fecha);
+        if (isNaN(date.getTime())) return '';
+        return date.toISOString().split('T')[0];
+    } catch {
+        return '';
+    }
+};
+
+// Función para convertir fecha de input date a formato dd mm aaaa
+const formatFechaFromInput = (fechaValue: string): string => {
+    if (!fechaValue) return '';
+    const [year, month, day] = fechaValue.split('-');
+    return `${day} ${month} ${year}`;
+};
+
 export const Personal: React.FC = () => {
     const navigate = useNavigate();
 
@@ -403,11 +442,9 @@ export const Personal: React.FC = () => {
         try {
             setLoadingOptions(true);
             
-            const [cargosResponse, departamentosResponse, empresasResponse, 
-                    ubicacionesResponse, supervisoresResponse] = await Promise.all([
+            const [cargosResponse, departamentosResponse, ubicacionesResponse, supervisoresResponse] = await Promise.all([
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerCargos.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerDepartamentos.php'),
-                apiService.get<RespuestaAPI>('/personal/opciones/ObtenerEmpresas.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerUbicaciones.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerSupervisores.php')
             ]);
@@ -425,14 +462,6 @@ export const Personal: React.FC = () => {
                 setDepartamentos(deptosData.map((d: any) => ({ 
                     id: d.id?.toString() || d.IdDepartamento?.toString() || '', 
                     valor: d.Departamento || d.valor || d.descripcion || '' 
-                })));
-            }
-
-            if (empresasResponse.status && empresasResponse.data) {
-                const empresasData = Array.isArray(empresasResponse.data) ? empresasResponse.data : [];
-                setEmpresas(empresasData.map((e: any) => ({ 
-                    id: e.id?.toString() || e.IdEmpresa?.toString() || '', 
-                    valor: e.Empresa || e.valor || e.descripcion || '' 
                 })));
             }
 
@@ -487,10 +516,6 @@ export const Personal: React.FC = () => {
                     endpoint = `/personal/crear/Departamento.php?IdUsuario=${usuarioSesion?.IdUsuario}`;
                     data = { Departamento: value };
                     break;
-                case 'Empresa':
-                    endpoint = `/personal/crear/Empresa.php?IdUsuario=${usuarioSesion?.IdUsuario}`;
-                    data = { Empresa: value };
-                    break;
                 default:
                     return false;
             }
@@ -515,9 +540,6 @@ export const Personal: React.FC = () => {
                         case 'Departamento':
                             nuevaLista = departamentos;
                             break;
-                        case 'Empresa':
-                            nuevaLista = empresas;
-                            break;
                     }
                     
                     const nuevoElemento = nuevaLista.find(item => 
@@ -531,9 +553,6 @@ export const Personal: React.FC = () => {
                                 break;
                             case 'Departamento':
                                 handleSelectChange('Departamento', nuevoElemento.id.toString());
-                                break;
-                            case 'Empresa':
-                                handleSelectChange('Empresa', nuevoElemento.id.toString());
                                 break;
                         }
                     }
@@ -554,7 +573,7 @@ export const Personal: React.FC = () => {
         } finally {
             setCreatingNewOption(null);
         }
-    }, [cargarOpcionesCatalogos, usuarioSesion, cargos, departamentos, empresas, handleSelectChange]);
+    }, [cargarOpcionesCatalogos, usuarioSesion, cargos, departamentos, handleSelectChange]);
 
     const obtenerTextoPorId = useCallback((value: string | number, opciones: OpcionSelect[]): string => {
         if (value === 0 || value === '0' || value === '' || value === null) {
@@ -671,10 +690,6 @@ export const Personal: React.FC = () => {
 
         if (filtros.Status) {
             filtrados = filtrados.filter(p => p.Status === filtros.Status);
-        }
-
-        if (filtros.Empresa && filtros.Empresa !== '0') {
-            filtrados = filtrados.filter(p => p.Empresa?.toString() === filtros.Empresa);
         }
 
         if (filtros.Departamento && filtros.Departamento !== '0') {
@@ -834,7 +849,12 @@ export const Personal: React.FC = () => {
 
     const handleEditPersonal = useCallback((personal: Interfacepersonal) => {
         setTipoFormulario('Modificar');
-        setPersonalForm(personal);
+        // Formatear la fecha de ingreso para mostrar en el input date
+        const fechaIngresoFormateada = formatFechaForInput(personal.FechaIngreso);
+        setPersonalForm({
+            ...personal,
+            FechaIngreso: fechaIngresoFormateada
+        });
         setPreviewFoto(personal.RutaFoto || '');
         setShowForm(true);
     }, []);
@@ -902,21 +922,23 @@ export const Personal: React.FC = () => {
         
         const nombreCompleto = `${personalForm.Nombre || ''} ${personalForm.ApPaterno || ''} ${personalForm.ApMaterno || ''}`.trim();
         
+        // Preparar los datos para enviar - convertir fecha de ingreso al formato del servidor
+        const dataToSendServer = {
+            ...personalForm,
+            FechaIngreso: personalForm.FechaIngreso ? formatFechaFromInput(personalForm.FechaIngreso) : '',
+            UsuarioCreacion: usuarioSesion?.IdUsuario,
+            RutaFoto: selectedFile ? '' : personalForm.RutaFoto
+        };
+        
         try {
             setSubmitting(true);
             const isUpdate = personal.some(p => p.IdPersonal === personalForm.IdPersonal);
             let response: RespuestaAPI;
             
-            const dataToSend = {
-                ...personalForm,
-                UsuarioCreacion: usuarioSesion?.IdUsuario,
-                RutaFoto: selectedFile ? '' : personalForm.RutaFoto
-            };
-            
             if (isUpdate) {
-                response = await apiService.put<RespuestaAPI>(`/personal/crud.php`, dataToSend);
+                response = await apiService.put<RespuestaAPI>(`/personal/crud.php`, dataToSendServer);
             } else {
-                response = await apiService.postForm<RespuestaAPI>(`/personal/crud.php`, dataToSend);
+                response = await apiService.postForm<RespuestaAPI>(`/personal/crud.php`, dataToSendServer);
             }
             
             if (response.status) {
@@ -1062,9 +1084,9 @@ export const Personal: React.FC = () => {
             searchable: false,
             width: '150px',
             align: 'center',
-            headerAlign: 'center'
+            headerAlign: 'center',
+            render: (value: string) => formatFechaDisplay(value)
         },
-
         {
             key: 'Cargo',
             title: 'Cargo',
@@ -1084,16 +1106,6 @@ export const Personal: React.FC = () => {
             align: 'center',
             headerAlign: 'center',
             render: (value: number) => obtenerTextoPorId(value, departamentos)
-        },
-        {
-            key: 'Empresa',
-            title: 'Empresa',
-            sortable: true,
-            searchable: false,
-            width: '200px',
-            align: 'center',
-            headerAlign: 'center',
-            render: (value: number) => obtenerTextoPorId(value, empresas)
         },
         {
             key: 'IdUbicacion',
@@ -1158,7 +1170,7 @@ export const Personal: React.FC = () => {
             width: '150px',
             align: 'center',
             headerAlign: 'center',
-            render: (value) => formatDateForServer(value)
+            render: (value) => formatFechaDisplay(value)
         },
         {
             key: 'actions',
@@ -1179,7 +1191,7 @@ export const Personal: React.FC = () => {
                 />
             )
         }
-    ], [openActionDropdown, cargos, departamentos, empresas, ubicaciones, supervisores, obtenerTextoPorId, handleViewPersonal, handleEditPersonal, handleCambiarEstatus]);
+    ], [openActionDropdown, cargos, departamentos, ubicaciones, supervisores, obtenerTextoPorId, handleViewPersonal, handleEditPersonal, handleCambiarEstatus]);
 
     useEffect(() => {
         aplicarFiltros();
@@ -1342,16 +1354,6 @@ export const Personal: React.FC = () => {
                 {showFiltrosAvanzados && (
                     <div className="filtros-avanzados">
                         <div className="filtros-avanzados-grid">
-                            <div className="filtro-group">
-                                <label className="filtro-label">Empresa:</label>
-                                <SelectConBusqueda
-                                    options={convertirOpcionesParaBusqueda(empresas)}
-                                    value={filtros.Empresa}
-                                    onChange={(value) => handleFiltroChange('Empresa', value)}
-                                    placeholder="Seleccionar empresa"
-                                />
-                            </div>
-
                             <div className="filtro-group">
                                 <label className="filtro-label">Departamento:</label>
                                 <select
@@ -1591,6 +1593,19 @@ export const Personal: React.FC = () => {
                                         <h3 className="form-section-title">Información Laboral</h3>
                                         <div className="form-personal-row two-columns">
                                             <div className="form-personal-group">
+                                                <label htmlFor='FechaIngreso' className="form-personal-label">Fecha de Ingreso</label>
+                                                <input
+                                                    type="date"
+                                                    name="FechaIngreso"
+                                                    value={personalForm.FechaIngreso}
+                                                    onChange={handleInputChange}
+                                                    className="form-personal-input"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-personal-row two-columns">
+                                            <div className="form-personal-group">
                                                 <label htmlFor='Cargo' className="form-personal-label">Cargo</label>
                                                 <SelectConBusquedayCrear
                                                     options={convertirOpciones(cargos)}
@@ -1620,20 +1635,6 @@ export const Personal: React.FC = () => {
                                         </div>
 
                                         <div className="form-personal-row two-columns">
-                                            <div className="form-personal-group">
-                                                <label htmlFor='Empresa' className="form-personal-label">Empresa</label>
-                                                <SelectConBusquedayCrear
-                                                    options={convertirOpciones(empresas)}
-                                                    value={personalForm.Empresa}
-                                                    onChange={(value) => handleSelectChange('Empresa', value)}
-                                                    placeholder="Buscar o crear empresa"
-                                                    onCreateNew={(value) => handleCreateNewOption('Empresa', value)}
-                                                    loading={creatingNewOption?.type === 'Empresa'}
-                                                    allowCreate={true}
-                                                    forceUppercase={true}
-                                                />
-                                            </div>
-
                                             <div className="form-personal-group">
                                                 <label htmlFor='IdUbicacion' className="form-personal-label">Ubicación</label>
                                                 <SelectConBusqueda
