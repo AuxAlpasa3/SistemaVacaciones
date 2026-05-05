@@ -14,7 +14,7 @@ export interface InterfaceVacaciones {
     FechaRetornoLabores: string;
     FechaAutoriza?: string;
     UsuarioAutoriza?: string;
-    Estatus: number;
+    Estatus: number | '';
 }
 
 export interface FiltrosVacaciones {
@@ -25,6 +25,7 @@ export interface FiltrosVacaciones {
     Supervisor: string;
     FechaIngreso: string;
     FechaSolicitud: string;
+    Estatus: number | '';
 }
 
 export interface OpcionSelect {
