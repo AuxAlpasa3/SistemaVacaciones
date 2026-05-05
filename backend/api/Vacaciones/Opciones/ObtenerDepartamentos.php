@@ -8,10 +8,11 @@ include_once '../../../db/Connection.php';
 
 try {
     $query = "SELECT DISTINCT 
-                Departamento as id,
-                Departamento as valor
-            FROM t_personal 
-            WHERE Departamento IS NOT NULL AND Departamento != ''
+                t1.Departamento as id,
+                t2.NomDepto as valor
+            FROM t_personal as t1
+            INNER JOIN t_departamento as t2 on t1.Departamento=t2.IdDepartamento
+            WHERE t1.Departamento IS NOT NULL AND Departamento != ''
             ORDER BY Departamento";
     
     $stmt = $Conexion->prepare($query);

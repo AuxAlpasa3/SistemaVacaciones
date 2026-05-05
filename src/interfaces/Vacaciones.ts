@@ -2,6 +2,7 @@ export interface InterfaceVacaciones {
     IdVacaciones: number;
     FechaSolicitud: string;
     UsuarioSolicita: string;
+    IdPersonal: number;
     NoEmpleado: string;
     NombreCompleto: string;
     Departamento: string;
@@ -13,6 +14,7 @@ export interface InterfaceVacaciones {
     FechaRetornoLabores: string;
     FechaAutoriza?: string;
     UsuarioAutoriza?: string;
+    Estatus: number;
 }
 
 export interface FiltrosVacaciones {

@@ -9,7 +9,7 @@ import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
 import { useNavigate } from 'react-router-dom';
 import { useUsuarioStore } from '../../services/UsuarioLogin';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
-import backgroundVideo from '../../assets/background.jpg';
+import backgroundImage from '../../assets/background.jpg'; // Cambiado de backgroundVideo a backgroundImage
 
 export function Login() {
     const navigate = useNavigate();
@@ -61,22 +61,20 @@ export function Login() {
     }, [])
 
     return (
-        <div className="fondo-con-video">
-            {/* Video de fondo */}
-            <video 
-                className="video-background" 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
-                preload="auto"
-            >
-                <source src={backgroundVideo} type="image/jpeg" />
-                <div className="video-fallback"></div>
-            </video>
+        <div className="fondo-con-imagen"> {/* Clase renombrada */}
+            {/* Imagen de fondo */}
+            <div 
+                className="imagen-background" 
+                style={{ 
+                    backgroundImage: `url(${backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                }}
+            ></div>
             
             {/* Capa overlay para mejorar contraste y legibilidad */}
-            <div className="video-overlay"></div>
+            <div className="imagen-overlay"></div> {/* Clase renombrada */}
             
             <div className='body-login-container'>
                 <div className="login-container">

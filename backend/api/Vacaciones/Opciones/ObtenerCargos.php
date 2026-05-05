@@ -9,11 +9,11 @@ include_once '../../../db/Connection.php';
 
 try {
     $query = "SELECT DISTINCT 
-                Cargo as id,
-                Cargo as valor
-            FROM t_personal 
-            WHERE Cargo IS NOT NULL AND Cargo != ''
-            ORDER BY Cargo";
+                t1.Cargo as id,
+                t2.NomCargo as valor
+            FROM t_personal as t1 inner join t_cargo as t2 on t1.Cargo=t2.IdCargo
+            WHERE t1.Cargo IS NOT NULL AND t1.Cargo != ''
+            ORDER BY t1.Cargo";
     
     $stmt = $Conexion->prepare($query);
     $stmt->execute();

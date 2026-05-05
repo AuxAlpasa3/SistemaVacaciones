@@ -10,6 +10,7 @@ import { NotFound } from './pages/NotFound/NotFound';
 import { ToastContainer } from 'react-toastify';
 
 import { Personal } from './pages/Personal/Personal';
+import { VerDetallePersonal } from './pages/Personal/VerDetallePersonal';
 import { HistorialPersonal } from './pages/HistorialPersonal/HistorialPersonal';
 import { Vacaciones } from './pages/Vacaciones/Vacaciones';
 
@@ -109,18 +110,18 @@ function App() {
 
             
             {/* VER de detalle */}
-            {/* <Route path="/Personal/VerPerfil/:id" element={
+            <Route path="/Personal/VerDetallePersonal/:id" element={
               <RutaProtegida>
                 <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
                 <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
                   <Header onMenuToggle={toggleSidebar} />
                   <div className="content-area">
-                    <VerPerfil />
+                    <VerDetallePersonal />
                   </div>
                   <Footer />
                 </div>
               </RutaProtegida>
-            } /> */}
+            } /> 
 
             
               {/* Personal */}

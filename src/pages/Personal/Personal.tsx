@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Plus, X, FileText, Edit, Trash2, MoreVertical, Filter, ChevronDown, FileDown, Printer, Download, Upload, Eye, RefreshCw } from 'lucide-react';
+import { Plus, X, FileText, Edit, Trash2, MoreVertical, Filter, ChevronDown, FileDown, Printer, Download, Upload, Eye, RefreshCw, Calendar } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
 import { SelectConBusqueda } from '../../components/Select/SelectConBusqueda';
@@ -298,17 +298,6 @@ const MemoizedActionButtons = React.memo(({
         {openActionDropdown === row.IdPersonal && (
             <div className="actions-dropdown-menu">
                 <button 
-                    className="actions-dropdown-item view-action" 
-                    onClick={() => { 
-                        onView(row); 
-                        setOpenActionDropdown(null); 
-                    }}
-                >
-                    <Eye size={14} />
-                    <span>Ver</span>
-                </button>
-                <div className="actions-dropdown-divider"></div>
-                <button 
                     className="actions-dropdown-item edit-action" 
                     onClick={() => { 
                         onEdit(row); 
@@ -333,6 +322,278 @@ const MemoizedActionButtons = React.memo(({
         )}
     </div>
 ));
+
+const DatePickerInput: React.FC<{
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+}> = ({ value, onChange, placeholder = "dd/mm/aaaa" }) => {
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [inputValue, setInputValue] = useState(value);
+
+    useEffect(() => {
+        if (value) {
+            const parts = value.split('-');
+            if (parts.length === 3) {
+                setInputValue(`${parts[2]}/${parts[1]}/${parts[0]}`);
+            } else {
+                setInputValue(value);
+            }
+        } else {
+            setInputValue('');
+        }
+    }, [value]);
+
+    const formatDateForInput = (date: Date): string => {
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    const formatDateForStorage = (dateStr: string): string => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return dateStr;
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let newValue = e.target.value;
+        
+        if (newValue.length === 2 && inputValue.length === 1) {
+            newValue = newValue + '/';
+        } else if (newValue.length === 5 && inputValue.length === 4) {
+            newValue = newValue + '/';
+        }
+        
+        setInputValue(newValue);
+        
+        if (newValue.length === 10) {
+            const [day, month, year] = newValue.split('/');
+            if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
+                const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                if (!isNaN(date.getTime())) {
+                    onChange(formatDateForStorage(newValue));
+                }
+            }
+        } else if (newValue.length === 0) {
+            onChange('');
+        }
+    };
+
+    const handleDateSelect = (day: number, month: number, year: number) => {
+        const selectedDate = new Date(year, month, day);
+        const formattedDate = formatDateForInput(selectedDate);
+        setInputValue(formattedDate);
+        onChange(formatDateForStorage(formattedDate));
+        setShowCalendar(false);
+    };
+
+    const getDaysInMonth = (date: Date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+        
+        const days: (number | null)[] = [];
+        for (let i = 0; i < startingDayOfWeek; i++) {
+            days.push(null);
+        }
+        for (let i = 1; i <= daysInMonth; i++) {
+            days.push(i);
+        }
+        return days;
+    };
+
+    const handlePrevMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+    };
+
+    const handleNextMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+    };
+
+    const isSelectedDate = (day: number, month: number, year: number) => {
+        if (!value) return false;
+        const [storedYear, storedMonth, storedDay] = value.split('-');
+        return parseInt(storedDay) === day && 
+               parseInt(storedMonth) === month + 1 && 
+               parseInt(storedYear) === year;
+    };
+
+    const days = getDaysInMonth(currentMonth);
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    return (
+        <div style={{ position: 'relative', width: '100%' }}>
+            <div style={{ display: 'flex', position: 'relative' }}>
+                <input
+                    type="text"
+                    className="form-personal-input"
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    placeholder={placeholder}
+                    style={{ paddingRight: '35px' }}
+                />
+                <button
+                    type="button"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    style={{
+                        position: 'absolute',
+                        right: '8px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#666'
+                    }}
+                >
+                    <Calendar size={18} />
+                </button>
+            </div>
+            
+            {showCalendar && (
+                <>
+                    <div 
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 998
+                        }}
+                        onClick={() => setShowCalendar(false)}
+                    />
+                    <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        marginTop: '4px',
+                        backgroundColor: 'white',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        zIndex: 999,
+                        width: '280px'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '12px',
+                            borderBottom: '1px solid #e0e0e0'
+                        }}>
+                            <button
+                                type="button"
+                                onClick={handlePrevMonth}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '18px',
+                                    padding: '4px 8px'
+                                }}
+                            >
+                                ‹
+                            </button>
+                            <span style={{ fontWeight: '500' }}>
+                                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleNextMonth}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '18px',
+                                    padding: '4px 8px'
+                                }}
+                            >
+                                ›
+                            </button>
+                        </div>
+                        
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(7, 1fr)',
+                            padding: '8px',
+                            gap: '4px'
+                        }}>
+                            {dayNames.map(day => (
+                                <div key={day} style={{
+                                    textAlign: 'center',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    color: '#666',
+                                    padding: '4px'
+                                }}>
+                                    {day}
+                                </div>
+                            ))}
+                            
+                            {days.map((day, index) => {
+                                if (day === null) {
+                                    return <div key={`empty-${index}`} style={{ padding: '4px' }} />;
+                                }
+                                
+                                const isSelected = isSelectedDate(day, currentMonth.getMonth(), currentMonth.getFullYear());
+                                const isToday = day === new Date().getDate() && 
+                                               currentMonth.getMonth() === new Date().getMonth() && 
+                                               currentMonth.getFullYear() === new Date().getFullYear();
+                                
+                                return (
+                                    <button
+                                        key={day}
+                                        type="button"
+                                        onClick={() => handleDateSelect(day, currentMonth.getMonth(), currentMonth.getFullYear())}
+                                        style={{
+                                            padding: '6px 4px',
+                                            textAlign: 'center',
+                                            border: 'none',
+                                            background: isSelected ? '#E85C0D' : 'transparent',
+                                            color: isSelected ? 'white' : (isToday ? '#E85C0D' : '#333'),
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                            fontWeight: isSelected ? '600' : 'normal',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!isSelected) {
+                                                e.currentTarget.style.backgroundColor = '#f5f5f5';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!isSelected) {
+                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                            }
+                                        }}
+                                    >
+                                        {day}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
 
 export const Personal: React.FC = () => {
     const navigate = useNavigate();
@@ -360,8 +621,6 @@ export const Personal: React.FC = () => {
         EsSupervisor: 'NO'
     });
     
-    const [fechaIngresoDisplay, setFechaIngresoDisplay] = useState('');
-    
     const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
     const [personal, setPersonal] = useState<Interfacepersonal[]>([]);
     const [personalFiltrados, setPersonalFiltrados] = useState<Interfacepersonal[]>([]);
@@ -387,8 +646,8 @@ export const Personal: React.FC = () => {
     const [filtros, setFiltros] = useState<FiltrosPersonal>({
         NoEmpleado: 0,
         NombreCompleto: '',
-        FechaCreacionInicio: '',
-        FechaCreacionFin: '',
+        FechaIngresoInicio: '',
+        FechaIngresoFin: '',
         Status: '',
         Empresa: '',
         Departamento: '',
@@ -400,15 +659,6 @@ export const Personal: React.FC = () => {
     const [cambioEstatusModalVisible, setCambioEstatusModalVisible] = useState(false);
     const [personalCambioEstatus, setPersonalCambioEstatus] = useState<Interfacepersonal | null>(null);
     const [cambiandoEstatus, setCambiandoEstatus] = useState(false);
-
-    // Sincronizar fecha display cuando cambia FechaIngreso en el formulario
-    useEffect(() => {
-        if (personalForm.FechaIngreso) {
-            setFechaIngresoDisplay(formatDateForServer(personalForm.FechaIngreso));
-        } else {
-            setFechaIngresoDisplay('');
-        }
-    }, [personalForm.FechaIngreso]);
 
     const cargarOpcionesCatalogos = useCallback(async () => {
         try {
@@ -669,14 +919,14 @@ export const Personal: React.FC = () => {
             );
         }
 
-        if (filtros.FechaCreacionInicio) {
+        if (filtros.FechaIngresoInicio) {
             filtrados = filtrados.filter(p => 
-                p.FechaCreacion && p.FechaCreacion >= filtros.FechaCreacionInicio
+                p.FechaIngreso && p.FechaIngreso >= filtros.FechaIngresoInicio
             );
         }
-        if (filtros.FechaCreacionFin) {
+        if (filtros.FechaIngresoFin) {
             filtrados = filtrados.filter(p => 
-                p.FechaCreacion && p.FechaCreacion <= filtros.FechaCreacionFin
+                p.FechaIngreso && p.FechaIngreso <= filtros.FechaIngresoFin
             );
         }
 
@@ -716,8 +966,8 @@ export const Personal: React.FC = () => {
         setFiltros({
             NoEmpleado: 0,
             NombreCompleto: '',
-            FechaCreacionInicio: '',
-            FechaCreacionFin: '',
+            FechaIngresoInicio: '',
+            FechaIngresoFin: '',
             Status: '',
             Empresa: '',
             Departamento: '',
@@ -840,7 +1090,7 @@ export const Personal: React.FC = () => {
     }, []);
 
     const handleViewPersonal = useCallback(async (personal: Interfacepersonal) => {
-        navigate(`/Catalogos/VerDetallePersonal/01_${personal.NoEmpleado}`);
+        navigate(`/Personal/VerDetallePersonal/01_${personal.NoEmpleado}`);
     }, [navigate]);
 
     const handleEditPersonal = useCallback((personal: Interfacepersonal) => {
@@ -849,7 +1099,6 @@ export const Personal: React.FC = () => {
             ...personal,
             FechaIngreso: personal.FechaIngreso || ''
         });
-        setFechaIngresoDisplay(formatDateForServer(personal.FechaIngreso || ''));
         setPreviewFoto(personal.RutaFoto || '');
         setShowForm(true);
     }, []);
@@ -909,33 +1158,17 @@ export const Personal: React.FC = () => {
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        
-        if (name === 'FechaIngreso') {
-            // Validar formato dd/mm/aaaa
-            if (value && !/^\d{2}\/\d{2}\/\d{4}$/.test(value) && value !== '') {
-                showToast({
-                    text: 'Formato de fecha inválido. Use dd/mm/aaaa',
-                    type: 'error',
-                    autoClose: 3000
-                });
-                return;
-            }
-            
-            // Guardar el valor mostrado en el estado display
-            setFechaIngresoDisplay(value);
-            
-            // Convertir a formato ISO (yyyy-mm-dd) para el formulario
-            const isoDate = formatDateForServer(value);
-            setPersonalForm((prev: any) => ({
-                ...prev,
-                [name]: isoDate
-            }));
-        } else {
-            setPersonalForm((prev: any) => ({
-                ...prev,
-                [name]: name === 'NoEmpleado' ? (value === '' ? 0 : parseInt(value) || 0) : value
-            }));
-        }
+        setPersonalForm((prev: any) => ({
+            ...prev,
+            [name]: name === 'NoEmpleado' ? (value === '' ? 0 : parseInt(value) || 0) : value
+        }));
+    }, []);
+
+    const handleFechaChange = useCallback((value: string) => {
+        setPersonalForm((prev: any) => ({
+            ...prev,
+            FechaIngreso: value
+        }));
     }, []);
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -1037,7 +1270,6 @@ export const Personal: React.FC = () => {
             NSS: '',
             EsSupervisor: 'NO'
         });
-        setFechaIngresoDisplay('');
         setPreviewFoto('');
         setSelectedFile(null);
         setTipoFormulario('Agregar');
@@ -1329,27 +1561,27 @@ export const Personal: React.FC = () => {
                         />
                     </div>
                     <div className="filtro-group">
-                        <label className="filtro-label">Fecha Creación Inicio:</label>
+                        <label className="filtro-label">Fecha Ingreso Inicio:</label>
                         <div className="date-input-wrapper">
                             <input
                                 type="date"
                                 className="filtro-input"
-                                value={filtros.FechaCreacionInicio}
-                                onChange={(e) => handleFiltroChange('FechaCreacionInicio', e.target.value)}
-                                max={filtros.FechaCreacionFin || undefined}
+                                value={filtros.FechaIngresoInicio}
+                                onChange={(e) => handleFiltroChange('FechaIngresoInicio', e.target.value)}
+                                max={filtros.FechaIngresoFin || undefined}
                             />
                         </div>
                     </div>
 
                     <div className="filtro-group">
-                        <label className="filtro-label">Fecha Creación Fin:</label>
+                        <label className="filtro-label">Fecha Ingreso Fin:</label>
                         <div className="date-input-wrapper">
                             <input
                                 type="date"
                                 className="filtro-input"
-                                value={filtros.FechaCreacionFin}
-                                onChange={(e) => handleFiltroChange('FechaCreacionFin', e.target.value)}
-                                min={filtros.FechaCreacionInicio || undefined}
+                                value={filtros.FechaIngresoFin}
+                                onChange={(e) => handleFiltroChange('FechaIngresoFin', e.target.value)}
+                                min={filtros.FechaIngresoInicio || undefined}
                             />
                         </div>
                     </div>
@@ -1562,19 +1794,11 @@ export const Personal: React.FC = () => {
 
                                             <div className="form-personal-group">
                                                 <label htmlFor='FechaIngreso' className="form-personal-label">Fecha de Ingreso</label>
-                                                <input
-                                                    type="text"
-                                                    name="FechaIngreso"
-                                                    value={fechaIngresoDisplay}
-                                                    onChange={handleInputChange}
-                                                    className="form-personal-input"
+                                                <DatePickerInput
+                                                    value={personalForm.FechaIngreso}
+                                                    onChange={handleFechaChange}
                                                     placeholder="dd/mm/aaaa"
-                                                    pattern="\d{2}/\d{2}/\d{4}"
-                                                    title="Formato: dd/mm/aaaa"
                                                 />
-                                                <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                                                    Formato: dd/mm/aaaa (ejemplo: 15/03/2024)
-                                                </small>
                                             </div>
                                         </div>
 

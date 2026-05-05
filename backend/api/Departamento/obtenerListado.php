@@ -13,7 +13,7 @@ try {
     switch ($method) {
         case "GET":
 
-           $query = "SELECT * FROM t_almacen";
+           $query = "SELECT * FROM t_departamento";
            $stmt = $Conexion->prepare($query);
             $stmt->execute();
             

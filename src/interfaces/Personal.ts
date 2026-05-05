@@ -24,8 +24,8 @@ export interface Interfacepersonal {
 export interface FiltrosPersonal {
     NoEmpleado: number;
     NombreCompleto: string;
-    FechaCreacionInicio: string;
-    FechaCreacionFin: string;
+    FechaIngresoInicio: string;
+    FechaIngresoFin: string;
     Status: string;
     Empresa: string;
     Departamento: string;

@@ -2,176 +2,140 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 include_once '../../db/Connection.php';
 
-// Obtener el método de la petición
 $method = $_SERVER['REQUEST_METHOD'];
-$idVacaciones = isset($_GET['IdVacaciones']) ? $_GET['IdVacaciones'] : null;
-$idUsuario = isset($_GET['IdUsuario']) ? $_GET['IdUsuario'] : null;
+$IdVacaciones = isset($_GET['IdVacaciones']) ? intval($_GET['IdVacaciones']) : 0;
+$IdUsuario = isset($_GET['IdUsuario']) ? intval($_GET['IdUsuario']) : 0;
 
 try {
-    
     switch ($method) {
         case 'POST':
-            // Crear nueva solicitud de vacaciones
             $data = json_decode(file_get_contents('php://input'), true);
             
-            // Si no hay datos en JSON, intentar obtener de $_POST
-            if (empty($data)) {
+            if (!$data) {
                 $data = $_POST;
             }
-            
-            // Buscar IdPersonal basado en NoEmpleado
-            $queryPersonal = "SELECT IdPersonal FROM t_personal WHERE NoEmpleado = :noEmpleado";
-            $stmtPersonal = $Conexion->prepare($queryPersonal);
-            $stmtPersonal->bindParam(':noEmpleado', $data['NoEmpleado']);
-            $stmtPersonal->execute();
-            $personal = $stmtPersonal->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$personal) {
-                throw new Exception('Empleado no encontrado');
-            }
-            
-            $idPersonal = $personal['IdPersonal'];
-            
-            $query = "INSERT INTO t_Vacaciones (
-                        FechaSolicitud,
-                        UsuarioSolicita,
+            $IdPersonal = isset($data['IdPersonal']) ? intval($data['IdPersonal']) : 0;
+            $IdUsuario = isset($data['UsuarioSolicita']) ? intval($data['UsuarioSolicita']) : 0;
+            $FechaSolicitud = isset($data['FechaSolicitud']) ? $data['FechaSolicitud'] : null;
+            $FechaInicio = isset($data['FechaInicio']) ? $data['FechaInicio'] : null;
+            $FechaFin = isset($data['FechaFin']) ? $data['FechaFin'] : null;
+            $FechaRetornoLabores = isset($data['FechaRetornoLabores']) ? $data['FechaRetornoLabores'] : null;
+            $DiasTomar = isset($data['DiasTomar']) ? intval($data['DiasTomar']) : 0;   
+            $Estatus = 1; // Estatus inicial para nueva solicitud
+
+            $query = "INSERT INTO t_vacaciones (
                         IdPersonal,
+                        FechaSolicitud,
                         FechaInicio,
                         FechaFin,
-                        DiasTomar,
                         FechaRetornoLabores,
-                        FechaAutoriza,
-                        UsuarioAutoriza
+                        DiasTomar,
+                        UsuarioSolicita,
+                        Estatus
                     ) VALUES (
-                        :fechaSolicitud,
-                        :usuarioSolicita,
-                        :idPersonal,
-                        :fechaInicio,
-                        :fechaFin,
-                        :diasTomar,
-                        :fechaRetornoLabores,
-                        :fechaAutoriza,
-                        :usuarioAutoriza
+                        :id_personal,
+                        :fecha_solicitud,
+                        :fecha_inicio,
+                        :fecha_fin,
+                        :fecha_retorno,
+                        :dias_tomar,
+                        :usuario_solicita,
+                        :estatus
                     )";
             
             $stmt = $Conexion->prepare($query);
-            $stmt->bindParam(':fechaSolicitud', $data['FechaSolicitud']);
-            $stmt->bindParam(':usuarioSolicita', $idUsuario);
-            $stmt->bindParam(':idPersonal', $idPersonal);
-            $stmt->bindParam(':fechaInicio', $data['FechaInicio']);
-            $stmt->bindParam(':fechaFin', $data['FechaFin']);
-            $stmt->bindParam(':diasTomar', $data['DiasTomar']);
-            $stmt->bindParam(':fechaRetornoLabores', $data['FechaRetornoLabores']);
-            $stmt->bindParam(':fechaAutoriza', $data['FechaAutoriza']);
-            $stmt->bindParam(':usuarioAutoriza', $idUsuario);
+            $stmt->execute([
+                ':id_personal' => $data['IdPersonal'],
+                ':fecha_solicitud' => $data['FechaSolicitud'],
+                ':fecha_inicio' => $data['FechaInicio'],
+                ':fecha_fin' => $data['FechaFin'],
+                ':fecha_retorno' => $data['FechaRetornoLabores'],
+                ':dias_tomar' => $data['DiasTomar'],
+                ':usuario_solicita' => $data['UsuarioSolicita'],
+                ':estatus' => $Estatus
+            ]);
             
-            if ($stmt->execute()) {
-                $idVacaciones = $Conexion->lastInsertId();
-                echo json_encode([
-                    'status' => true,
-                    'message' => 'Solicitud de vacaciones creada correctamente',
-                    'data' => ['IdVacaciones' => $idVacaciones]
-                ]);
-            } else {
-                throw new Exception('Error al crear la solicitud');
-            }
+            $insertedId = $Conexion->lastInsertId();
+            
+            echo json_encode([
+                'status' => true,
+                'message' => 'Solicitud de vacaciones creada correctamente',
+                'data' => ['IdVacaciones' => $insertedId]
+            ]);
             break;
             
-        case 'PUT':
-            // Actualizar solicitud de vacaciones
-            if (!$idVacaciones) {
-                throw new Exception('IdVacaciones es requerido');
+        case 'PUT': 
+            if ($IdVacaciones <= 0) {
+                throw new Exception('ID de vacaciones no válido');
             }
             
             $data = json_decode(file_get_contents('php://input'), true);
             
-            // Buscar IdPersonal basado en NoEmpleado
-            $queryPersonal = "SELECT IdPersonal FROM t_personal WHERE NoEmpleado = :noEmpleado";
-            $stmtPersonal = $Conexion->prepare($queryPersonal);
-            $stmtPersonal->bindParam(':noEmpleado', $data['NoEmpleado']);
-            $stmtPersonal->execute();
-            $personal = $stmtPersonal->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$personal) {
-                throw new Exception('Empleado no encontrado');
-            }
-            
-            $idPersonal = $personal['IdPersonal'];
-            
-            $query = "UPDATE t_Vacaciones SET 
-                        FechaSolicitud = :fechaSolicitud,
-                        UsuarioSolicita = :usuarioSolicita,
-                        IdPersonal = :idPersonal,
-                        FechaInicio = :fechaInicio,
-                        FechaFin = :fechaFin,
-                        DiasTomar = :diasTomar,
-                        FechaRetornoLabores = :fechaRetornoLabores,
-                        FechaAutoriza = :fechaAutoriza,
-                        UsuarioAutoriza = :usuarioAutoriza
-                    WHERE IdVacaciones = :idVacaciones";
+            $query = "UPDATE t_vacaciones SET 
+                        IdPersonal = :id_personal,
+                        FechaSolicitud = CONVERT(datetime, :fecha_solicitud, 23),
+                        FechaInicio = CONVERT(datetime, :fecha_inicio, 23),
+                        FechaFin = CONVERT(datetime, :fecha_fin, 23),
+                        FechaRetornoLabores = CONVERT(datetime, :fecha_retorno, 23),
+                        DiasTomar = :dias_tomar,
+                        UsuarioSolicita = :usuario_solicita,
+                        UsuarioAutoriza = :usuario_autoriza,
+                        FechaAutoriza = CONVERT(datetime, :fecha_autoriza, 23),
+                        Estatus = :estatus
+                      WHERE IdVacaciones = :id_vacaciones";
             
             $stmt = $Conexion->prepare($query);
-            $stmt->bindParam(':fechaSolicitud', $data['FechaSolicitud']);
-            $stmt->bindParam(':usuarioSolicita', $idUsuario);
-            $stmt->bindParam(':idPersonal', $idPersonal);
-            $stmt->bindParam(':fechaInicio', $data['FechaInicio']);
-            $stmt->bindParam(':fechaFin', $data['FechaFin']);
-            $stmt->bindParam(':diasTomar', $data['DiasTomar']);
-            $stmt->bindParam(':fechaRetornoLabores', $data['FechaRetornoLabores']);
-            $stmt->bindParam(':fechaAutoriza', $data['FechaAutoriza']);
-            $stmt->bindParam(':usuarioAutoriza', $idUsuario);
-            $stmt->bindParam(':idVacaciones', $idVacaciones);
+            $stmt->execute([
+                ':id_personal' => $data['IdPersonal'],
+                ':fecha_solicitud' => $data['FechaSolicitud'],
+                ':fecha_inicio' => $data['FechaInicio'],
+                ':fecha_fin' => $data['FechaFin'],
+                ':fecha_retorno' => $data['FechaRetornoLabores'],
+                ':dias_tomar' => $data['DiasTomar'],
+                ':usuario_solicita' => $data['UsuarioSolicita'],
+                ':usuario_autoriza' => $data['UsuarioAutoriza'] ?? null,
+                ':fecha_autoriza' => $data['FechaAutoriza'] ?? null,
+                ':id_vacaciones' => $IdVacaciones,
+                ':estatus' => $data['Estatus'] ?? null
+            ]);
             
-            if ($stmt->execute()) {
-                echo json_encode([
-                    'status' => true,
-                    'message' => 'Solicitud de vacaciones actualizada correctamente',
-                    'data' => []
-                ]);
-            } else {
-                throw new Exception('Error al actualizar la solicitud');
-            }
+            echo json_encode([
+                'status' => true,
+                'message' => 'Solicitud de vacaciones actualizada correctamente'
+            ]);
             break;
             
         case 'DELETE':
-            // Eliminar solicitud de vacaciones
-            if (!$idVacaciones) {
-                throw new Exception('IdVacaciones es requerido');
+            if ($IdVacaciones <= 0) {
+                throw new Exception('ID de vacaciones no válido');
             }
             
-            $query = "DELETE FROM t_Vacaciones WHERE IdVacaciones = :idVacaciones";
+            $query = "DELETE FROM t_vacaciones WHERE IdVacaciones = :id_vacaciones";
             $stmt = $Conexion->prepare($query);
-            $stmt->bindParam(':idVacaciones', $idVacaciones);
+            $stmt->execute([':id_vacaciones' => $IdVacaciones]);
             
-            if ($stmt->execute()) {
-                echo json_encode([
-                    'status' => true,
-                    'message' => 'Solicitud de vacaciones eliminada correctamente',
-                    'data' => []
-                ]);
-            } else {
-                throw new Exception('Error al eliminar la solicitud');
-            }
+            echo json_encode([
+                'status' => true,
+                'message' => 'Solicitud de vacaciones eliminada correctamente'
+            ]);
             break;
             
         default:
-            echo json_encode([
-                'status' => false,
-                'message' => 'Método no permitido',
-                'data' => []
-            ]);
-            break;
+            throw new Exception('Método no permitido');
     }
-    
+} catch (PDOException $e) {
+    echo json_encode([
+        'status' => false,
+        'message' => 'Error en la operación: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
     echo json_encode([
         'status' => false,
-        'message' => $e->getMessage(),
-        'data' => []
+        'message' => $e->getMessage()
     ]);
 }
 ?>

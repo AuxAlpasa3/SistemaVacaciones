@@ -1,20 +1,17 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Plus, X, FileText, Edit, Trash2, MoreVertical, Filter, ChevronDown, FileDown, Printer, Download, Upload, Eye, RefreshCw, Calendar, User, Building, Briefcase, Phone, Mail, MapPin } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { Plus, X, FileText, Edit, Trash2, MoreVertical, Filter, ChevronDown, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
 import { SelectConBusqueda } from '../../components/Select/SelectConBusqueda';
-import { SelectConBusquedayCrear } from '../../components/Select/SelectConBusquedayCrear';
 import './vacaciones.css';
 import type { InterfaceVacaciones, FiltrosVacaciones, OpcionSelect } from '../../interfaces/Vacaciones';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
 import type { Usuario } from '../../interfaces/Usuario';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';
-import { formatDateForServer } from '../../helpers/date';
+import { formatDateForServer, formatDateForInput } from '../../helpers/date';
 import { apiService } from '../../api/apiService';
-import { useNavigate } from 'react-router-dom';
 
-// Modal para confirmar eliminación
 const DeleteConfirmationModal: React.FC<{
     visible: boolean;
     onClose: () => void;
@@ -79,14 +76,85 @@ const DeleteConfirmationModal: React.FC<{
     );
 };
 
-// Componente memoizado para los botones de acción
+const ActionConfirmationModal: React.FC<{
+    visible: boolean;
+    onClose: () => void;
+    vacacion: InterfaceVacaciones | null;
+    onConfirm: () => void;
+    loading?: boolean;
+    actionType: 'authorize' | 'cancel';
+}> = ({ visible, onClose, vacacion, onConfirm, loading = false, actionType }) => {
+    if (!visible) return null;
+
+    const isAuthorize = actionType === 'authorize';
+    const title = isAuthorize ? 'Confirmar Autorización' : 'Confirmar Cancelación';
+    const message = isAuthorize 
+        ? '¿Está seguro de que desea autorizar esta solicitud de vacaciones?'
+        : '¿Está seguro de que desea cancelar esta solicitud de vacaciones?';
+    const confirmText = isAuthorize ? 'Autorizar' : 'Cancelar';
+    const confirmClass = isAuthorize ? 'btn-success' : 'btn-warning';
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ width: '450px', maxWidth: '90vw' }}>
+                <div className="modal-header">
+                    <h3 className="modal-title">{title}</h3>
+                    <button className="modal-close" onClick={onClose}>
+                        <X size={20} />
+                    </button>
+                </div>
+                <div className="modal-body">
+                    <p style={{ marginBottom: '16px' }}>{message}</p>
+                    <div style={{ 
+                        backgroundColor: '#FFF3E0', 
+                        padding: '12px', 
+                        borderRadius: '8px',
+                        marginBottom: '8px'
+                    }}>
+                        <p style={{ marginBottom: '4px', fontWeight: '500' }}>
+                            <strong>Empleado:</strong> {vacacion?.NombreCompleto}
+                        </p>
+                        <p style={{ marginBottom: '4px' }}>
+                            <strong>No. Empleado:</strong> {vacacion?.NoEmpleado}
+                        </p>
+                        <p style={{ marginBottom: '4px' }}>
+                            <strong>Período:</strong> {formatDateForServer(vacacion?.FechaInicio || '')} al {formatDateForServer(vacacion?.FechaFin || '')}
+                        </p>
+                        <p>
+                            <strong>Días:</strong> {vacacion?.DiasTomar}
+                        </p>
+                    </div>
+                </div>
+                <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px', borderTop: '1px solid #E0E0E0' }}>
+                    <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        className={`btn ${confirmClass}`}
+                        onClick={onConfirm}
+                        disabled={loading}
+                    >
+                        {loading ? 'Procesando...' : confirmText}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const MemoizedActionButtons = React.memo(({
     row,
     openActionDropdown,
     setOpenActionDropdown,
     onView,
     onEdit,
-    onDelete
+    onDelete,
+    onAuthorize,
+    onCancel,
+    userRole,
+    canAuthorize = false,
+    canCancel = false
 }: {
     row: InterfaceVacaciones;
     openActionDropdown: number | null;
@@ -94,67 +162,130 @@ const MemoizedActionButtons = React.memo(({
     onView: (row: InterfaceVacaciones) => void;
     onEdit: (row: InterfaceVacaciones) => void;
     onDelete: (row: InterfaceVacaciones) => void;
-}) => (
-    <div className="actions-dropdown-container">
-        <button
-            className="actions-dropdown-trigger"
-            onClick={(e) => {
-                e.stopPropagation();
-                setOpenActionDropdown(openActionDropdown === row.IdVacaciones ? null : row.IdVacaciones);
-            }}
-            title="Más acciones"
-        >
-            <MoreVertical size={16} color='black' />
-        </button>
+    onAuthorize: (row: InterfaceVacaciones) => void;
+    onCancel: (row: InterfaceVacaciones) => void;
+    userRole: string;
+    canAuthorize: boolean;
+    canCancel: boolean;
+}) => {
+    const showAuthorizeButton = canAuthorize && row.Estatus === 1;
+    const showCancelButton = (canCancel && row.Estatus === 1) || (canCancel && row.Estatus === 2);
+    const showEditDeleteButtons = row.Estatus !== 2; // No mostrar editar/eliminar si está autorizado
 
-        {openActionDropdown === row.IdVacaciones && (
-            <div className="actions-dropdown-menu">
-                <button 
-                    className="actions-dropdown-item view-action" 
-                    onClick={() => { 
-                        onView(row); 
-                        setOpenActionDropdown(null); 
+    const getStatusBadge = (estatus: number) => {
+        switch(estatus) {
+            case 1:
+                return <span className="status-badge status-pending">Pendiente</span>;
+            case 2:
+                return <span className="status-badge status-authorized">Autorizado</span>;
+            case 3:
+                return <span className="status-badge status-cancelled">Cancelado</span>;
+            default:
+                return <span className="status-badge">Desconocido</span>;
+        }
+    };
+
+    return (
+        <div className="actions-dropdown-container">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {getStatusBadge(row.Estatus || 1)}
+                <button
+                    className="actions-dropdown-trigger"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenActionDropdown(openActionDropdown === row.IdVacaciones ? null : row.IdVacaciones);
                     }}
+                    title="Más acciones"
                 >
-                    <Eye size={14} />
-                    <span>Ver</span>
-                </button>
-                <div className="actions-dropdown-divider"></div>
-                <button 
-                    className="actions-dropdown-item edit-action" 
-                    onClick={() => { 
-                        onEdit(row); 
-                        setOpenActionDropdown(null); 
-                    }}
-                >
-                    <Edit size={14} />
-                    <span>Editar</span>
-                </button>
-                <div className="actions-dropdown-divider"></div>
-                <button 
-                    className="actions-dropdown-item delete-action" 
-                    onClick={() => { 
-                        onDelete(row); 
-                        setOpenActionDropdown(null); 
-                    }}
-                >
-                    <Trash2 size={14} />
-                    <span>Eliminar</span>
+                    <MoreVertical size={16} color='black' />
                 </button>
             </div>
-        )}
-    </div>
-));
+
+            {openActionDropdown === row.IdVacaciones && (
+                <div className="actions-dropdown-menu">
+                    <button 
+                        className="actions-dropdown-item view-action" 
+                        onClick={() => { 
+                            onView(row); 
+                            setOpenActionDropdown(null); 
+                        }}
+                    >
+                        <Eye size={14} />
+                        <span>Ver</span>
+                    </button>
+                    
+                    {showAuthorizeButton && (
+                        <>
+                            <div className="actions-dropdown-divider"></div>
+                            <button 
+                                className="actions-dropdown-item authorize-action" 
+                                onClick={() => { 
+                                    onAuthorize(row); 
+                                    setOpenActionDropdown(null); 
+                                }}
+                            >
+                                <CheckCircle size={14} />
+                                <span>Autorizar</span>
+                            </button>
+                        </>
+                    )}
+                    
+                    {showCancelButton && (
+                        <>
+                            <div className="actions-dropdown-divider"></div>
+                            <button 
+                                className="actions-dropdown-item cancel-action" 
+                                onClick={() => { 
+                                    onCancel(row); 
+                                    setOpenActionDropdown(null); 
+                                }}
+                            >
+                                <XCircle size={14} />
+                                <span>Cancelar</span>
+                            </button>
+                        </>
+                    )}
+                    
+                    {showEditDeleteButtons && (
+                        <>
+                            <div className="actions-dropdown-divider"></div>
+                            <button 
+                                className="actions-dropdown-item edit-action" 
+                                onClick={() => { 
+                                    onEdit(row); 
+                                    setOpenActionDropdown(null); 
+                                }}
+                            >
+                                <Edit size={14} />
+                                <span>Editar</span>
+                            </button>
+                            <div className="actions-dropdown-divider"></div>
+                            <button 
+                                className="actions-dropdown-item delete-action" 
+                                onClick={() => { 
+                                    onDelete(row); 
+                                    setOpenActionDropdown(null); 
+                                }}
+                            >
+                                <Trash2 size={14} />
+                                <span>Eliminar</span>
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+});
 
 MemoizedActionButtons.displayName = 'MemoizedActionButtons';
 
 export const Vacaciones: React.FC = () => {
-    const navigate = useNavigate();
-
     const [vacacionesForm, setVacacionesForm] = useState<Partial<InterfaceVacaciones>>({
         IdVacaciones: 0,
         FechaSolicitud: '',
         UsuarioSolicita: '',
+        IdPersonal: 0,
         NoEmpleado: '',
         NombreCompleto: '',
         Departamento: '',
@@ -165,14 +296,14 @@ export const Vacaciones: React.FC = () => {
         DiasTomar: '',
         FechaRetornoLabores: '',
         FechaAutoriza: '',
-        UsuarioAutoriza: ''
+        UsuarioAutoriza: '',
+        Estatus: 1
     });
     
-    // Estados para fechas display
-    const [fechaInicioDisplay, setFechaInicioDisplay] = useState('');
-    const [fechaFinDisplay, setFechaFinDisplay] = useState('');
-    const [fechaIngresoDisplay, setFechaIngresoDisplay] = useState('');
-    const [fechaSolicitudDisplay, setFechaSolicitudDisplay] = useState('');
+    const [fechaInicioInput, setFechaInicioInput] = useState('');
+    const [fechaFinInput, setFechaFinInput] = useState('');
+    const [fechaIngresoInput, setFechaIngresoInput] = useState('');
+    const [fechaSolicitudInput, setFechaSolicitudInput] = useState('');
     
     const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
     const [vacaciones, setVacaciones] = useState<InterfaceVacaciones[]>([]);
@@ -184,18 +315,20 @@ export const Vacaciones: React.FC = () => {
     const [openActionDropdown, setOpenActionDropdown] = useState<number | null>(null);
     const [showFiltrosAvanzados, setShowFiltrosAvanzados] = useState(false);
     
-    // Estados para opciones de catálogos
     const [empleados, setEmpleados] = useState<OpcionSelect[]>([]);
-    const [departamentos, setDepartamentos] = useState<OpcionSelect[]>([]);
-    const [cargos, setCargos] = useState<OpcionSelect[]>([]);
     const [loadingOptions, setLoadingOptions] = useState(false);
     
-    // Estado para modal de eliminación
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [vacacionAEliminar, setVacacionAEliminar] = useState<InterfaceVacaciones | null>(null);
     const [eliminando, setEliminando] = useState(false);
     
-    // Filtros
+    const [actionModalVisible, setActionModalVisible] = useState(false);
+    const [vacacionAccion, setVacacionAccion] = useState<InterfaceVacaciones | null>(null);
+    const [actionType, setActionType] = useState<'authorize' | 'cancel'>('authorize');
+    const [accionEnProceso, setAccionEnProceso] = useState(false);
+    
+    const [selectedEmpleadoId, setSelectedEmpleadoId] = useState<string>('');
+    
     const [filtros, setFiltros] = useState<FiltrosVacaciones>({
         NoEmpleado: 0,
         NombreCompleto: '',
@@ -206,71 +339,26 @@ export const Vacaciones: React.FC = () => {
         FechaSolicitud: ''
     });
 
-    // Sincronizar fechas display cuando cambian las fechas del formulario
-    useEffect(() => {
-        if (vacacionesForm.FechaInicio) {
-            setFechaInicioDisplay(formatDateForServer(vacacionesForm.FechaInicio));
-        } else {
-            setFechaInicioDisplay('');
-        }
-    }, [vacacionesForm.FechaInicio]);
+    // Verificar roles del usuario
+    const userRole = usuarioSesion?.RolUsuario || '';
+    const isHR = userRole === 'Recursos Humanos';
+    const isAdmin = userRole === 'Administrador';
+    const isSupervisor = userRole === 'Supervisor';
+    
+    const canAuthorize = isHR || isAdmin; 
+    const canCancel = (isHR || isAdmin || isSupervisor); 
 
-    useEffect(() => {
-        if (vacacionesForm.FechaFin) {
-            setFechaFinDisplay(formatDateForServer(vacacionesForm.FechaFin));
-        } else {
-            setFechaFinDisplay('');
-        }
-    }, [vacacionesForm.FechaFin]);
-
-    useEffect(() => {
-        if (vacacionesForm.FechaIngreso) {
-            setFechaIngresoDisplay(formatDateForServer(vacacionesForm.FechaIngreso));
-        } else {
-            setFechaIngresoDisplay('');
-        }
-    }, [vacacionesForm.FechaIngreso]);
-
-    useEffect(() => {
-        if (vacacionesForm.FechaSolicitud) {
-            setFechaSolicitudDisplay(formatDateForServer(vacacionesForm.FechaSolicitud));
-        } else {
-            setFechaSolicitudDisplay('');
-        }
-    }, [vacacionesForm.FechaSolicitud]);
-
-    // Cargar opciones de catálogos
     const cargarOpcionesCatalogos = useCallback(async () => {
         try {
             setLoadingOptions(true);
             
-            const [empleadosResponse, departamentosResponse, cargosResponse] = await Promise.all([
-                apiService.get<RespuestaAPI>('/vacaciones/opciones/ObtenerEmpleados.php'),
-                apiService.get<RespuestaAPI>('/vacaciones/opciones/ObtenerDepartamentos.php'),
-                apiService.get<RespuestaAPI>('/vacaciones/opciones/ObtenerCargos.php')
-            ]);
+            const empleadosResponse = await apiService.get<RespuestaAPI>(`/vacaciones/opciones/ObtenerEmpleados.php?idusuario=${usuarioSesion?.IdUsuario}`);
 
             if (empleadosResponse.status && empleadosResponse.data) {
                 const empleadosData = Array.isArray(empleadosResponse.data) ? empleadosResponse.data : [];
                 setEmpleados(empleadosData.map((e: any) => ({ 
                     id: e.NoEmpleado?.toString() || e.id?.toString() || '', 
                     valor: e.NombreCompleto || e.valor || '' 
-                })));
-            }
-
-            if (departamentosResponse.status && departamentosResponse.data) {
-                const deptosData = Array.isArray(departamentosResponse.data) ? departamentosResponse.data : [];
-                setDepartamentos(deptosData.map((d: any) => ({ 
-                    id: d.id?.toString() || d.IdDepartamento?.toString() || '', 
-                    valor: d.Departamento || d.valor || '' 
-                })));
-            }
-
-            if (cargosResponse.status && cargosResponse.data) {
-                const cargosData = Array.isArray(cargosResponse.data) ? cargosResponse.data : [];
-                setCargos(cargosData.map((c: any) => ({ 
-                    id: c.id?.toString() || c.IdCargo?.toString() || '', 
-                    valor: c.Cargo || c.valor || '' 
                 })));
             }
 
@@ -284,27 +372,38 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setLoadingOptions(false);
         }
-    }, []);
+    }, [usuarioSesion?.IdUsuario]);
 
-    // Buscar empleado por número
     const buscarEmpleado = useCallback(async (noEmpleado: string) => {
         if (!noEmpleado || noEmpleado.length < 3) return;
         
         try {
-            const response = await apiService.get<RespuestaAPI>(`/vacaciones/BuscarEmpleado.php?NoEmpleado=${noEmpleado}`);
+            const response = await apiService.get<RespuestaAPI>(
+                `/vacaciones/BuscarEmpleadoPorId.php?NoEmpleado=${noEmpleado}&idusuario=${usuarioSesion?.IdUsuario}`
+            );
+            
             if (response.status && response.data) {
                 const empleado = response.data as any;
-                setVacacionesForm(prev => ({
-                    ...prev,
+                const empleadoData = {
                     NoEmpleado: empleado.NoEmpleado?.toString() || '',
                     NombreCompleto: empleado.NombreCompleto || '',
                     Departamento: empleado.Departamento?.toString() || '',
                     Cargo: empleado.Cargo?.toString() || '',
-                    FechaIngreso: empleado.FechaIngreso || ''
+                    FechaIngreso: empleado.FechaIngreso || '',
+                    IdPersonal: empleado.IdPersonal || 0
+                };
+                
+                setVacacionesForm(prev => ({
+                    ...prev,
+                    ...empleadoData
                 }));
+                
+                setSelectedEmpleadoId(empleadoData.NoEmpleado);
+                
                 if (empleado.FechaIngreso) {
-                    setFechaIngresoDisplay(formatDateForServer(empleado.FechaIngreso));
+                    setFechaIngresoInput(formatDateForInput(empleado.FechaIngreso));
                 }
+                
                 showToast({
                     text: 'Empleado encontrado',
                     type: 'success',
@@ -316,6 +415,16 @@ export const Vacaciones: React.FC = () => {
                     type: 'error',
                     autoClose: 1500
                 });
+                setVacacionesForm(prev => ({
+                    ...prev,
+                    NoEmpleado: '',
+                    NombreCompleto: '',
+                    Departamento: '',
+                    Cargo: '',
+                    FechaIngreso: ''
+                }));
+                setSelectedEmpleadoId('');
+                setFechaIngresoInput('');
             }
         } catch (error) {
             console.error('Error buscando empleado:', error);
@@ -325,14 +434,33 @@ export const Vacaciones: React.FC = () => {
                 autoClose: 1500
             });
         }
-    }, []);
+    }, [usuarioSesion?.IdUsuario]);
 
-    // Calcular días entre fechas
-    const calcularDias = useCallback((fechaInicio: string, fechaFin: string) => {
+    const handleEmpleadoChange = useCallback((selectedId: string) => {
+        setSelectedEmpleadoId(selectedId);
+        if (selectedId) {
+            buscarEmpleado(selectedId);
+        } else {
+            setVacacionesForm(prev => ({
+                ...prev,
+                NoEmpleado: '',
+                NombreCompleto: '',
+                Departamento: '',
+                Cargo: '',
+                FechaIngreso: ''
+            }));
+            setFechaIngresoInput('');
+        }
+    }, [buscarEmpleado]);
+
+    const calcularDiasDesdeFechas = useCallback((fechaInicio: string, fechaFin: string) => {
         if (!fechaInicio || !fechaFin) return;
         
         const inicio = new Date(fechaInicio);
         const fin = new Date(fechaFin);
+        
+        if (fin < inicio) return;
+        
         const diffTime = Math.abs(fin.getTime() - inicio.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
         
@@ -342,7 +470,64 @@ export const Vacaciones: React.FC = () => {
         }));
     }, []);
 
-    // Aplicar filtros
+    const calcularFechaFinDesdeDias = useCallback((fechaInicio: string, dias: number) => {
+        if (!fechaInicio || !dias || dias <= 0) return;
+        
+        const inicio = new Date(fechaInicio);
+        const fin = new Date(inicio);
+        fin.setDate(inicio.getDate() + (dias - 1));
+        
+        const fechaFinStr = fin.toISOString().split('T')[0];
+        setFechaFinInput(fechaFinStr);
+        setVacacionesForm(prev => ({ ...prev, FechaFin: fechaFinStr }));
+    }, []);
+
+    const handleFechaInicioChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setFechaInicioInput(value);
+        const isoDate = value ? new Date(value).toISOString().split('T')[0] : '';
+        setVacacionesForm(prev => ({ ...prev, FechaInicio: isoDate }));
+        
+        if (vacacionesForm.DiasTomar && Number(vacacionesForm.DiasTomar) > 0) {
+            calcularFechaFinDesdeDias(isoDate, Number(vacacionesForm.DiasTomar));
+        }
+        else if (vacacionesForm.FechaFin) {
+            calcularDiasDesdeFechas(isoDate, vacacionesForm.FechaFin);
+        }
+    }, [vacacionesForm.DiasTomar, vacacionesForm.FechaFin, calcularFechaFinDesdeDias, calcularDiasDesdeFechas]);
+
+    const handleFechaFinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setFechaFinInput(value);
+        const isoDate = value ? new Date(value).toISOString().split('T')[0] : '';
+        setVacacionesForm(prev => ({ ...prev, FechaFin: isoDate }));
+        
+        if (vacacionesForm.FechaInicio) {
+            calcularDiasDesdeFechas(vacacionesForm.FechaInicio, isoDate);
+        }
+    }, [vacacionesForm.FechaInicio, calcularDiasDesdeFechas]);
+
+    const handleDiasTomarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        const dias = value ? Number(value) : 0;
+        
+        setVacacionesForm(prev => ({ ...prev, DiasTomar: value }));
+        
+        if (vacacionesForm.FechaInicio && dias > 0) {
+            calcularFechaFinDesdeDias(vacacionesForm.FechaInicio, dias);
+        } else if (dias === 0) {
+            setFechaFinInput('');
+            setVacacionesForm(prev => ({ ...prev, FechaFin: '' }));
+        }
+    }, [vacacionesForm.FechaInicio, calcularFechaFinDesdeDias]);
+
+    const handleFechaSolicitudChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setFechaSolicitudInput(value);
+        const isoDate = value ? new Date(value).toISOString().split('T')[0] : '';
+        setVacacionesForm(prev => ({ ...prev, FechaSolicitud: isoDate }));
+    }, []);
+
     const aplicarFiltros = useCallback(() => {
         let filtrados = [...vacaciones];
 
@@ -398,52 +583,6 @@ export const Vacaciones: React.FC = () => {
         });
         setVacacionesFiltrados(vacaciones);
     };
-
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        
-        if (name === 'FechaInicio') {
-            if (value && !/^\d{2}\/\d{2}\/\d{4}$/.test(value) && value !== '') {
-                showToast({
-                    text: 'Formato de fecha inválido. Use dd/mm/aaaa',
-                    type: 'error',
-                    autoClose: 3000
-                });
-                return;
-            }
-            setFechaInicioDisplay(value);
-            const isoDate = formatDateForServer(value);
-            setVacacionesForm(prev => ({ ...prev, [name]: isoDate }));
-            if (vacacionesForm.FechaFin) {
-                calcularDias(isoDate, vacacionesForm.FechaFin);
-            }
-        } else if (name === 'FechaFin') {
-            if (value && !/^\d{2}\/\d{2}\/\d{4}$/.test(value) && value !== '') {
-                showToast({
-                    text: 'Formato de fecha inválido. Use dd/mm/aaaa',
-                    type: 'error',
-                    autoClose: 3000
-                });
-                return;
-            }
-            setFechaFinDisplay(value);
-            const isoDate = formatDateForServer(value);
-            setVacacionesForm(prev => ({ ...prev, [name]: isoDate }));
-            if (vacacionesForm.FechaInicio) {
-                calcularDias(vacacionesForm.FechaInicio, isoDate);
-            }
-        } else if (name === 'NoEmpleado') {
-            setVacacionesForm(prev => ({ ...prev, [name]: value }));
-            if (value.length >= 3) {
-                buscarEmpleado(value);
-            }
-        } else {
-            setVacacionesForm(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
-    }, [vacacionesForm.FechaInicio, vacacionesForm.FechaFin, calcularDias, buscarEmpleado]);
 
     const fetchVacaciones = useCallback(async () => {
         try {
@@ -524,8 +663,10 @@ export const Vacaciones: React.FC = () => {
             const datosNormalizados = {
                 ...vacacionesForm,
                 FechaRetornoLabores: fechaRetorno.toISOString().split('T')[0],
-                FechaAutoriza: new Date().toISOString().split('T')[0],
-                UsuarioSolicita: usuarioSesion?.IdUsuario?.toString() || ''
+                FechaAutoriza: vacacionesForm.Estatus === 2 ? new Date().toISOString().split('T')[0] : '',
+                UsuarioSolicita: usuarioSesion?.IdUsuario?.toString() || '',
+                UsuarioAutoriza: vacacionesForm.Estatus === 2 ? usuarioSesion?.IdUsuario?.toString() : '',
+                Estatus: vacacionesForm.Estatus || 1
             };
 
             const isUpdate = (vacacionesForm.IdVacaciones || 0) !== 0;
@@ -567,23 +708,84 @@ export const Vacaciones: React.FC = () => {
         }
     }, [vacacionesForm, usuarioSesion, fetchVacaciones, validateForm]);
 
+    // Función para autorizar vacaciones
+    const handleAuthorize = useCallback((vacacion: InterfaceVacaciones) => {
+        setVacacionAccion(vacacion);
+        setActionType('authorize');
+        setActionModalVisible(true);
+    }, []);
+
+    // Función para cancelar vacaciones
+    const handleCancel = useCallback((vacacion: InterfaceVacaciones) => {
+        setVacacionAccion(vacacion);
+        setActionType('cancel');
+        setActionModalVisible(true);
+    }, []);
+
+    // Confirmar acción (autorizar o cancelar)
+    const confirmAction = useCallback(async () => {
+        if (!vacacionAccion) return;
+        
+        try {
+            setAccionEnProceso(true);
+            
+            const newStatus = actionType === 'authorize' ? 2 : 3;
+            const url = `/vacaciones/cambiarEstatus.php?IdVacaciones=${vacacionAccion.IdVacaciones}&Estatus=${newStatus}&IdUsuario=${usuarioSesion?.IdUsuario}`;
+            
+            const response = await apiService.put<RespuestaAPI>(url, {});
+            
+            if (response.status) {
+                const message = actionType === 'authorize' 
+                    ? 'Solicitud de vacaciones autorizada correctamente'
+                    : 'Solicitud de vacaciones cancelada correctamente';
+                    
+                showToast({
+                    text: message,
+                    type: 'success',
+                    autoClose: 1500
+                });
+                
+                fetchVacaciones();
+                setActionModalVisible(false);
+                setVacacionAccion(null);
+            } else {
+                showToast({
+                    text: response.message || `Error al ${actionType === 'authorize' ? 'autorizar' : 'cancelar'} la solicitud`,
+                    type: 'error',
+                    autoClose: 1500
+                });
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast({
+                text: `Error al ${actionType === 'authorize' ? 'autorizar' : 'cancelar'} la solicitud de vacaciones`,
+                type: 'error',
+                autoClose: 1500
+            });
+        } finally {
+            setAccionEnProceso(false);
+        }
+    }, [vacacionAccion, actionType, usuarioSesion, fetchVacaciones]);
+
     const handleEdit = useCallback((vacacion: InterfaceVacaciones) => {
         setTipoFormulario('Modificar');
         setVacacionesForm(vacacion);
-        setFechaInicioDisplay(formatDateForServer(vacacion.FechaInicio || ''));
-        setFechaFinDisplay(formatDateForServer(vacacion.FechaFin || ''));
-        setFechaIngresoDisplay(formatDateForServer(vacacion.FechaIngreso || ''));
-        setFechaSolicitudDisplay(formatDateForServer(vacacion.FechaSolicitud || ''));
+        setSelectedEmpleadoId(vacacion.NoEmpleado?.toString() || '');
+        setFechaInicioInput(formatDateForInput(vacacion.FechaInicio || ''));
+        setFechaFinInput(formatDateForInput(vacacion.FechaFin || ''));
+        setFechaIngresoInput(formatDateForInput(vacacion.FechaIngreso || ''));
+        setFechaSolicitudInput(formatDateForInput(vacacion.FechaSolicitud || ''));
         setShowForm(true);
     }, []);
 
     const handleView = useCallback((vacacion: InterfaceVacaciones) => {
         setTipoFormulario('Ver');
         setVacacionesForm(vacacion);
-        setFechaInicioDisplay(formatDateForServer(vacacion.FechaInicio || ''));
-        setFechaFinDisplay(formatDateForServer(vacacion.FechaFin || ''));
-        setFechaIngresoDisplay(formatDateForServer(vacacion.FechaIngreso || ''));
-        setFechaSolicitudDisplay(formatDateForServer(vacacion.FechaSolicitud || ''));
+        setSelectedEmpleadoId(vacacion.NoEmpleado?.toString() || '');
+        setFechaInicioInput(formatDateForInput(vacacion.FechaInicio || ''));
+        setFechaFinInput(formatDateForInput(vacacion.FechaFin || ''));
+        setFechaIngresoInput(formatDateForInput(vacacion.FechaIngreso || ''));
+        setFechaSolicitudInput(formatDateForInput(vacacion.FechaSolicitud || ''));
         setShowForm(true);
     }, []);
 
@@ -644,18 +846,23 @@ export const Vacaciones: React.FC = () => {
             DiasTomar: '',
             FechaRetornoLabores: '',
             FechaAutoriza: '',
-            UsuarioAutoriza: ''
+            UsuarioAutoriza: '',
+            Estatus: 1
         });
-        setFechaInicioDisplay('');
-        setFechaFinDisplay('');
-        setFechaIngresoDisplay('');
-        setFechaSolicitudDisplay('');
+        setFechaInicioInput('');
+        setFechaFinInput('');
+        setFechaIngresoInput('');
+        setFechaSolicitudInput('');
+        setSelectedEmpleadoId('');
     }, []);
 
     const handleShowForm = useCallback(() => {
         resetForm();
         setShowForm(true);
         setTipoFormulario('Agregar');
+        const today = new Date().toISOString().split('T')[0];
+        setFechaSolicitudInput(today);
+        setVacacionesForm(prev => ({ ...prev, FechaSolicitud: today, Estatus: 1 }));
     }, [resetForm]);
 
     const tableColumns: Column[] = useMemo(() => [
@@ -739,7 +946,7 @@ export const Vacaciones: React.FC = () => {
             title: 'Acciones',
             sortable: false,
             searchable: false,
-            width: '120px',
+            width: '160px',
             align: 'center',
             headerAlign: 'center',
             render: (_, row) => (
@@ -750,12 +957,16 @@ export const Vacaciones: React.FC = () => {
                     onView={handleView}
                     onEdit={handleEdit}
                     onDelete={handleDeleteClick}
+                    onAuthorize={handleAuthorize}
+                    onCancel={handleCancel}
+                    userRole={userRole}
+                    canAuthorize={canAuthorize}
+                    canCancel={canCancel}
                 />
             )
         }
-    ], [openActionDropdown, handleView, handleEdit, handleDeleteClick]);
+    ], [openActionDropdown, handleView, handleEdit, handleDeleteClick, handleAuthorize, handleCancel, userRole, canAuthorize, canCancel]);
 
-    // Efectos
     useEffect(() => {
         aplicarFiltros();
     }, [aplicarFiltros]);
@@ -811,7 +1022,6 @@ export const Vacaciones: React.FC = () => {
                 </div>
             </div>
 
-            {/* Filtros */}
             <div className="filtros-container">
                 <div className="filtros-basicos">
                     <div className="filtro-group">
@@ -914,7 +1124,6 @@ export const Vacaciones: React.FC = () => {
                 />
             </div>
 
-            {/* Formulario Modal */}
             {showForm && (
                 <div className="form-vacaciones-modal-overlay">
                     <div className="form-vacaciones-modal">
@@ -937,32 +1146,14 @@ export const Vacaciones: React.FC = () => {
                             <form onSubmit={handleSubmit}>
                                 <div className="form-section">
                                     <h3 className="form-section-title">Información del Empleado</h3>
-                                    <div className="form-vacaciones-row two-columns">
+                                    <div className="form-vacaciones-row">
                                         <div className="form-vacaciones-group">
-                                            <label htmlFor='NoEmpleado' className="form-vacaciones-label required">No. Empleado *</label>
-                                            <input
-                                                type="text"
-                                                id="NoEmpleado"
-                                                name="NoEmpleado"
-                                                value={vacacionesForm.NoEmpleado || ''}
-                                                onChange={handleInputChange}
-                                                className="form-vacaciones-input"
-                                                placeholder="Número de empleado"
-                                                disabled={isViewMode}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="form-vacaciones-group">
-                                            <label htmlFor='NombreCompleto' className="form-vacaciones-label required">Nombre Completo *</label>
-                                            <input
-                                                type="text"
-                                                id="NombreCompleto"
-                                                name="NombreCompleto"
-                                                value={vacacionesForm.NombreCompleto || ''}
-                                                onChange={handleInputChange}
-                                                className="form-vacaciones-input"
-                                                placeholder="Nombre completo del empleado"
+                                            <label className="form-vacaciones-label required">No. Empleado *</label>
+                                            <SelectConBusqueda
+                                                options={empleados}
+                                                value={selectedEmpleadoId}
+                                                onChange={handleEmpleadoChange}
+                                                placeholder="Seleccione un empleado..."
                                                 disabled={isViewMode}
                                                 required
                                             />
@@ -971,59 +1162,46 @@ export const Vacaciones: React.FC = () => {
 
                                     <div className="form-vacaciones-row two-columns">
                                         <div className="form-vacaciones-group">
-                                            <label htmlFor='Departamento' className="form-vacaciones-label">Departamento</label>
+                                            <label className="form-vacaciones-label">Departamento</label>
                                             <input
                                                 type="text"
-                                                id="Departamento"
-                                                name="Departamento"
                                                 value={vacacionesForm.Departamento || ''}
-                                                onChange={handleInputChange}
                                                 className="form-vacaciones-input"
-                                                placeholder="Departamento"
-                                                disabled={isViewMode}
+                                                disabled={true}
+                                                placeholder="Departamento del empleado"
                                             />
                                         </div>
 
                                         <div className="form-vacaciones-group">
-                                            <label htmlFor='Cargo' className="form-vacaciones-label">Cargo</label>
+                                            <label className="form-vacaciones-label">Cargo</label>
                                             <input
                                                 type="text"
-                                                id="Cargo"
-                                                name="Cargo"
                                                 value={vacacionesForm.Cargo || ''}
-                                                onChange={handleInputChange}
                                                 className="form-vacaciones-input"
-                                                placeholder="Cargo"
-                                                disabled={isViewMode}
+                                                disabled={true}
+                                                placeholder="Cargo del empleado"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="form-vacaciones-row two-columns">
                                         <div className="form-vacaciones-group">
-                                            <label htmlFor='FechaIngreso' className="form-vacaciones-label">Fecha de Ingreso</label>
+                                            <label className="form-vacaciones-label">Fecha de Ingreso</label>
                                             <input
-                                                type="text"
-                                                id="FechaIngreso"
-                                                name="FechaIngreso"
-                                                value={fechaIngresoDisplay}
-                                                onChange={handleInputChange}
+                                                type="date"
+                                                value={fechaIngresoInput}
                                                 className="form-vacaciones-input"
-                                                placeholder="dd/mm/aaaa"
                                                 disabled={true}
                                             />
                                         </div>
 
                                         <div className="form-vacaciones-group">
-                                            <label htmlFor='FechaSolicitud' className="form-vacaciones-label">Fecha de Solicitud</label>
+                                            <label className="form-vacaciones-label">Fecha de Solicitud</label>
                                             <input
-                                                type="text"
-                                                id="FechaSolicitud"
-                                                name="FechaSolicitud"
-                                                value={fechaSolicitudDisplay || formatDateForServer(new Date().toISOString().split('T')[0])}
-                                                onChange={handleInputChange}
+                                                type="date"
+                                                value={fechaSolicitudInput}
+                                                onChange={handleFechaSolicitudChange}
                                                 className="form-vacaciones-input"
-                                                placeholder="dd/mm/aaaa"
                                                 disabled={isViewMode}
                                             />
                                         </div>
@@ -1034,43 +1212,36 @@ export const Vacaciones: React.FC = () => {
                                     <h3 className="form-section-title">Período de Vacaciones</h3>
                                     <div className="form-vacaciones-row three-columns">
                                         <div className="form-vacaciones-group">
-                                            <label htmlFor='FechaInicio' className="form-vacaciones-label required">Fecha de Inicio *</label>
+                                            <label className="form-vacaciones-label required">Fecha de Inicio *</label>
                                             <input
-                                                type="text"
-                                                id="FechaInicio"
-                                                name="FechaInicio"
-                                                value={fechaInicioDisplay}
-                                                onChange={handleInputChange}
+                                                type="date"
+                                                value={fechaInicioInput}
+                                                onChange={handleFechaInicioChange}
                                                 className="form-vacaciones-input"
-                                                placeholder="dd/mm/aaaa"
                                                 disabled={isViewMode}
                                                 required
                                             />
                                         </div>
 
                                         <div className="form-vacaciones-group">
-                                            <label htmlFor='FechaFin' className="form-vacaciones-label required">Fecha de Fin *</label>
+                                            <label className="form-vacaciones-label required">Fecha de Fin *</label>
                                             <input
-                                                type="text"
-                                                id="FechaFin"
-                                                name="FechaFin"
-                                                value={fechaFinDisplay}
-                                                onChange={handleInputChange}
+                                                type="date"
+                                                value={fechaFinInput}
+                                                onChange={handleFechaFinChange}
                                                 className="form-vacaciones-input"
-                                                placeholder="dd/mm/aaaa"
                                                 disabled={isViewMode}
                                                 required
                                             />
                                         </div>
 
                                         <div className="form-vacaciones-group">
-                                            <label htmlFor='DiasTomar' className="form-vacaciones-label required">Días a Tomar *</label>
+                                            <label className="form-vacaciones-label required">Días a Tomar *</label>
                                             <input
                                                 type="number"
-                                                id="DiasTomar"
                                                 name="DiasTomar"
                                                 value={vacacionesForm.DiasTomar || ''}
-                                                onChange={handleInputChange}
+                                                onChange={handleDiasTomarChange}
                                                 className="form-vacaciones-input"
                                                 placeholder="Días"
                                                 disabled={isViewMode}
@@ -1083,11 +1254,10 @@ export const Vacaciones: React.FC = () => {
                                     {isViewMode && vacacionesForm.FechaRetornoLabores && (
                                         <div className="form-vacaciones-row">
                                             <div className="form-vacaciones-group">
-                                                <label htmlFor='FechaRetornoLabores' className="form-vacaciones-label">Fecha de Retorno</label>
+                                                <label className="form-vacaciones-label">Fecha de Retorno</label>
                                                 <input
-                                                    type="text"
-                                                    id="FechaRetornoLabores"
-                                                    value={formatDateForServer(vacacionesForm.FechaRetornoLabores)}
+                                                    type="date"
+                                                    value={formatDateForInput(vacacionesForm.FechaRetornoLabores)}
                                                     className="form-vacaciones-input"
                                                     disabled
                                                 />
@@ -1098,11 +1268,10 @@ export const Vacaciones: React.FC = () => {
                                     {isViewMode && vacacionesForm.FechaAutoriza && (
                                         <div className="form-vacaciones-row">
                                             <div className="form-vacaciones-group">
-                                                <label htmlFor='FechaAutoriza' className="form-vacaciones-label">Fecha de Autorización</label>
+                                                <label className="form-vacaciones-label">Fecha de Autorización</label>
                                                 <input
-                                                    type="text"
-                                                    id="FechaAutoriza"
-                                                    value={formatDateForServer(vacacionesForm.FechaAutoriza)}
+                                                    type="date"
+                                                    value={formatDateForInput(vacacionesForm.FechaAutoriza)}
                                                     className="form-vacaciones-input"
                                                     disabled
                                                 />
@@ -1140,7 +1309,6 @@ export const Vacaciones: React.FC = () => {
                 </div>
             )}
 
-            {/* Modal de eliminación */}
             <DeleteConfirmationModal
                 visible={deleteModalVisible}
                 onClose={() => {
@@ -1150,6 +1318,18 @@ export const Vacaciones: React.FC = () => {
                 vacacion={vacacionAEliminar}
                 onConfirm={handleConfirmDelete}
                 loading={eliminando}
+            />
+
+            <ActionConfirmationModal
+                visible={actionModalVisible}
+                onClose={() => {
+                    setActionModalVisible(false);
+                    setVacacionAccion(null);
+                }}
+                vacacion={vacacionAccion}
+                onConfirm={confirmAction}
+                loading={accionEnProceso}
+                actionType={actionType}
             />
         </div>
     );

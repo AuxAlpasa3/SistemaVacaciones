@@ -167,7 +167,7 @@ export const TablaVacaciones: React.FC = () => {
     const fetchtablaVacaciones = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await apiService.get<RespuestaAPI>('/tablaVacaciones/ObtenerListado.php');
+            const response = await apiService.get<RespuestaAPI>('/tablaVacaciones/obtenerListado.php');
             if (response.status && response.data) {
                 const tablaVacacionesData = response.data as InterfacetablaVacaciones[];
                 settablaVacaciones(tablaVacacionesData);

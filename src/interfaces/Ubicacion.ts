@@ -1,4 +1,8 @@
 export interface InterfaceUbicacion {
     IdUbicacion: string;
-    Ubicacion: string;
+    NomCorto: string;
+    NomLargo: string;
+    Ciudad: string;
+    Estado: string;
+    Pais: string;
 }

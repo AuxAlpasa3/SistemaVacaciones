@@ -11,7 +11,7 @@ try {
     switch ($method) {
         case "GET":
 
-           $query = "SELECT IdTablaVacaciones, Antiguedad, Dias fROM TablaVacaciones";
+           $query = "SELECT IdTablaVacaciones, Antiguedad, Dias fROM t_tablaVacaciones";
            $stmt = $Conexion->prepare($query);
 
             $stmt->execute();

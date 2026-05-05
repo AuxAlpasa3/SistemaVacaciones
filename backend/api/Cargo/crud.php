@@ -101,9 +101,9 @@ try {
             
             if ($Cargo !== null) {
                 $updateFields[] = "NomCargo = :NomCargo";
-                $params[':NomCargo'] = $Cargo;
-                if ($oldData['NomCargo'] != $Cargo) {
-                    $changes[] = "NomCargo: '" . addslashes($oldData['NomCargo']) . "' -> '" . addslashes($Cargo) . "'";
+                $params[':Cargo'] = $Cargo;
+                if ($oldData['Cargo'] != $Cargo) {
+                    $changes[] = "Cargo: '" . addslashes($oldData['Cargo']) . "' -> '" . addslashes($Cargo) . "'";
                 }
             }
             
