@@ -12,7 +12,6 @@ import { showToast } from '../../helpers/toast';
 import { formatDateForServer, formatDateForInput } from '../../helpers/date';
 import { apiService } from '../../api/apiService';
 
-// Interfaces faltantes
 interface EmpleadoResponse {
     NoEmpleado: string;
     NombreCompleto: string;

@@ -25,7 +25,7 @@ try {
             $FechaFin = isset($data['FechaFin']) ? $data['FechaFin'] : null;
             $FechaRetornoLabores = isset($data['FechaRetornoLabores']) ? $data['FechaRetornoLabores'] : null;
             $DiasTomar = isset($data['DiasTomar']) ? intval($data['DiasTomar']) : 0;   
-            $Estatus = 1; // Estatus inicial para nueva solicitud
+            $Estatus = 0; // Estatus inicial para nueva solicitud
 
             $query = "INSERT INTO t_vacaciones (
                         IdPersonal,
