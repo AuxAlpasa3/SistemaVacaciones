@@ -1,96 +1,78 @@
 import React, { useState, useEffect, type ReactElement, useCallback } from 'react';
 import { 
     Clock, 
-    Truck, 
     CheckCircle, 
-    Inbox, 
     Calendar, 
-    TrendingUp,
     RefreshCw,
     AlertCircle,
-    Scale
+    Users,
+    Search
 } from 'lucide-react';
 import './Menu.css';
 import { formatDate } from '../../helpers/date';
 import { apiService } from '../../api/apiService';
 
-interface MenuStatsResponse {
+interface Vacacion {
+    IdVacaciones: number;
+    IdPersonal: string;
+    NombrePersonal?: string;
+    FechaSolicitud: string;
+    FechaInicio: string;
+    FechaFin: string;
+    FechaRetornoLabores: string;
+    DiasTomar: number;
+    UsuarioSolicita: number;
+    UsuarioAutoriza?: number;
+    FechaAutoriza?: string;
+    Estatus: number;
+}
+
+interface VacacionesResponse {
     status: boolean;
     data?: {
-        pendientesHoy: {
-            count: number;
-            detalles?: BoletaResumen[];
-        };
-        pendientesEnvio: {
-            count: number;
-            detalles?: BoletaResumen[];
-        };
-        enviadosHoy: {
-            count: number;
-            detalles?: BoletaResumen[];
-        };
-        recibidosMes: {
-            count: number;
-        };
-        enviadosSemana: {
-            count: number;
-        };
-        enviadosMes: {
-            count: number;
+        pendientes: Vacacion[];
+        validadas: Vacacion[];
+        todasVacaciones: Vacacion[];
+        resumen: {
+            totalPendientes: number;
+            totalValidadas: number;
+            personalVacacionesHoy: number;
         };
     };
     message?: string;
     error?: string;
 }
 
-interface MenuStats {
-    pendientesHoy: number;
-    pendientesEnvio: number;
-    enviadosHoy: number;
-    recibidosMes: number;
-    enviadosSemana: number;
-    enviadosMes: number;
-}
-
-interface BoletaResumen {
-    id: number;
-    folio: string;
-    cliente: string;
-    fecha: string;
-    estatus: string;
-    peso?: number;
-}
-
 export const Menu = (): ReactElement => {
-    const [MenuStats, setMenuStats] = useState<MenuStats>({
-        pendientesHoy: 0,
-        pendientesEnvio: 0,
-        enviadosHoy: 0,
-        recibidosMes: 0,
-        enviadosSemana: 0,
-        enviadosMes: 0
+    const [vacacionesPendientes, setVacacionesPendientes] = useState<Vacacion[]>([]);
+    const [vacacionesValidadas, setVacacionesValidadas] = useState<Vacacion[]>([]);
+    const [todasVacaciones, setTodasVacaciones] = useState<Vacacion[]>([]);
+    const [resumen, setResumen] = useState({
+        totalPendientes: 0,
+        totalValidadas: 0,
+        personalVacacionesHoy: 0
     });
-
-    const [detalleBoletas, setDetalleBoletas] = useState<{
-        pendientesHoy: BoletaResumen[];
-        pendientesEnvio: BoletaResumen[];
-        enviadosHoy: BoletaResumen[];
-    }>({
-        pendientesHoy: [],
-        pendientesEnvio: [],
-        enviadosHoy: []
-    });
-
+    
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [lastUpdate, setLastUpdate] = useState<string>('');
+    
+    const [fechaInicio, setFechaInicio] = useState<string>(() => {
+        const date = new Date();
+        date.setDate(1);
+        return date.toISOString().split('T')[0];
+    });
+    const [fechaFin, setFechaFin] = useState<string>(() => {
+        const date = new Date();
+        date.setMonth(date.getMonth() + 1);
+        date.setDate(0);
+        return date.toISOString().split('T')[0];
+    });
+    const [filtroPersonal, setFiltroPersonal] = useState<string>('');
+    const [filtroEstatus, setFiltroEstatus] = useState<string>('todos');
 
-    const [showDetallesPendientes, setShowDetallesPendientes] = useState(false);
-    const [showDetallesPendientesEnvio, setShowDetallesPendientesEnvio] = useState(false);
-    const [showDetallesEnviados, setShowDetallesEnviados] = useState(false);
-
-    const fetchMenuStats = useCallback(async (isRefresh: boolean = false): Promise<void> => {
+    const fetchVacaciones = useCallback(async (isRefresh: boolean = false): Promise<void> => {
         try {
             if (isRefresh) {
                 setRefreshing(true);
@@ -99,82 +81,57 @@ export const Menu = (): ReactElement => {
             }
             setError(null);
             
-            const response = await apiService.get<MenuStatsResponse>('/Menu.php');
+            const response = await apiService.get<VacacionesResponse>(`Menu.php?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
             
             if (response.status && response.data) {
-                const data = response.data;
+                setVacacionesPendientes(response.data.pendientes || []);
+                setVacacionesValidadas(response.data.validadas || []);
+                setTodasVacaciones(response.data.todasVacaciones || []);
+                setResumen(response.data.resumen || {
+                    totalPendientes: 0,
+                    totalValidadas: 0,
+                    personalVacacionesHoy: 0
+                });
                 
-                setMenuStats({
-                    pendientesHoy: parseInt(data.pendientesHoy?.count?.toString() || '0'),
-                    pendientesEnvio: parseInt(data.pendientesEnvio?.count?.toString() || '0'),
-                    enviadosHoy: parseInt(data.enviadosHoy?.count?.toString() || '0'),
-                    recibidosMes: parseInt(data.recibidosMes?.count?.toString() || '0'),
-                    enviadosSemana: parseInt(data.enviadosSemana?.count?.toString() || '0'),
-                    enviadosMes: parseInt(data.enviadosMes?.count?.toString() || '0')
-                });
-
-                setDetalleBoletas({
-                    pendientesHoy: data.pendientesHoy?.detalles || [],
-                    pendientesEnvio: data.pendientesEnvio?.detalles || [],
-                    enviadosHoy: data.enviadosHoy?.detalles || []
-                });
-
                 const updateTime = new Date().toLocaleTimeString('es-ES', {
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit'
                 });
                 setLastUpdate(updateTime);
-                
             } else {
-                throw new Error(response.message || 'Error al cargar las estadísticas');
+                throw new Error(response.message || 'Error al cargar las vacaciones');
             }
-            
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Error al cargar las estadísticas';
+            const errorMessage = error instanceof Error ? error.message : 'Error al cargar las vacaciones';
             setError(errorMessage);
-            
-            setMenuStats({
-                pendientesHoy: 15,
-                pendientesEnvio: 8,
-                enviadosHoy: 10,
-                recibidosMes: 150,
-                enviadosSemana: 45,
-                enviadosMes: 120
-            });
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [fechaInicio, fechaFin]);
 
     useEffect(() => {
-        fetchMenuStats();
-        
-        const interval = setInterval(() => {
-            fetchMenuStats(true);
-        }, 300000);
-        
-        return () => {
-            clearInterval(interval);
-        };
-    }, [fetchMenuStats]);
+        fetchVacaciones();
+    }, [fetchVacaciones]);
 
-    const totalOperacionesHoy = MenuStats.pendientesHoy + MenuStats.enviadosHoy;
-    const porcentajeEficienciaHoy = totalOperacionesHoy > 0 
-        ? Math.round((MenuStats.enviadosHoy / totalOperacionesHoy) * 100)
-        : 0;
-
-    const promedioDiario = Math.round(MenuStats.enviadosMes / new Date().getDate());
-    const eficienciaMensual = MenuStats.recibidosMes > 0 
-        ? Math.round((MenuStats.enviadosMes / MenuStats.recibidosMes) * 100)
-        : 0;
+    const vacacionesFiltradas = todasVacaciones.filter(vacacion => {
+        const cumplePersonal = filtroPersonal === '' || 
+            vacacion.IdPersonal.toString().includes(filtroPersonal);
+        
+        const cumpleEstatus = filtroEstatus === 'todos' || 
+            (filtroEstatus === 'pendiente' && vacacion.Estatus === 0) ||
+            (filtroEstatus === 'validada' && vacacion.Estatus === 1)  ||
+            (filtroEstatus === 'rechazada' && vacacion.Estatus === 2);
+        
+        return cumplePersonal && cumpleEstatus;
+    });
 
     if (loading) {
         return (
             <div className="loading-container">
                 <div className="spinner"></div>
-                <p>Cargando estadísticas del sistema...</p>
+                <p>Cargando sistema de vacaciones...</p>
             </div>
         );
     }
@@ -183,15 +140,9 @@ export const Menu = (): ReactElement => {
         return (
             <div className="error-container">
                 <AlertCircle size={48} className="error-icon" />
-                <h4>Error al cargar estadísticas</h4>
+                <h4>Error al cargar datos</h4>
                 <p className="error-message">{error}</p>
-                <p className="text-muted mt-3">
-                    Mostrando datos de ejemplo para pruebas
-                </p>
-                <button 
-                    onClick={() => fetchMenuStats()} 
-                    className="btn btn-primary mt-3"
-                >
+                <button onClick={() => fetchVacaciones()} className="btn btn-primary mt-3">
                     <RefreshCw size={16} className="me-2" />
                     Reintentar
                 </button>
@@ -205,13 +156,14 @@ export const Menu = (): ReactElement => {
                 <div className="container-fluid">
                     <div className="row mb-4">
                         <div className="col-sm-6">
+                            <h4>Dashboard de Vacaciones</h4>
                             <p className="text-muted mb-0">
-                                Resumen de operaciones y estadísticas del sistema
+                                Gestión y seguimiento de solicitudes de vacaciones
                             </p>
                         </div>
                         <div className="col-sm-6 text-end">
                             <button 
-                                onClick={() => fetchMenuStats(true)}
+                                onClick={() => fetchVacaciones(true)}
                                 className="btn btn-outline-primary"
                                 disabled={refreshing}
                             >
@@ -234,253 +186,225 @@ export const Menu = (): ReactElement => {
                             </div>
                         </div>
                     </div>
+
+                    <div className="row mb-4">
+                        <div className="col-md-12">
+                            <div className="filtros-container card p-3">
+                                <div className="row align-items-end">
+                                    <div className="col-md-4">
+                                        <label className="form-label">Fecha Inicio</label>
+                                        <input
+                                            type="date"
+                                            className="form-control"
+                                            value={fechaInicio}
+                                            onChange={(e) => setFechaInicio(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-md-4">
+                                        <label className="form-label">Fecha Fin</label>
+                                        <input
+                                            type="date"
+                                            className="form-control"
+                                            value={fechaFin}
+                                            onChange={(e) => setFechaFin(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-md-4">
+                                        <button 
+                                            className="btn btn-primary w-100"
+                                            onClick={() => fetchVacaciones()}
+                                        >
+                                            <Search size={16} className="me-2" />
+                                            Aplicar Filtro
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <section className="content">
                 <div className="container-fluid">
-                    <div className="Menu-grid">
-                        <div className="Menu-card" style={{ borderTop: '4px solid #f59e0b' }}>
-                            <div className="card-icon" style={{ backgroundColor: '#fef3c7', color: '#f59e0b' }}>
-                                <Clock size={24} />
+                    <div className="dashboard-grid">
+                        <div className="dashboard-card pendientes-card">
+                            <div className="card-header">
+                                <div className="card-icon">
+                                    <Clock size={28} />
+                                </div>
+                                <div className="card-stats">
+                                    <h2>{resumen.totalPendientes}</h2>
+                                    <p>Solicitudes Pendientes</p>
+                                </div>
                             </div>
-                            <div className="card-content">
-                                <h3>{MenuStats.pendientesHoy.toLocaleString()}</h3>
-                                <p>Boletas Pendientes Hoy</p>
-                                {detalleBoletas.pendientesHoy.length > 0 && (
-                                    <button 
-                                        className="detalles-btn"
-                                        onClick={() => setShowDetallesPendientes(!showDetallesPendientes)}
-                                    >
-                                        {showDetallesPendientes ? 'Ocultar detalles' : 'Ver detalles'}
-                                    </button>
-                                )}
-                            </div>
-                            {showDetallesPendientes && detalleBoletas.pendientesHoy.length > 0 && (
-                                <div className="detalles-container">
-                                    <h5>Detalles:</h5>
-                                    <div className="detalles-grid">
-                                        {detalleBoletas.pendientesHoy.map((boleta, index) => (
-                                            <div key={index} className="detalle-card">
-                                                <div className="detalle-folio">
-                                                    <strong>{boleta.folio}</strong>
-                                                </div>
-                                                <div className="detalle-cliente">{boleta.cliente}</div>
-                                                <div className="detalle-fecha">{formatDate(boleta.fecha)}</div>
-                                                {boleta.peso && (
-                                                    <div className="detalle-peso">
-                                                        <span className="peso-label">Peso:</span>
-                                                        <span className="peso-value">{boleta.peso.toLocaleString()} kg</span>
-                                                    </div>
-                                                )}
+                            <div className="card-body">
+                                <div className="stat-detail">
+                                    <span>Esperando autorización</span>
+                                    <span className="badge bg-warning">Pendiente</span>
+                                </div>
+                                {vacacionesPendientes.length > 0 && (
+                                    <div className="mini-lista">
+                                        {vacacionesPendientes.slice(0, 3).map(v => (
+                                            <div key={v.IdVacaciones} className="mini-item">
+                                                <span>Personal #{v.IdPersonal}</span>
+                                                <small>{formatDate(v.FechaInicio)} - {formatDate(v.FechaFin)}</small>
                                             </div>
                                         ))}
+                                        {vacacionesPendientes.length > 3 && (
+                                            <div className="text-muted small mt-2">
+                                                +{vacacionesPendientes.length - 3} más...
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
 
-                        <div className="Menu-card" style={{ borderTop: '4px solid #3b82f6' }}>
-                            <div className="card-icon" style={{ backgroundColor: '#dbeafe', color: '#3b82f6' }}>
-                                <Truck size={24} />
+                        <div className="dashboard-card validadas-card">
+                            <div className="card-header">
+                                <div className="card-icon">
+                                    <CheckCircle size={28} />
+                                </div>
+                                <div className="card-stats">
+                                    <h2>{resumen.totalValidadas}</h2>
+                                    <p>Solicitudes Validadas</p>
+                                </div>
                             </div>
-                            <div className="card-content">
-                                <h3>{MenuStats.pendientesEnvio.toLocaleString()}</h3>
-                                <p>Pendientes de Envío</p>
-                                {detalleBoletas.pendientesEnvio.length > 0 && (
-                                    <button 
-                                        className="detalles-btn"
-                                        onClick={() => setShowDetallesPendientesEnvio(!showDetallesPendientesEnvio)}
-                                    >
-                                        {showDetallesPendientesEnvio ? 'Ocultar detalles' : 'Ver detalles'}
-                                    </button>
-                                )}
-                            </div>
-                            {showDetallesPendientesEnvio && detalleBoletas.pendientesEnvio.length > 0 && (
-                                <div className="detalles-container">
-                                    <h5>Detalles:</h5>
-                                    <div className="detalles-grid">
-                                        {detalleBoletas.pendientesEnvio.map((boleta, index) => (
-                                            <div key={index} className="detalle-card">
-                                                <div className="detalle-folio">
-                                                    <strong>{boleta.folio}</strong>
-                                                </div>
-                                                <div className="detalle-cliente">{boleta.cliente}</div>
-                                                <div className="detalle-fecha">{formatDate(boleta.fecha)}</div>
-                                                {boleta.peso && (
-                                                    <div className="detalle-peso">
-                                                        <span className="peso-label">Peso:</span>
-                                                        <span className="peso-value">{boleta.peso.toLocaleString()} kg</span>
-                                                    </div>
-                                                )}
+                            <div className="card-body">
+                                <div className="stat-detail">
+                                    <span>Autorizadas en el período</span>
+                                    <span className="badge bg-success">Validada</span>
+                                </div>
+                                {vacacionesValidadas.length > 0 && (
+                                    <div className="mini-lista">
+                                        {vacacionesValidadas.slice(0, 3).map(v => (
+                                            <div key={v.IdVacaciones} className="mini-item">
+                                                <span>Personal #{v.IdPersonal}</span>
+                                                <small>{v.DiasTomar} días</small>
                                             </div>
                                         ))}
+                                        {vacacionesValidadas.length > 3 && (
+                                            <div className="text-muted small mt-2">
+                                                +{vacacionesValidadas.length - 3} más...
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
 
-                        <div className="Menu-card" style={{ borderTop: '4px solid #10b981' }}>
-                            <div className="card-icon" style={{ backgroundColor: '#d1fae5', color: '#10b981' }}>
-                                <CheckCircle size={24} />
-                            </div>
-                            <div className="card-content">
-                                <h3>{MenuStats.enviadosHoy.toLocaleString()}</h3>
-                                <p>Enviados Hoy</p>
-                                {detalleBoletas.enviadosHoy.length > 0 && (
-                                    <button 
-                                        className="detalles-btn"
-                                        onClick={() => setShowDetallesEnviados(!showDetallesEnviados)}
-                                    >
-                                        {showDetallesEnviados ? 'Ocultar detalles' : 'Ver detalles'}
-                                    </button>
-                                )}
-                            </div>
-                            {showDetallesEnviados && detalleBoletas.enviadosHoy.length > 0 && (
-                                <div className="detalles-container">
-                                    <h5>Detalles:</h5>
-                                    <div className="detalles-grid">
-                                        {detalleBoletas.enviadosHoy.map((boleta, index) => (
-                                            <div key={index} className="detalle-card">
-                                                <div className="detalle-folio">
-                                                    <strong>{boleta.folio}</strong>
-                                                </div>
-                                                <div className="detalle-cliente">{boleta.cliente}</div>
-                                                <div className="detalle-fecha">{formatDate(boleta.fecha)}</div>
-                                                {boleta.peso && (
-                                                    <div className="detalle-peso">
-                                                        <span className="peso-label">Peso:</span>
-                                                        <span className="peso-value">{boleta.peso.toLocaleString()} kg</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
+                        <div className="dashboard-card hoy-card">
+                            <div className="card-header">
+                                <div className="card-icon">
+                                    <Users size={28} />
                                 </div>
-                            )}
+                                <div className="card-stats">
+                                    <h2>{resumen.personalVacacionesHoy}</h2>
+                                    <p>En Vacaciones Hoy</p>
+                                </div>
+                            </div>
+                            <div className="card-body">
+                                <div className="stat-detail">
+                                    <span>Personal disfrutando sus vacaciones</span>
+                                    <span className="badge bg-info">Hoy</span>
+                                </div>
+                                <div className="fecha-actual">
+                                    <small>{new Date().toLocaleDateString('es-ES')}</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="Menu-grid">
-                        <div className="Menu-card" style={{ borderTop: '4px solid #8b5cf6' }}>
-                            <div className="card-icon" style={{ backgroundColor: '#ede9fe', color: '#8b5cf6' }}>
-                                <Inbox size={24} />
-                            </div>
-                            <div className="card-content">
-                                <h3>{MenuStats.recibidosMes.toLocaleString()}</h3>
-                                <p>Recibidos Este Mes</p>
+                    <div className="table-container card mt-4">
+                        <div className="card-header d-flex justify-content-between align-items-center">
+                            <h5 className="mb-0">
+                                <Calendar size={20} className="me-2" />
+                                Registro Completo de Vacaciones
+                            </h5>
+                            <div className="filtros-table d-flex gap-2">
+                                <div className="input-group input-group-sm" style={{ width: '250px' }}>
+                                    <span className="input-group-text">
+                                        <Search size={14} />
+                                    </span>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Buscar por personal..."
+                                        value={filtroPersonal}
+                                        onChange={(e) => setFiltroPersonal(e.target.value)}
+                                    />
+                                </div>
+                                <select 
+                                    className="form-select form-select-sm"
+                                    style={{ width: '150px' }}
+                                    value={filtroEstatus}
+                                    onChange={(e) => setFiltroEstatus(e.target.value)}
+                                >
+                                    <option value="todos">Todos los estatus</option>
+                                    <option value="pendiente">Pendientes</option>
+                                    <option value="validada">Validadas</option>
+                                    <option value="rechazada">Rechazadas</option>
+                                </select>
                             </div>
                         </div>
-
-                        <div className="Menu-card" style={{ borderTop: '4px solid #ec4899' }}>
-                            <div className="card-icon" style={{ backgroundColor: '#fce7f3', color: '#ec4899' }}>
-                                <Calendar size={24} />
-                            </div>
-                            <div className="card-content">
-                                <h3>{MenuStats.enviadosSemana.toLocaleString()}</h3>
-                                <p>Enviados Esta Semana</p>
-                            </div>
-                        </div>
-
-                        <div className="Menu-card" style={{ borderTop: '4px solid #1e293b' }}>
-                            <div className="card-icon" style={{ backgroundColor: '#f1f5f9', color: '#1e293b' }}>
-                                <TrendingUp size={24} />
-                            </div>
-                            <div className="card-content">
-                                <h3>{MenuStats.enviadosMes.toLocaleString()}</h3>
-                                <p>Enviados Este Mes</p>
-                            </div>
-                        </div>
-                     </div>
-{/*
-                    <div className="summary-card">
-                        <div className="summary-header">
-                            <h5><TrendingUp className="me-2" /> Resumen de Eficiencia</h5>
-                            <span className="summary-update">
-                                Actualizado: {lastUpdate}
-                            </span>
-                        </div>
-                        <div className="efficiency-grid">
-                            <div className="efficiency-item">
-                                <div className="efficiency-label">
-                                    <Clock size={16} className="me-2" />
-                                    Eficiencia Hoy
-                                </div>
-                                <div className="efficiency-value">
-                                    <div className="progress">
-                                        <div 
-                                            className="progress-bar bg-success" 
-                                            style={{ width: `${porcentajeEficienciaHoy}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className="percentage">{porcentajeEficienciaHoy}%</span>
-                                </div>
-                                <div className="efficiency-detail">
-                                    {MenuStats.enviadosHoy} de {totalOperacionesHoy} boletas procesadas
-                                </div>
-                            </div>
-                            
-                            <div className="efficiency-item">
-                                <div className="efficiency-label">
-                                    <Calendar size={16} className="me-2" />
-                                    Promedio Diario
-                                </div>
-                                <div className="efficiency-value">
-                                    <h3>{promedioDiario.toLocaleString()}</h3>
-                                    <span className="efficiency-sub">boletas/día</span>
-                                </div>
-                                <div className="efficiency-detail">
-                                    {MenuStats.enviadosMes} boletas este mes
-                                </div>
-                            </div>
-                            
-                            <div className="efficiency-item">
-                                <div className="efficiency-label">
-                                    <TrendingUp size={16} className="me-2" />
-                                    Eficiencia Mensual
-                                </div>
-                                <div className="efficiency-value">
-                                    <div className="progress">
-                                        <div 
-                                            className="progress-bar bg-primary" 
-                                            style={{ width: `${eficienciaMensual}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className="percentage">{eficienciaMensual}%</span>
-                                </div>
-                                <div className="efficiency-detail">
-                                    {MenuStats.enviadosMes} de {MenuStats.recibidosMes} procesadas
-                                </div>
+                        <div className="card-body p-0">
+                            <div className="table-responsive">
+                                <table className="table table-hover table-striped mb-0">
+                                    <thead className="table-dark">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Personal ID</th>
+                                            <th>Fecha Solicitud</th>
+                                            <th>Fecha Inicio</th>
+                                            <th>Fecha Fin</th>
+                                            <th>Retorno Laboral</th>
+                                            <th>Días</th>
+                                            <th>Fecha Autorización</th>
+                                            <th>Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {vacacionesFiltradas.length > 0 ? (
+                                            vacacionesFiltradas.map((vacacion) => (
+                                                <tr key={vacacion.IdVacaciones}>
+                                                    <td>{vacacion.IdVacaciones}</td>
+                                                    <td> #{vacacion.IdPersonal}</td>
+                                                    <td>{formatDate(vacacion.FechaSolicitud)}</td>
+                                                    <td>{formatDate(vacacion.FechaInicio)}</td>
+                                                    <td>{formatDate(vacacion.FechaFin)}</td>
+                                                    <td>{formatDate(vacacion.FechaRetornoLabores)}</td>
+                                                    <td className="text-center">{vacacion.DiasTomar}</td>
+                                                    <td>{vacacion.FechaAutoriza ? formatDate(vacacion.FechaAutoriza) : '---'}</td>
+                                                    <td>
+                                                        {vacacion.Estatus == 0 ? (
+                                                            <span className="badge bg-warning">Pendiente</span>
+                                                        ) : vacacion.Estatus == 1 ? (
+                                                            <span className="badge bg-success">Validada</span>
+                                                        ) : vacacion.Estatus == 2 ? ( 
+                                                            <span className="badge bg-danger">Rechazada</span>
+                                                        ) : (
+                                                            <span className="badge bg-secondary">Desconocido</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={9} className="text-center py-4">
+                                                    <div className="text-muted">
+                                                        <AlertCircle size={32} className="mb-2" />
+                                                        <p>No se encontraron registros de vacaciones</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    </div> */}
-
-                    <div className="system-info-card">
-                        <div className="system-info-header">
-                            <h6><Scale size={18} className="me-2" /> Información del Sistema</h6>
-                        </div>
-                        <div className="system-info-grid">
-                            <div className="system-info-item">
-                                <span className="info-label">Total Operaciones Hoy:</span>
-                                <span className="info-value">{totalOperacionesHoy}</span>
-                            </div>
-                            <div className="system-info-item">
-                                <span className="info-label">Pendientes por Procesar:</span>
-                                <span className="info-value">{MenuStats.pendientesHoy + MenuStats.pendientesEnvio}</span>
-                            </div>
-                            <div className="system-info-item">
-                                <span className="info-label">Mes Actual:</span>
-                                <span className="info-value">
-                                    {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                                </span>
-                            </div>
-                            <div className="system-info-item">
-                                <span className="info-label">Estado del Sistema:</span>
-                                <span className="info-value status-active">
-                                    <span className="status-dot"></span>
-                                    Activo
-                                </span>
-                            </div>
+                        <div className="card-footer text-muted">
+                            Mostrando {vacacionesFiltradas.length} de {todasVacaciones.length} registros
                         </div>
                     </div>
                 </div>

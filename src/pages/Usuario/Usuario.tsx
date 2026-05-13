@@ -1,71 +1,48 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Plus, X, FileText, Edit, Trash2, Eye, MoreVertical, Lock, EyeOff } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { Plus, X, FileText, Edit, Trash2, MoreVertical, Lock, Eye, EyeOff, Filter, ChevronDown, FileDown, Printer, Download, RefreshCw, Search } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
+import { SelectConBusqueda } from '../../components/Select/SelectConBusqueda';
 import './Usuario.css';
-// INTERFACES
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
-import type { Usuario,OpcionSelect } from '../../interfaces/Usuario';
-import type { InterfaceTipoUsuario } from '../../interfaces/TipoUsuario';
-// HELPERS
+import type { CatalogoUsuario, OpcionSelect, FiltrosUsuario } from '../../interfaces/Usuario';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';
-// API
+import { formatDateForServer } from '../../helpers/date';
 import { apiService } from '../../api/apiService';
-import ReactSelect from '../../components/Select/Select';
-import type { OptionType } from '../../interfaces/OptionType';
 
-const MemoizedActionButtons = React.memo(({
-    row,
-    openActionDropdown,
-    setOpenActionDropdown,
-    onEdit,
-    onDelete,
-    onCambiarContrasenia
-}: {
-    row: any,
-    openActionDropdown: string | null,
-    setOpenActionDropdown: (IdUsuario: string | null) => void,
-    onEdit: (row: any) => void,
-    onDelete: (row: any) => void,
-    onCambiarContrasenia: (row: any) => void,
-}) => (
-    <div className="actions-dropdown-container">
-        <button
-            className="actions-dropdown-trigger"
-            onClick={() => setOpenActionDropdown(openActionDropdown === row.IdUsuario ? null : row.IdUsuario)}
-            title="Más acciones"
-        >
-            <MoreVertical size={16} color='black' />
-        </button>
+interface InterfaceTipoUsuario {
+    IdTipoUsuario: string;
+    TipoUsuario: string;
+}
 
-        {openActionDropdown === row?.IdUsuario && (
-            <div className="actions-dropdown-menu">
-                <button className="actions-dropdown-item edit-action" onClick={() => { onEdit(row); setOpenActionDropdown(null); }}>
-                    <Edit size={14} />
-                    <span>Editar</span>
-                </button>
-                <div className="actions-dropdown-divider"></div>
-                <button className="actions-dropdown-item contrasena-action" onClick={() => { onCambiarContrasenia(row); setOpenActionDropdown(null); }}>
-                    <Lock size={14} />
-                    <span>Cambiar Contraseña</span>
-                </button>
-                <div className="actions-dropdown-divider"></div>
-                <button className="actions-dropdown-item delete-action" onClick={() => { onDelete(row); setOpenActionDropdown(null); }}>
-                    <Trash2 size={14} />
-                    <span>Eliminar</span>
-                </button>
-            </div>
-        )}
-    </div>
-));
+interface InterfaceRol {
+    IdRolUsuario: string;
+    RolUsuario: string;
+}
 
+interface InterfaceUbicacion {
+    IdUbicacion: string;
+    NomCorto: string;
+}
+
+interface InterfacePersonal {
+    IdPersonal: string;
+    NoEmpleado: string;
+    NombreCompleto: string;
+    Nombre?: string;
+    ApPaterno?: string;
+    ApMaterno?: string;
+}
+
+// Modal para cambio de contraseña (mantener igual)
 const CambioContraseniaModal: React.FC<{
-    usuario: Usuario | null;
+    usuario: CatalogoUsuario | null;
     onClose: () => void;
     onSubmit: (data: { nuevaContrasenia: string; confirmarContrasenia: string }) => void;
     loading: boolean;
 }> = ({ usuario, onClose, onSubmit, loading }) => {
+    // ... (código del modal sin cambios)
     const [formData, setFormData] = useState({
         nuevaContrasenia: '',
         confirmarContrasenia: ''
@@ -115,85 +92,109 @@ const CambioContraseniaModal: React.FC<{
     const passwordStrength = getPasswordStrength(formData.nuevaContrasenia);
 
     return (
-        <div className="cambio-contrasenia-modal-overlay">
-            <div className="cambio-contrasenia-modal">
-                <div className="cambio-contrasenia-modal-header">
-                    <h2 className="cambio-contrasenia-modal-title">
-                        <Lock size={20} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ width: '500px', maxWidth: '90vw' }}>
+                <div className="modal-header">
+                    <h3 className="modal-title">
+                        <Lock size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
                         Cambiar Contraseña - {usuario?.Usuario}
-                    </h2>
-                    <button className="close-button" onClick={onClose}>
+                    </h3>
+                    <button className="modal-close" onClick={onClose}>
                         <X size={20} />
                     </button>
                 </div>
-
-                <div className="cambio-contrasenia-modal-body">
+                
+                <div className="modal-body">
                     <form onSubmit={handleSubmit}>
-                        <div className="cambio-contrasenia-form-group">
-                            <label className="cambio-contrasenia-label">Nueva Contraseña:</label>
-                            <div className="password-input-container">
+                        <div className="form-group" style={{ marginBottom: '20px' }}>
+                            <label className="form-label">Nueva Contraseña:</label>
+                            <div className="password-input-container" style={{ position: 'relative' }}>
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     name="nuevaContrasenia"
                                     value={formData.nuevaContrasenia}
                                     onChange={handleInputChange}
-                                    className={`cambio-contrasenia-input ${errors.nuevaContrasenia ? 'shake' : ''}`}
+                                    className="form-input"
                                     placeholder="Ingresa la nueva contraseña"
                                     required
                                     minLength={6}
+                                    style={{ paddingRight: '40px' }}
                                 />
                                 <button
                                     type="button"
                                     className="password-toggle"
                                     onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '10px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
                                 >
                                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
-                            <div className="password-strength">
+                            <div className="password-strength" style={{ marginTop: '8px' }}>
                                 <div className={`password-strength-bar ${passwordStrength.strength === 1 ? 'weak' :
                                     passwordStrength.strength === 2 ? 'medium' :
                                         passwordStrength.strength === 3 ? 'strong' : ''
-                                    }`} />
+                                    }`} style={{ height: '4px', borderRadius: '2px', transition: 'all 0.3s ease' }} />
                             </div>
-                            <div className="password-strength-text">
+                            <div className="password-strength-text" style={{ fontSize: '12px', marginTop: '4px' }}>
                                 {passwordStrength.text}
                             </div>
-                            <div className={`validation-message ${errors.nuevaContrasenia ? 'error' : ''}`}>
-                                {errors.nuevaContrasenia}
-                            </div>
+                            {errors.nuevaContrasenia && (
+                                <div className="error-message" style={{ color: '#dc3545', fontSize: '12px', marginTop: '4px' }}>
+                                    {errors.nuevaContrasenia}
+                                </div>
+                            )}
                         </div>
 
-                        <div className="cambio-contrasenia-form-group">
-                            <label className="cambio-contrasenia-label">Confirmar Contraseña:</label>
-                            <div className="password-input-container">
+                        <div className="form-group" style={{ marginBottom: '20px' }}>
+                            <label className="form-label">Confirmar Contraseña:</label>
+                            <div className="password-input-container" style={{ position: 'relative' }}>
                                 <input
                                     type={showConfirmPassword ? "text" : "password"}
                                     name="confirmarContrasenia"
                                     value={formData.confirmarContrasenia}
                                     onChange={handleInputChange}
-                                    className={`cambio-contrasenia-input ${errors.confirmarContrasenia ? 'shake' : ''}`}
+                                    className="form-input"
                                     placeholder="Confirma la nueva contraseña"
                                     required
                                     minLength={6}
+                                    style={{ paddingRight: '40px' }}
                                 />
                                 <button
                                     type="button"
                                     className="password-toggle"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '10px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
                                 >
                                     {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
-                            <div className={`validation-message ${errors.confirmarContrasenia ? 'error' : ''}`}>
-                                {errors.confirmarContrasenia}
-                            </div>
+                            {errors.confirmarContrasenia && (
+                                <div className="error-message" style={{ color: '#dc3545', fontSize: '12px', marginTop: '4px' }}>
+                                    {errors.confirmarContrasenia}
+                                </div>
+                            )}
                         </div>
 
-                        <div className="cambio-contrasenia-modal-actions">
+                        <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
                             <button
                                 type="button"
-                                className="btn-cancel"
+                                className="btn btn-secondary"
                                 onClick={onClose}
                                 disabled={loading}
                             >
@@ -201,7 +202,7 @@ const CambioContraseniaModal: React.FC<{
                             </button>
                             <button
                                 type="submit"
-                                className="btn-change-password"
+                                className="btn btn-primary orange-button"
                                 disabled={loading}
                             >
                                 <Lock size={16} />
@@ -215,267 +216,218 @@ const CambioContraseniaModal: React.FC<{
     );
 };
 
-export const Usuarios: React.FC = () => {
-    const [usuarioForm, setUsuarioForm] = useState<Usuario>({
-        IdUsuario: '',
+// Componente de botones de acción memoizado
+const MemoizedActionButtons = React.memo(({
+    row,
+    openActionDropdown,
+    setOpenActionDropdown,
+    onEdit,
+    onDelete,
+    onCambiarContrasenia
+}: {
+    row: any,
+    openActionDropdown: string | null,
+    setOpenActionDropdown: (IdUsuario: string | null) => void,
+    onEdit: (row: any) => void,
+    onDelete: (row: any) => void,
+    onCambiarContrasenia: (row: any) => void,
+}) => (
+    <div className="actions-dropdown-container">
+        <button
+            className="actions-dropdown-trigger"
+            onClick={() => setOpenActionDropdown(openActionDropdown === row.IdUsuario ? null : row.IdUsuario)}
+            title="Más acciones"
+        >
+            <MoreVertical size={16} color='black' />
+        </button>
+
+        {openActionDropdown === row?.IdUsuario && (
+            <div className="actions-dropdown-menu">
+                <button className="actions-dropdown-item edit-action" onClick={() => { onEdit(row); setOpenActionDropdown(null); }}>
+                    <Edit size={14} />
+                    <span>Editar</span>
+                </button>
+                <div className="actions-dropdown-divider"></div>
+                <button className="actions-dropdown-item contrasena-action" onClick={() => { onCambiarContrasenia(row); setOpenActionDropdown(null); }}>
+                    <Lock size={14} />
+                    <span>Cambiar Contraseña</span>
+                </button>
+                <div className="actions-dropdown-divider"></div>
+                <button className="actions-dropdown-item delete-action" onClick={() => { onDelete(row); setOpenActionDropdown(null); }}>
+                    <Trash2 size={14} />
+                    <span>Eliminar</span>
+                </button>
+            </div>
+        )}
+    </div>
+));
+
+export const Usuario: React.FC = () => {
+    const [usuarioForm, setUsuarioForm] = useState<CatalogoUsuario>({
+        IdUsuario: 0,
         Usuario: '',
-        TipoUsuario: '',
-        Correo: '',
-        NombreColaborador: '',
-        Almacen: '',
-        Estatus: '',
-        Contrasenia: ''
+        EmpleadoID: 0,
+        Descripcion: '',
+        TipoUsuario: 0,
+        Contrasenia: '',
+        Estatus: 0,
+        rol: 0,
+        Sesion: '',
+        UltimaSesion: '',
+        CreateDate: '',
+        Ubicacion: 0
     });
-    const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
-    const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+    
+    const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
+    const [usuarios, setUsuarios] = useState<CatalogoUsuario[]>([]);
+    const [usuariosFiltrados, setUsuariosFiltrados] = useState<CatalogoUsuario[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [tipoFormulario, setTipoFormulario] = useState('Agregar');
     const [submitting, setSubmitting] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
+    const [selectedUsuario, setSelectedUsuario] = useState<CatalogoUsuario | null>(null);
     const [changingPassword, setChangingPassword] = useState(false);
     const [openActionDropdown, setOpenActionDropdown] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [showFiltrosAvanzados, setShowFiltrosAvanzados] = useState(false);
     
-    const [listadoUsuario, setListadoUsuario] = useState<Usuario[] | []>([]);
+    // Estados para los catálogos
+    const [tiposUsuario, setTiposUsuario] = useState<OpcionSelect[]>([]);
+    const [roles, setRoles] = useState<OpcionSelect[]>([]);
+    const [personal, setPersonal] = useState<OpcionSelect[]>([]);
+    const [estatus, setEstatus] = useState<OpcionSelect[]>([
+        { id: '1', valor: 'Activo' },
+        { id: '0', valor: 'Inactivo' }
+    ]);
+    const [ubicaciones, setUbicaciones] = useState<OpcionSelect[]>([]);
+    const [loadingOptions, setLoadingOptions] = useState(false);
 
-    const [listadoEstatus, setListadoEstatus] = useState<InterfaceEstatusUsuario[] | []>([]);
-    const [listadoTipoUsuario, setListadoTipoUsuario] = useState<InterfaceTipoUsuario[] | []>([]);
-    const [listadoAlmacen, setListadoAlmacen] = useState<InterfaceAlmacen[] | []>([]);
+    const [filtros, setFiltros] = useState<FiltrosUsuario>({
+        Usuario: '',
+        TipoUsuario: '',
+        Estatus: '',
+        rol: '',
+        Ubicacion: '',
+        EmpleadoID: '',
+        FechaCreacionInicio: '',
+        FechaCreacionFin: ''
+    });
 
-    const [estatus, setEstatus] = useState<OpcionSelect[]>([]);
-    const [tipoUsuario, setTipoUsuario] = useState<OpcionSelect[]>([]);
-    const [almacen, setAlmacen] = useState<OpcionSelect[]>([]);
-
-    const [selectedEstatus, setSelectedEstatus] = useState<any>({ value: '', label: '' });
-    const [selectedTipoUsuario, setSelectedTipoUsuario] = useState<any>({ value: '', label: '' });
-    const [selectedAlmacen, setSelectedAlmacen] = useState<any>({ value: '', label: '' });
-
-    useEffect(() => {
-        const fetchUsuarioListado = async () => {
-            try {
-                if (usuarioForm.IdUsuario != '') {
-                    const listadoUsuarioss = await obtenerUsuario();
-                    setListadoUsuario(listadoUsuarioss as Usuario[]);
-                }
-            } catch (error) {
-                showToast({ text: 'Error al obtener lista de Usuario', type: 'error' });
-            }
-        }
-
-        fetchUsuarioListado();
-    }, [usuarioForm.IdUsuario]);
-
-    const obtenerUsuario = async () => {
-        try {
-            const config = {};
-            const listadoUsuarios: any = await apiService.get<RespuestaAPI>('/Usuarios/Crud.php', config);
-
-            setSelectedEstatus({ label: (Array.isArray(listadoUsuarios.data) && listadoUsuarios.data.length > 0) && listadoUsuarios.data[0]?.Estatus == 1 ? 'Activo' : 'Inactivo', value: listadoUsuarios.data[0]?.Estatus });
-
-            return listadoUsuarios || [];
-
-        } catch (err: any) {
-            showToast({ text: err?.data?.message || err.message, type: 'error' });
-        }
-    };
-
-    //Listado Estatus//
-    useEffect(() => {
-        const fetchEstatusListado = async () => {
-            try {
-                const listadoEstatuss = await obtenerEstatus();
-                setListadoEstatus(listadoEstatuss as InterfaceEstatusUsuario[]);
-            } catch (error) {
-                showToast({ text: 'Error al obtener lista de estatus', type: 'error' });
-            }
-        }
-
-        fetchEstatusListado();
-    }, []);
-
-    const obtenerEstatus = async () => {
-        try {
-            const config = {};
-            const listadoEstatuss = await apiService.get<RespuestaAPI>('/Catalogos/ObtenerEstatus.php', config);
-            return listadoEstatuss.data || [];
-        } catch (err: any) {
-            showToast({ text: err?.data?.message || err.message, type: 'error' });
-        }
-    };
-
-
-    //Listado TipoUsuario//
-    useEffect(() => {
-        const fetchTipoUsuarioListado = async () => {
-            try {
-                const listadoTipoUsuarioss = await obtenerTipoUsuario();
-                setListadoTipoUsuario(listadoTipoUsuarioss as InterfaceTipoUsuario[]);
-            } catch (error) {
-                showToast({ text: 'Error al obtener lista de TipoUsuario', type: 'error' });
-            }
-        }
-        fetchTipoUsuarioListado();
-    }, []);
-
-    
-    const convertirOpciones = useCallback((opciones: OpcionSelect[]): {id: string, valor: string}[] => {
+    const convertirOpciones = useCallback((opciones: OpcionSelect[]): { id: string, valor: string }[] => {
         return opciones.map(opcion => ({
             id: opcion.id.toString(),
             valor: opcion.valor
         }));
     }, []);
 
-    const convertirOpcionesParaBusqueda = useCallback((opciones: OpcionSelect[]): {id: string, valor: string}[] => {
-        return opciones.map(opcion => ({
-            id: opcion.id.toString(),
-            valor: opcion.valor
-        }));
-    }, []);
-
-      const obtenerTextoPorId = useCallback((value: string, opciones: OpcionSelect[]): string => {
-            if (value === '0' || value === '0') {
-                return 'N/A';
-            }
-            if (!value && value !== '0') return '';
-            
-            const opcion = opciones.find(op => op.id.toString() === value.toString());
-            return opcion ? opcion.valor : value;
-        }, []);
-
-
-    const obtenerTipoUsuario = async () => {
+    const cargarTiposUsuario = useCallback(async () => {
         try {
-            const config = {};
-            const listadoTipoUsuarios = await apiService.get<RespuestaAPI>('/Catalogos/ObtenerTipoUsuario.php', config);
-            return listadoTipoUsuarios.data || [];
-        } catch (err: any) {
-            showToast({ text: err?.data?.message || err.message, type: 'error' });
+            const response = await apiService.get<RespuestaAPI>('Usuarios/Catalogos/ObtenerTipoUsuario.php');
+                const tiposData = Array.isArray(response.data) ? response.data : [];
+                setTiposUsuario(tiposData.map((t: InterfaceTipoUsuario) => ({ 
+                    id: t.IdTipoUsuario.toString(), 
+                    valor: t.TipoUsuario 
+                })));
+        } catch (error) {
+            console.error('Error cargando tipos de usuario:', error);
         }
-    };
-
-    useEffect(() => {
-        const fetchAlmacenListado = async () => {
-            try {
-                const listadoAlmacens = await obtenerAlmacen();
-                setListadoAlmacen(listadoAlmacens as InterfaceAlmacen[]);
-            } catch (error) {
-                showToast({ text: 'Error al obtener lista de estatus', type: 'error' });
-            }
-        }
-
-        fetchAlmacenListado();
     }, []);
 
-    const obtenerAlmacen = async () => {
+    const cargarRoles = useCallback(async () => {
         try {
-            const config = {};
-            const listadoAlmacens = await apiService.get<RespuestaAPI>('/Catalogos/ObtenerAlmacen.php', config);
-            return listadoAlmacens.data || [];
-        } catch (err: any) {
-            showToast({ text: err?.data?.message || err.message, type: 'error' });
+            const response = await apiService.get<RespuestaAPI>('Usuarios/Catalogos/ObtenerRoles.php');
+                const rolesData = Array.isArray(response.data) ? response.data : [];
+                setRoles(rolesData.map((r: InterfaceRol) => ({ 
+                    id: r.IdRolUsuario.toString(), 
+                    valor: r.RolUsuario 
+                })));
+        } catch (error) {
+            console.error('Error cargando roles:', error);
         }
-    };
-
-
-
-
-    const tableColumns: Column[] = useMemo(() => [
-        {
-            key: 'IdUsuario',
-            title: 'ID Usuario',
-            sortable: true,
-            searchable: true,
-            width: '100px',
-            align: 'center'
-        },
-        {
-            key: 'Usuario',
-            title: 'Usuario',
-            sortable: true,
-            searchable: true,
-            width: '200px',
-            align: 'center'
-        },
-        {
-            key: 'TipoUsuario',
-            title: 'Tipo de Usuario',
-            sortable: true,
-            searchable: true,
-            width: '150px',
-            align: 'center',
-            render: (value) => obtenerTextoPorId(value, tipoUsuario)
-        },
-        {
-            key: 'Correo',
-            title: 'Correo',
-            sortable: true,
-            searchable: true,
-            width: '200px',
-            align: 'center'
-        },
-        {
-            key: 'NombreColaborador',
-            title: 'Nombre',
-            sortable: true,
-            searchable: true,
-            width: '200px',
-            align: 'center'
-        },
-        {
-            key: 'Estatus',
-            title: 'Estatus',
-            sortable: true,
-            searchable: true,
-            width: '100px',
-            align: 'center',
-            render: (value) => obtenerTextoPorId(value, estatus)
-        },
-        {
-            key: 'actions',
-            title: 'Acciones',
-            sortable: false,
-            searchable: false,
-            width: '120px',
-            align: 'center',
-            render: (_, row) => (
-                <MemoizedActionButtons
-                    row={row}
-                    openActionDropdown={openActionDropdown}
-                    setOpenActionDropdown={setOpenActionDropdown}
-                    onEdit={handleEditSolicitud}
-                    onDelete={handleDeleteSolicitud}
-                    onCambiarContrasenia={handleOpenPasswordModal}
-                />
-            )
-        }
-    ], [openActionDropdown]);
-
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setUsuarioForm(prev => ({
-            ...prev,
-            [name]: value
-        }));
     }, []);
 
-    const handleEstatusSelect = (EstatusData: OptionType) => {
-        setSelectedEstatus(EstatusData);
-    }
-    const handleTipoUsuarioSelect = (TipoUsuarioData: OptionType) => {
-        setSelectedTipoUsuario(TipoUsuarioData);
-    }
-    const handleAlmacenSelect = (AlmacenData: OptionType) => {
-        setSelectedAlmacen(AlmacenData);
-    }
+    const cargarUbicaciones = useCallback(async () => {
+        try {
+            const response = await apiService.get<RespuestaAPI>('Usuarios/Catalogos/ObtenerUbicaciones.php');
+             const ubicacionesData = Array.isArray(response.data) ? response.data : [];
+                setUbicaciones(ubicacionesData.map((u: InterfaceUbicacion) => ({ 
+                    id: u.IdUbicacion.toString(), 
+                    valor: u.NomCorto 
+                })));
+        } catch (error) {
+            console.error('Error cargando ubicaciones:', error);
+        }
+    }, []);
 
+    // Cargar catálogo de personal
+    const cargarPersonal = useCallback(async () => {
+        try {
+            const response = await apiService.get<RespuestaAPI>('/personal/Catalogo.php');
+            if (response.status && response.data) {
+                const personalData = Array.isArray(response.data) ? response.data : [];
+                setPersonal(personalData.map((p: InterfacePersonal) => ({ 
+                    id: p.IdPersonal.toString(), 
+                    valor: `${p.NoEmpleado} - ${p.NombreCompleto}` 
+                })));
+            }
+        } catch (error) {
+            console.error('Error cargando personal:', error);
+        }
+    }, []);
+
+    const cargarEstatus = useCallback(async () => {
+        try {
+            const response = await apiService.get<RespuestaAPI>('Usuarios/Catalogos/ObtenerEstatus.php');
+            if (response.status && response.data) {
+                const estatusData = Array.isArray(response.data) ? response.data : [];
+                setEstatus(estatusData.map((e: any) => ({ 
+                    id: e.IdEstatus?.toString() || e.IdEstatusUsuario?.toString(), 
+                    valor: e.Estatus || e.EstatusUsuario 
+                })));
+            }
+        } catch (error) {
+            console.error('Error cargando estatus:', error);
+            // Fallback: estatus fijos
+            setEstatus([
+                { id: '1', valor: 'Activo' },
+                { id: '0', valor: 'Inactivo' }
+            ]);
+        }
+    }, []);
+
+    // Cargar todos los catálogos
+    const cargarOpcionesCatalogos = useCallback(async () => {
+        try {
+            setLoadingOptions(true);
+            await Promise.all([
+                cargarTiposUsuario(),
+                cargarRoles(),
+                cargarUbicaciones(),
+                cargarPersonal(),
+                cargarEstatus()
+            ]);
+        } catch (error) {
+            console.error('Error cargando opciones:', error);
+            showToast({
+                text: 'Error al cargar opciones',
+                type: 'error',
+                autoClose: 1500
+            });
+        } finally {
+            setLoadingOptions(false);
+        }
+    }, [cargarTiposUsuario, cargarRoles, cargarUbicaciones, cargarPersonal, cargarEstatus]);
+
+    // Obtener lista de usuarios
     const fetchUsuarios = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await apiService.get<RespuestaAPI>('/usuarios/ObtenerListado.php');
+            const response = await apiService.get<RespuestaAPI>('/Usuarios/ObtenerListado.php');
+            
             if (response.status && response.data) {
-                const usuariosData = response.data as Usuario[];
+                const usuariosData = Array.isArray(response.data) ? response.data : [];
                 setUsuarios(usuariosData);
-
+                setUsuariosFiltrados(usuariosData);
             } else {
                 showToast({
                     text: response.message || 'Error al cargar usuarios',
@@ -483,6 +435,7 @@ export const Usuarios: React.FC = () => {
                     autoClose: 1500
                 });
                 setUsuarios([]);
+                setUsuariosFiltrados([]);
             }
         } catch (error) {
             showToast({
@@ -491,57 +444,332 @@ export const Usuarios: React.FC = () => {
                 autoClose: 1500
             });
             setUsuarios([]);
+            setUsuariosFiltrados([]);
         } finally {
             setLoading(false);
         }
     }, []);
 
+    // Aplicar filtros
+    const aplicarFiltros = useCallback(() => {
+        let filtrados = [...usuarios];
+
+        if (filtros.Usuario) {
+            filtrados = filtrados.filter(u => 
+                u.Usuario.toLowerCase().includes(filtros.Usuario.toLowerCase())
+            );
+        }
+
+        if (filtros.TipoUsuario && filtros.TipoUsuario !== '') {
+            filtrados = filtrados.filter(u => u.TipoUsuario === parseInt(filtros.TipoUsuario));
+        }
+
+        if (filtros.Estatus && filtros.Estatus !== '') {
+            filtrados = filtrados.filter(u => u.Estatus === parseInt(filtros.Estatus));
+        }
+
+        if (filtros.rol && filtros.rol !== '') {
+            filtrados = filtrados.filter(u => u.rol === parseInt(filtros.rol));
+        }
+
+        if (filtros.Ubicacion && filtros.Ubicacion !== '') {
+            filtrados = filtrados.filter(u => u.Ubicacion === parseInt(filtros.Ubicacion));
+        }
+
+        if (filtros.EmpleadoID && filtros.EmpleadoID !== '') {
+            filtrados = filtrados.filter(u => u.EmpleadoID === parseInt(filtros.EmpleadoID));
+        }
+
+        if (filtros.FechaCreacionInicio) {
+            filtrados = filtrados.filter(u => 
+                u.CreateDate && u.CreateDate >= filtros.FechaCreacionInicio
+            );
+        }
+        
+        if (filtros.FechaCreacionFin) {
+            filtrados = filtrados.filter(u => 
+                u.CreateDate && u.CreateDate <= filtros.FechaCreacionFin
+            );
+        }
+
+        setUsuariosFiltrados(filtrados);
+    }, [usuarios, filtros]);
+
+    // Manejar cambios en filtros
+    const handleFiltroChange = (campo: keyof FiltrosUsuario, valor: string) => {
+        setFiltros(prev => ({
+            ...prev,
+            [campo]: valor
+        }));
+    };
+
+    // Limpiar filtros
+    const limpiarFiltros = () => {
+        setFiltros({
+            Usuario: '',
+            TipoUsuario: '',
+            Estatus: '',
+            rol: '',
+            Ubicacion: '',
+            EmpleadoID: '',
+            FechaCreacionInicio: '',
+            FechaCreacionFin: ''
+        });
+        setUsuariosFiltrados(usuarios);
+    };
+
+    // Obtener texto por ID para catálogos
+    const obtenerTextoPorId = useCallback((value: string | number | undefined, opciones: OpcionSelect[]): string => {
+        if (!value || value === 0 || value === '0' || value === '') {
+            return 'N/A';
+        }
+        const opcion = opciones.find(op => op.id.toString() === value.toString());
+        return opcion ? opcion.valor : value.toString();
+    }, []);
+
+    // Obtener texto para personal
+    const obtenerTextoPersonal = useCallback((value: string | number | undefined): string => {
+        if (!value || value === 0 || value === '0' || value === '') {
+            return 'N/A';
+        }
+        const empleado = personal.find(p => p.id.toString() === value.toString());
+        return empleado ? empleado.valor : value.toString();
+    }, [personal]);
+
+    // Formatear fecha
+    const formatDate = useCallback((date: string) => {
+        if (!date) return '';
+        return formatDateForServer(date);
+    }, []);
+
+    // Columnas de la tabla
+    const tableColumns: Column[] = useMemo(() => [
+        {
+            key: 'IdUsuario',
+            title: 'ID',
+            sortable: true,
+            searchable: true,
+            width: '80px',
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            key: 'Usuario',
+            title: 'Usuario',
+            sortable: true,
+            searchable: true,
+            width: '150px',
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            key: 'EmpleadoID',
+            title: 'Empleado',
+            sortable: true,
+            searchable: true,
+            width: '200px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value) => obtenerTextoPersonal(value)
+        },
+        {
+            key: 'Descripcion',
+            title: 'Descripción',
+            sortable: true,
+            searchable: true,
+            width: '200px',
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            key: 'TipoUsuario',
+            title: 'Tipo de Usuario',
+            sortable: true,
+            searchable: true,
+            width: '150px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value) => obtenerTextoPorId(value, tiposUsuario)
+        },
+        {
+            key: 'rol',
+            title: 'Rol',
+            sortable: true,
+            searchable: true,
+            width: '120px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value) => obtenerTextoPorId(value, roles)
+        },
+        {
+            key: 'Ubicacion',
+            title: 'Ubicación',
+            sortable: true,
+            searchable: true,
+            width: '120px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value) => obtenerTextoPorId(value, ubicaciones)
+        },
+        {
+            key: 'Estatus',
+            title: 'Estatus',
+            sortable: true,
+            searchable: true,
+            width: '100px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value: string) => {
+                let statusText = '';
+                let statusClass = '';
+                switch (value) {
+                    case '1':
+                        statusText = 'Activo';
+                        statusClass = 'status-active';
+                        break;
+                    case '0':
+                        statusText = 'Inactivo';
+                        statusClass = 'status-inactive';
+                        break;
+                    default:
+                        statusText = 'Desconocido';
+                        statusClass = 'status-unknown';
+                }
+                return (
+                    <span className={`status-badge ${statusClass}`}>
+                        {statusText}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'UltimaSesion',
+            title: 'Última Sesión',
+            sortable: true,
+            searchable: false,
+            width: '150px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value) => formatDate(value)
+        },
+        {
+            key: 'CreateDate',
+            title: 'Fecha Creación',
+            sortable: true,
+            searchable: false,
+            width: '150px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value) => formatDate(value)
+        },
+        {
+            key: 'actions',
+            title: 'Acciones',
+            sortable: false,
+            searchable: false,
+            width: '120px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (_, row) => (
+                <MemoizedActionButtons
+                    row={row}
+                    openActionDropdown={openActionDropdown}
+                    setOpenActionDropdown={setOpenActionDropdown}
+                    onEdit={handleEditUsuario}
+                    onDelete={handleDeleteUsuario}
+                    onCambiarContrasenia={handleOpenPasswordModal}
+                />
+            )
+        }
+    ], [openActionDropdown, tiposUsuario, roles, ubicaciones, personal, obtenerTextoPorId, obtenerTextoPersonal, formatDate]);
+
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setUsuarioForm(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    }, []);
+
+    // Manejar cambios en selects
+    const handleSelectChange = useCallback((name: keyof CatalogoUsuario, value: string) => {
+        setUsuarioForm(prev => ({
+            ...prev,
+            [name]: value === '' ? 0 : parseInt(value)
+        }));
+    }, []);
+
+    // Enviar formulario
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!usuarioForm.Usuario) {
+            showToast({ text: 'El nombre de usuario es requerido', type: 'error' });
+            return;
+        }
+        
         try {
             setSubmitting(true);
-
-            const formData = new FormData();
-            Object.entries(usuarioForm).forEach(([key, value]) => {
-                formData.append(key, value);
-            });
-
-            const response = await apiService.postForm<RespuestaAPI>(`/usuarios/crud.php?IdUsuario=${usuarioSesion?.IdUsuario}`, formData);
-
-            showToast({
-                text: response.message || 'Usuario guardado correctamente',
-                type: response.status ? 'success' : 'error',
-                autoClose: 1500
-            });
-
+            const isUpdate = usuarioForm.IdUsuario !== 0;
+            
+            const dataToSend = {
+                ...usuarioForm,
+                UsuarioCreacion: usuarioSesion?.IdUsuario
+            };
+            
+            let response: RespuestaAPI;
+            
+            if (isUpdate) {
+                response = await apiService.put<RespuestaAPI>(`/Usuarios/Crud.php?IdUsuario=${usuarioSesion?.IdUsuario}`, dataToSend);
+            } else {
+                response = await apiService.post<RespuestaAPI>(`/Usuarios/Crud.php?IdUsuario=${usuarioSesion?.IdUsuario}`, dataToSend);
+            }
+            
             if (response.status) {
+                showToast({
+                    text: response.message || (isUpdate ? 'Usuario actualizado correctamente' : 'Usuario guardado correctamente'),
+                    type: 'success',
+                    autoClose: 1500
+                });
+                
                 setShowForm(false);
                 resetForm();
-                fetchUsuarios();
+                setTipoFormulario('Agregar');
+                await fetchUsuarios();
+            } else {
+                showToast({
+                    text: response.message || 'Error al procesar la solicitud',
+                    type: 'error',
+                    autoClose: 1500
+                });
             }
         } catch (error) {
+            console.error('Error:', error);
             showToast({
-                text: 'Error al guardar el usuario',
+                text: 'Error al procesar la solicitud',
                 type: 'error',
                 autoClose: 1500
             });
         } finally {
             setSubmitting(false);
         }
-    }, [usuarioForm, fetchUsuarios]);
+    }, [usuarioForm, fetchUsuarios, usuarioSesion]);
 
+    // Cambiar contraseña
     const handleCambiarContrasenia = useCallback(async (data: { nuevaContrasenia: string; confirmarContrasenia: string }) => {
         if (!selectedUsuario) return;
 
         try {
             setChangingPassword(true);
 
-            const formData = new FormData();
-            formData.append('IdUsuario', selectedUsuario.IdUsuario);
-            formData.append('Contrasenia', data.nuevaContrasenia);
-            formData.append('action', 'cambiar_contrasenia');
-
-            const response = await apiService.postForm<RespuestaAPI>(`/usuarios/crud.php?IdUsuario=${usuarioSesion?.IdUsuario}`, formData);
+            const response = await apiService.put<RespuestaAPI>(
+                `/Usuarios/CambiarContrasenia.php`,
+                { 
+                    IdUsuario: selectedUsuario.IdUsuario,
+                    IdUsuarioSesion: usuarioSesion?.IdUsuario,
+                    Contrasenia: data.nuevaContrasenia 
+                }
+            );
 
             showToast({
                 text: response.message || 'Contraseña cambiada correctamente',
@@ -562,21 +790,22 @@ export const Usuarios: React.FC = () => {
         } finally {
             setChangingPassword(false);
         }
-    }, [selectedUsuario]);
+    }, [selectedUsuario, usuarioSesion]);
 
-    const handleViewSolicitud = useCallback((usuario: Usuario) => {
-        console.log('Ver usuario:', usuario);
-    }, []);
-
-    const handleEditSolicitud = useCallback((usuario: Usuario) => {
-        setUsuarioForm({ ...usuario, IdUsuario: usuario.IdUsuario })
+    // Editar usuario
+    const handleEditUsuario = useCallback((usuario: CatalogoUsuario) => {
+        setTipoFormulario('Modificar');
+        setUsuarioForm({ ...usuario });
         setShowForm(true);
     }, []);
 
-    const handleDeleteSolicitud = useCallback(async (usuario: Usuario) => {
+    // Eliminar usuario
+    const handleDeleteUsuario = useCallback(async (usuario: CatalogoUsuario) => {
         if (window.confirm('¿Está seguro de que desea eliminar este usuario?')) {
             try {
-                const response = await apiService.delete<RespuestaAPI>(`/Usuarios/crud.php?IdUsuario=${usuario.IdUsuario}`);
+                const response = await apiService.delete<RespuestaAPI>(
+                    `/Usuarios/Crud.php?IdUsuario=${usuario.IdUsuario}&IdUsuarioSesion=${usuarioSesion?.IdUsuario}`
+                );
 
                 if (response.status) {
                     showToast({
@@ -584,7 +813,7 @@ export const Usuarios: React.FC = () => {
                         type: 'success',
                         autoClose: 1500
                     });
-                    fetchUsuarios();
+                    await fetchUsuarios();
                 } else {
                     showToast({
                         text: response.message || 'Error al eliminar usuario',
@@ -600,31 +829,51 @@ export const Usuarios: React.FC = () => {
                 });
             }
         }
-    }, [fetchUsuarios]);
+    }, [fetchUsuarios, usuarioSesion]);
 
-    const handleOpenPasswordModal = useCallback((usuario: Usuario) => {
+    // Abrir modal de cambio de contraseña
+    const handleOpenPasswordModal = useCallback((usuario: CatalogoUsuario) => {
         setSelectedUsuario(usuario);
         setShowPasswordModal(true);
     }, []);
 
+    // Resetear formulario
     const resetForm = useCallback(() => {
         setUsuarioForm({
-            IdUsuario: '',
+            IdUsuario: 0,
             Usuario: '',
-            TipoUsuario: '',
-            Correo: '',
-            NombreColaborador: '',
-            Almacen: '',
-            Estatus: 'Activo',
-            Contrasenia: ''
+            EmpleadoID: 0,
+            Descripcion: '',
+            TipoUsuario: 0,
+            Contrasenia: '',
+            Estatus: 1,
+            rol: 0,
+            Sesion: '',
+            UltimaSesion: '',
+            CreateDate: '',
+            Ubicacion: 0
         });
+        setTipoFormulario('Agregar');
     }, []);
+
+    // Mostrar formulario
+    const handleShowForm = useCallback(() => {
+        resetForm();
+        setShowForm(true);
+        setTipoFormulario('Agregar');
+    }, [resetForm]);
+
+    // Efectos
+    useEffect(() => {
+        aplicarFiltros();
+    }, [aplicarFiltros]);
 
     useEffect(() => {
         fetchUsuarios();
+        cargarOpcionesCatalogos();
         const usuario = obtenerUsuarioSesion();
         setUsuarioSesion(usuario);
-    }, [fetchUsuarios]);
+    }, [fetchUsuarios, cargarOpcionesCatalogos]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -641,13 +890,13 @@ export const Usuarios: React.FC = () => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if ((event.ctrlKey || event.metaKey) && event.key === 'a' && !showForm) {
                 event.preventDefault();
-                setShowForm(true);
+                handleShowForm();
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [showForm]);
+    }, [showForm, handleShowForm]);
 
     useEffect(() => {
         document.body.style.overflow = showForm || showPasswordModal ? 'hidden' : 'auto';
@@ -656,198 +905,294 @@ export const Usuarios: React.FC = () => {
         };
     }, [showForm, showPasswordModal]);
 
-    const handleShowForm = useCallback(() => {
-        resetForm();
-        setShowForm(true);
-    }, [resetForm]);
-
     return (
         <div className="usuarios-container">
             <div className="usuarios-header">
                 <h1 className="page-title-usuarios">Catálogo de Usuarios</h1>
                 <div className="action-buttons">
-                    <button className="action-btn" onClick={handleShowForm}>
+                    <button className="action-btn orange-button" onClick={handleShowForm}>
                         <Plus size={18} />
                         Nuevo Usuario
                     </button>
                 </div>
             </div>
 
+            <div className="filtros-container">
+                <div className="filtros-basicos">
+                    <div className="filtro-group">
+                        <label className="filtro-label">Usuario:</label>
+                        <input
+                            type="text"
+                            className="filtro-input"
+                            placeholder="Buscar por usuario..."
+                            value={filtros.Usuario}
+                            onChange={(e) => handleFiltroChange('Usuario', e.target.value)}
+                        />
+                    </div>
+
+                    <div className="filtro-group">
+                        <label className="filtro-label">Tipo Usuario:</label>
+                        <SelectConBusqueda
+                            options={convertirOpciones(tiposUsuario)}
+                            value={filtros.TipoUsuario}
+                            onChange={(value) => handleFiltroChange('TipoUsuario', value)}
+                            placeholder="Seleccionar tipo de usuario"
+                        />
+                    </div>
+
+                    <div className="filtro-group">
+                        <label className="filtro-label">Estatus:</label>
+                        <select
+                            className="filtro-select"
+                            value={filtros.Estatus}
+                            onChange={(e) => handleFiltroChange('Estatus', e.target.value)}
+                        >
+                            <option value="">TODOS</option>
+                            {estatus.map(est => (
+                                <option key={est.id} value={est.id}>
+                                    {est.valor}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <button
+                        className="filtros-avanzados-btn"
+                        onClick={() => setShowFiltrosAvanzados(!showFiltrosAvanzados)}
+                    >
+                        <Filter size={16} />
+                        <span>Filtros Avanzados</span>
+                        <ChevronDown size={16} className={`chevron ${showFiltrosAvanzados ? 'rotated' : ''}`} />
+                    </button>
+                </div>
+
+                {showFiltrosAvanzados && (
+                    <div className="filtros-avanzados">
+                        <div className="filtros-avanzados-grid">
+                            <div className="filtro-group">
+                                <label className="filtro-label">Rol:</label>
+                                <SelectConBusqueda
+                                    options={convertirOpciones(roles)}
+                                    value={filtros.rol}
+                                    onChange={(value) => handleFiltroChange('rol', value)}
+                                    placeholder="Seleccionar rol"
+                                />
+                            </div>
+
+                            <div className="filtro-group">
+                                <label className="filtro-label">Ubicación:</label>
+                                <SelectConBusqueda
+                                    options={convertirOpciones(ubicaciones)}
+                                    value={filtros.Ubicacion}
+                                    onChange={(value) => handleFiltroChange('Ubicacion', value)}
+                                    placeholder="Seleccionar ubicación"
+                                />
+                            </div>
+
+                            <div className="filtro-group">
+                                <label className="filtro-label">Empleado:</label>
+                                <SelectConBusqueda
+                                    options={convertirOpciones(personal)}
+                                    value={filtros.EmpleadoID}
+                                    onChange={(value) => handleFiltroChange('EmpleadoID', value)}
+                                    placeholder="Buscar empleado..."
+                                />
+                            </div>
+
+                            <div className="filtro-group">
+                                <label className="filtro-label">Fecha Creación Inicio:</label>
+                                <input
+                                    type="date"
+                                    className="filtro-input"
+                                    value={filtros.FechaCreacionInicio}
+                                    onChange={(e) => handleFiltroChange('FechaCreacionInicio', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="filtro-group">
+                                <label className="filtro-label">Fecha Creación Fin:</label>
+                                <input
+                                    type="date"
+                                    className="filtro-input"
+                                    value={filtros.FechaCreacionFin}
+                                    onChange={(e) => handleFiltroChange('FechaCreacionFin', e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="filtros-avanzados-actions">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={limpiarFiltros}
+                            >
+                                Limpiar Filtros
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             <div className="usuarios-content">
+                {loadingOptions && (
+                    <div className="loading-options">
+                        <span>Cargando opciones...</span>
+                    </div>
+                )}
                 <Tabla
                     columns={tableColumns}
-                    data={usuarios}
+                    data={usuariosFiltrados}
                     pageSize={10}
                     pageSizeOptions={[5, 10, 25, 50]}
                     emptyMessage="No se encontraron Usuarios"
                     className="full-height-table"
-                //loading={loading}
+                    loading={loading}
                 />
             </div>
 
+            {/* Modal de formulario */}
             {showForm && (
-                <div className="form-usuario-modal-overlay">
-                    <div className="form-usuario-modal">
-                        <div className="form-usuario-modal-header">
-                            <h2 className="form-usuario-modal-title">
-                                {usuarioForm.IdUsuario && usuarioForm.IdUsuario !== '' ? 'Editar Usuario' : 'Registro de Usuario'}
-                            </h2>
-                            <button className="close-button" onClick={() => {
+                <div className="modal-overlay">
+                    <div className="modal-container" style={{ width: '800px', maxWidth: '90vw' }}>
+                        <div className="modal-header">
+                            <h3 className="modal-title">
+                                {tipoFormulario === 'Modificar' ? 'Editar Usuario' : 'Registro de Usuario'}
+                            </h3>
+                            <button className="modal-close" onClick={() => {
                                 setShowForm(false);
                                 resetForm();
+                                setTipoFormulario('Agregar');
                             }}>
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <div className="form-usuario-modal-body">
+                        <div className="modal-body">
                             <form onSubmit={handleSubmit}>
-                                <div className="form-usuario-row three-columns-equal">
-                                    <div className="form-usuario-group">
-                                        <label htmlFor='Usuario' className="form-usuario-label">Usuario:</label>
-                                        <input
-                                            type="text"
-                                            name="Usuario"
-                                            value={usuarioForm.Usuario}
-                                            onChange={handleInputChange}
-                                            className="form-usuario-input"
-                                            placeholder="Nombre de usuario"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-usuario-group">
-                                        <label htmlFor='TipoUsuario' className="form-usuario-label">Tipo de Usuario:</label>
-                                        <div className="form-group usuario-search-container">
-                                            <div className="usuario-input-wrapper">
-                                                <div className="usuario-input-container">
-                                                    <ReactSelect optionsData={
-                                                        listadoTipoUsuario.map((tipousuario) => ({
-                                                            value: tipousuario.IdTipoUsuario,
-                                                            label: `${tipousuario.TipoUsuario}`
-                                                        }))
-                                                    }
-                                                        handleChange={(e: {
-                                                            value: string;
-                                                            label: string;
-                                                        }) => {
-                                                            handleTipoUsuarioSelect(e)
-                                                        }}
-                                                        selectedOption={selectedTipoUsuario}
-                                                        isClearable={false}
-                                                    />
-                                                </div>
-                                            </div>
+                                <div className="form-grid" style={{ display: 'grid', gap: '20px' }}>
+                                    <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div className="form-group">
+                                            <label htmlFor='Usuario' className="form-label required">Usuario:</label>
+                                            <input
+                                                type="text"
+                                                name="Usuario"
+                                                id="Usuario"
+                                                value={usuarioForm.Usuario}
+                                                onChange={handleInputChange}
+                                                className="form-input"
+                                                placeholder="Nombre de usuario"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor='EmpleadoID' className="form-label">Empleado:</label>
+                                            <SelectConBusqueda
+                                                options={convertirOpciones(personal)}
+                                                value={usuarioForm.EmpleadoID?.toString() || ''}
+                                                onChange={(value) => handleSelectChange('EmpleadoID', value)}
+                                                placeholder="Buscar empleado..."
+                                            />
                                         </div>
                                     </div>
-                                    <div className="form-usuario-group ">
-                                        <label htmlFor='Estatus' className="form-usuario-label">Estatus:</label>
-                                        <div className="form-group usuario-search-container">
-                                            <div className="usuario-input-wrapper">
-                                                <div className="usuario-input-container">
-                                                    <ReactSelect optionsData={
-                                                        listadoEstatus.map((estatus) => ({
-                                                            value: estatus.IdEstatusUsuario,
-                                                            label: `${estatus.EstatusUsuario}`
-                                                        }))
-                                                    }
-                                                        handleChange={(e: {
-                                                            value: string;
-                                                            label: string;
-                                                        }) => {
-                                                            handleEstatusSelect(e)
-                                                        }}
-                                                        selectedOption={selectedEstatus}
-                                                        isClearable={false}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <div className="form-usuario-row three-columns-equal">
-                                    <div className="form-usuario-group">
-                                        <label htmlFor='Correo' className="form-usuario-label">Correo:</label>
-                                        <input
-                                            type="email"
-                                            name="Correo"
-                                            value={usuarioForm.Correo}
-                                            onChange={handleInputChange}
-                                            className="form-usuario-input"
-                                            placeholder="correo@ejemplo.com"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-usuario-group">
-                                        <label htmlFor='NombreColaborador' className="form-usuario-label">Nombre Completo:</label>
-                                        <input
-                                            type="text"
-                                            name="NombreColaborador"
-                                            value={usuarioForm.NombreColaborador}
-                                            onChange={handleInputChange}
-                                            className="form-usuario-input"
-                                            placeholder="Nombre completo del colaborador"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-usuario-group">
-                                        <label htmlFor='Almacen' className="form-usuario-label">Almacén:</label>
-                                        <div className="form-group usuario-search-container">
-                                            <div className="usuario-input-wrapper">
-                                                <div className="usuario-input-container">
-                                                    <ReactSelect optionsData={
-                                                        listadoAlmacen.map((almacen) => ({
-                                                            value: almacen.IdAlmacen,
-                                                            label: `${almacen.Almacen}`
-                                                        }))
-                                                    }
-                                                        handleChange={(e: {
-                                                            value: string;
-                                                            label: string;
-                                                        }) => {
-                                                            handleAlmacenSelect(e)
-                                                        }}
-                                                        selectedOption={selectedAlmacen}
-                                                        isClearable={false}
-                                                    />
-                                                </div>
-                                            </div>
+                                    <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div className="form-group">
+                                            <label htmlFor='TipoUsuario' className="form-label">Tipo de Usuario:</label>
+                                            <SelectConBusqueda
+                                                options={convertirOpciones(tiposUsuario)}
+                                                value={usuarioForm.TipoUsuario?.toString() || ''}
+                                                onChange={(value) => handleSelectChange('TipoUsuario', value)}
+                                                placeholder="Seleccionar tipo de usuario"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor='rol' className="form-label">Rol:</label>
+                                            <SelectConBusqueda
+                                                options={convertirOpciones(roles)}
+                                                value={usuarioForm.rol?.toString() || ''}
+                                                onChange={(value) => handleSelectChange('rol', value)}
+                                                placeholder="Seleccionar rol"
+                                            />
                                         </div>
                                     </div>
-                                </div>
 
-                                {!usuarioForm.IdUsuario ? (
-                                    <div className="form-usuario-row">
-                                        <div className="form-usuario-group">
-                                            <label htmlFor='Contrasenia' className="form-usuario-label">Contraseña:</label>
+                                    <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div className="form-group">
+                                            <label htmlFor='Ubicacion' className="form-label">Ubicación:</label>
+                                            <SelectConBusqueda
+                                                options={convertirOpciones(ubicaciones)}
+                                                value={usuarioForm.Ubicacion?.toString() || ''}
+                                                onChange={(value) => handleSelectChange('Ubicacion', value)}
+                                                placeholder="Seleccionar ubicación"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor='Estatus' className="form-label">Estatus:</label>
+                                            <select
+                                                name="Estatus"
+                                                id="Estatus"
+                                                value={usuarioForm.Estatus}
+                                                onChange={handleInputChange}
+                                                className="form-select"
+                                            >
+                                                {estatus.map(est => (
+                                                    <option key={est.id} value={est.id}>
+                                                        {est.valor}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label htmlFor='Descripcion' className="form-label">Descripción:</label>
+                                        <textarea
+                                            name="Descripcion"
+                                            id="Descripcion"
+                                            value={usuarioForm.Descripcion || ''}
+                                            onChange={handleInputChange}
+                                            className="form-input"
+                                            placeholder="Descripción del usuario"
+                                            rows={3}
+                                            style={{ resize: 'vertical' }}
+                                        />
+                                    </div>
+
+                                    {!usuarioForm.IdUsuario && (
+                                        <div className="form-group">
+                                            <label htmlFor='Contrasenia' className="form-label required">Contraseña:</label>
                                             <input
                                                 type="password"
                                                 name="Contrasenia"
-                                                value={usuarioForm.Contrasenia}
+                                                id="Contrasenia"
+                                                value={usuarioForm.Contrasenia || ''}
                                                 onChange={handleInputChange}
-                                                className="form-usuario-input"
+                                                className="form-input"
                                                 placeholder="Contraseña inicial"
                                                 required
                                                 minLength={6}
                                             />
+                                            <small style={{ fontSize: '12px', color: '#666', marginTop: '4px', display: 'block' }}>
+                                                Mínimo 6 caracteres
+                                            </small>
                                         </div>
-                                    </div>
-                                ) : null}
+                                    )}
+                                </div>
 
-                                <div className="form-usuario-actions">
+                                <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                                     <button
                                         type="button"
                                         className="btn btn-secondary"
                                         onClick={() => {
                                             setShowForm(false);
                                             resetForm();
+                                            setTipoFormulario('Agregar');
                                         }}
                                     >
                                         Cancelar
                                     </button>
                                     <button
                                         type="submit"
-                                        className="btn btn-primary"
+                                        className="btn btn-primary orange-button"
                                         disabled={submitting}
                                     >
                                         <FileText size={16} />
@@ -857,22 +1202,21 @@ export const Usuarios: React.FC = () => {
                             </form>
                         </div>
                     </div>
-                </div >
+                </div>
             )}
 
-            {
-                showPasswordModal && (
-                    <CambioContraseniaModal
-                        usuario={selectedUsuario}
-                        onClose={() => {
-                            setShowPasswordModal(false);
-                            setSelectedUsuario(null);
-                        }}
-                        onSubmit={handleCambiarContrasenia}
-                        loading={changingPassword}
-                    />
-                )
-            }
-        </div >
+            {/* Modal de cambio de contraseña */}
+            {showPasswordModal && (
+                <CambioContraseniaModal
+                    usuario={selectedUsuario}
+                    onClose={() => {
+                        setShowPasswordModal(false);
+                        setSelectedUsuario(null);
+                    }}
+                    onSubmit={handleCambiarContrasenia}
+                    loading={changingPassword}
+                />
+            )}
+        </div>
     );
 };

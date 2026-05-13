@@ -2361,3 +2361,118 @@ input[type="date"].form-vacaciones-input:disabled::-webkit-calendar-picker-indic
     background-color: #FF9800;
     color: white;
 }
+
+/* Tabs Styles */
+.vacaciones-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background-color: white;
+    padding: 8px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.tab-button:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.tab-button.active {
+    background-color: #fff3e0;
+    color: #d94f00;
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -9px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #d94f00;
+    border-radius: 2px;
+}
+
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background-color: #e5e7eb;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.tab-button.active .tab-count {
+    background-color: #d94f00;
+    color: white;
+}
+
+.tab-button:hover .tab-count {
+    background-color: #d1d5db;
+}
+
+/* Status badge adicional para Validado */
+.status-validated {
+    background-color: #E8F5E9;
+    color: #4CAF50;
+}
+
+/* Ajustes responsivos para tabs */
+@media (max-width: 768px) {
+    .vacaciones-tabs {
+        padding: 4px 16px;
+        gap: 4px;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-button {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    .tab-button.active::after {
+        bottom: -5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .vacaciones-tabs {
+        padding: 4px 12px;
+        border-radius: 6px;
+    }
+
+    .tab-button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .tab-count {
+        min-width: 18px;
+        height: 18px;
+        font-size: 10px;
+    }
+}

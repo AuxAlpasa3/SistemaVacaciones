@@ -42,18 +42,33 @@ try {
             WHERE Status = '1'";
     
     if ($rol == 1 || $rol == 2) {
+        // Admin y RRHH pueden ver todos los empleados
         $query .= " ORDER BY Nombre, ApPaterno, ApMaterno";
         $params = [];
     } 
     elseif ($rol == 3) {
+        // Supervisor puede ver sus empleados Y a sí mismo
         if (!empty($empleadoID)) {
-            $query .= " AND IdSupervisor = :empleadoID ORDER BY Nombre, ApPaterno, ApMaterno";
-            $params = [':empleadoID' => $empleadoID];
+            $query .= " AND (IdSupervisor = :empleadoID OR NoEmpleado = :propioEmpleado) ORDER BY Nombre, ApPaterno, ApMaterno";
+            $params = [
+                ':empleadoID' => $empleadoID,
+                ':propioEmpleado' => $empleadoID
+            ];
         } else {
             $query .= " AND 1=0 ORDER BY Nombre, ApPaterno, ApMaterno";
             $params = [];
         }
     } 
+    elseif ($rol == 4) {
+        // Empleado normal SOLO puede verse a sí mismo
+        if (!empty($empleadoID)) {
+            $query .= " AND NoEmpleado = :propioEmpleado ORDER BY Nombre, ApPaterno, ApMaterno";
+            $params = [':propioEmpleado' => $empleadoID];
+        } else {
+            $query .= " AND 1=0 ORDER BY Nombre, ApPaterno, ApMaterno";
+            $params = [];
+        }
+    }
     else {
         echo json_encode([
             'status' => false,
@@ -71,7 +86,8 @@ try {
         'status' => true,
         'message' => 'Empleados obtenidos correctamente',
         'data' => $result,
-        'rol' => $rol 
+        'rol' => $rol,
+        'empleado_actual' => $empleadoID
     ]);
     
 } catch (Exception $e) {

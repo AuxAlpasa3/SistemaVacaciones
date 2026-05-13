@@ -11,7 +11,7 @@ import {
 import './Header.css';
 import { eliminarLocalStorageKey } from '../../helpers/localStorage';
 import { useNavigate } from 'react-router-dom';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario} from '../../interfaces/Usuario';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 
 interface HeaderProps {
@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
     const navigate = useNavigate();
     const [fullScreen, setFullScreen] = useState(false);
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-    const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
+    const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
 
     const userDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -103,15 +103,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
             {/* <div className="user-dropdown-divider"></div> */}
 
             <div className="user-dropdown-menu">
-               {/*  <button 
-                    className="user-dropdown-item" 
-                    onClick={() => 
-                    aria-label="Perfil"
-                >
-                    <Settings size={16} />
-                    <span>Perfil</span>
-                </button>
- */}
                 <button 
                     className="user-dropdown-item logout-item" 
                     onClick={handleLogout}

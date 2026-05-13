@@ -6,7 +6,7 @@ import './Cargo.css';
 // INTERFACES
 import type { InterfaceCargo } from '../../interfaces/Cargo';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario} from '../../interfaces/Usuario';
 // HELPERS
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';

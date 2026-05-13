@@ -16,7 +16,8 @@ try {
     switch ($method) {
         case "GET":
 
-           $query = "SELECT * FROM t_usuario";
+           $query = "SELECT * FROM t_usuario as t1
+           inner join t_personal as t2 on t1.EmpleadoID = t2.IdPersonal";
            $stmt = $Conexion->prepare($query);
 
             $stmt->execute();

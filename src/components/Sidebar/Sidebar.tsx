@@ -19,7 +19,7 @@ import {
 import { PiTruckTrailerDuotone } from "react-icons/pi";
 import Seguridad from '../../assets/LogoCredencial.png';
 import './Sidebar.css';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario} from '../../interfaces/Usuario';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { 
     filtrarMenuPorRol, 
@@ -78,7 +78,7 @@ const DynamicIcon = ({ iconName, size = 18 }: { iconName: string; size?: number 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const location = useLocation();
     const sidebarRef = useRef<HTMLDivElement>(null);
-    const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
+    const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     
     // Filtrar el menú basado en el rol del usuario
     const menuSections = useMemo(() => {
@@ -87,8 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             return [];
         }
         
-        const rolIdNormalizado = normalizarRolId(usuarioSesion.IdRolUsuario);
-        console.log('Generando menú para rol:', rolIdNormalizado, obtenerNombreRol(rolIdNormalizado));
+        const rolIdNormalizado = normalizarRolId(usuarioSesion.rol );
         
         // Si es administrador (ID 1), mostrar todo el menú
         if (rolIdNormalizado === 1) {
@@ -172,12 +171,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         console.log('Usuario cargado desde sesión:', usuario);
         
         if (usuario) {
-            const rolIdNormalizado = normalizarRolId(usuario.IdRolUsuario);
+            const rolIdNormalizado = normalizarRolId(usuario.rol);
             console.log('Detalles del usuario:', {
                 nombre: usuario.Usuario,
-                idRol: usuario.IdRolUsuario,
-                tipoIdRol: typeof usuario.IdRolUsuario,
-                rolNombre: usuario.RolUsuario,
+                idRol: usuario.rol,
+                tipoIdRol: typeof usuario.rol,
+                rolNombre: usuario.rol || obtenerNombreRol(rolIdNormalizado),
                 idRolNormalizado: rolIdNormalizado,
                 nombreRol: obtenerNombreRol(rolIdNormalizado)
             });
@@ -213,7 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         }
 
         if (menuSections.length === 0) {
-            const rolIdNormalizado = normalizarRolId(usuarioSesion.IdRolUsuario);
+            const rolIdNormalizado = normalizarRolId(usuarioSesion.rol);
             return (
                 <div className="nav-message">
                     <Icons.Shield size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
@@ -221,8 +220,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <div className="debug-info">
                         <p><strong>Información:</strong></p>
                         <p>Usuario: {usuarioSesion.Usuario}</p>
-                        <p>Rol ID: {usuarioSesion.IdRolUsuario} ({typeof usuarioSesion.IdRolUsuario})</p>
-                        <p>Rol: {usuarioSesion.RolUsuario || obtenerNombreRol(rolIdNormalizado)}</p>
+                        <p>Rol ID: {usuarioSesion.rol} ({typeof usuarioSesion.rol})</p>
+                        <p>Rol: {usuarioSesion.rol || obtenerNombreRol(rolIdNormalizado)}</p>
                         <p className="nav-submessage">Contacta al administrador para solicitar permisos</p>
                     </div>
                 </div>
@@ -273,29 +272,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     };
 
     const getAvatarColor = () => {
-        const rolId = normalizarRolId(usuarioSesion?.IdRolUsuario);
+        const rolId = normalizarRolId(usuarioSesion?.rol);
         switch (rolId) {
             case 1: return '#ff6b6b'; // Administrador - Rojo
-            case 2: return '#4ecdc4'; // Operaciones - Turquesa
-            case 3: return '#45b7d1'; // Recursos Humanos - Azul
-            case 4: return '#96ceb4'; // Báscula - Verde
-            case 5: return '#feca57'; // Administrativo - Amarillo
-            case 6: return '#a29bfe'; // Comercial - Morado
+            case 2: return '#4ecdc4'; // Recursos Humanos - Turquesa
+            case 4: return '#96ceb4'; // Supervisores - Verde
             default: return '#a8e6cf';
         }
     };
 
     const getRolInfo = () => {
-        if (!usuarioSesion?.IdRolUsuario) {
+        if (!usuarioSesion?.rol) {
             return { nombre: 'Sin rol', id: 'N/A', idNormalizado: null };
         }
         
-        const rolIdNormalizado = normalizarRolId(usuarioSesion.IdRolUsuario);
-        const rolNombre = usuarioSesion.RolUsuario || obtenerNombreRol(rolIdNormalizado);
+        const rolIdNormalizado = normalizarRolId(usuarioSesion.rol);
+        const rolNombre = usuarioSesion.rol || obtenerNombreRol(rolIdNormalizado);
         
         return {
             nombre: rolNombre,
-            id: usuarioSesion.IdRolUsuario,
+            id: usuarioSesion.rol,
             idNormalizado: rolIdNormalizado
         };
     };

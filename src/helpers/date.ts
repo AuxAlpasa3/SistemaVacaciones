@@ -167,10 +167,6 @@ export const isValidDate = (date: Date | string): boolean => {
     return !isNaN(d.getTime());
 };
 
-/**
- * Formatea una fecha para enviar al servidor en formato YYYY-MM-DD
- * SIN información de zona horaria
- */
 export const formatDateForServer = (date: Date | string | undefined): string => {
     if (!date) return '';
     

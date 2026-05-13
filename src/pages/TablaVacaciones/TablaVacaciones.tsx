@@ -6,7 +6,7 @@ import './tablaVacaciones.css';
 // INTERFACES
 import type { InterfacetablaVacaciones } from '../../interfaces/tablaVacaciones';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario} from '../../interfaces/Usuario';
 // HELPERS
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';

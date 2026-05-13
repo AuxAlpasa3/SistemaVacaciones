@@ -1,14 +1,12 @@
-// constants/rolesPermissions.ts
-import type { Usuario } from '../interfaces/Usuario';
+// rolesPermissions.ts
+import type { CatalogoUsuario } from '../interfaces/Usuario';
 
-// Definir los IDs de roles disponibles
 export const ROLES = {
     ADMINISTRADOR: 1,
     RECURSOS_HUMANOS: 2,
     SUPERVISOR: 3
 } as const;
 
-// Interfaz para los items del menú
 export interface MenuItem {
     path: string;
     label: string;
@@ -16,7 +14,6 @@ export interface MenuItem {
     rolesPermitidos: number[];
 }
 
-// Interfaz para las secciones del menú
 export interface MenuSection {
     id: string;
     title: string;
@@ -38,12 +35,6 @@ export const MENU_CONFIG: MenuSection[] = [
                 icon: 'FaUsers',
                 rolesPermitidos: [1, 2] 
             },
-            // {
-            //     path: '/HistorialPersonal/HistorialPersonal',
-            //     label: 'Historial del Personal',
-            //     icon: 'FaUserFriends',
-            //     rolesPermitidos: [1, 2] 
-            // },
             {
                 path: '/Vacaciones/Vacaciones',
                 label: 'Vacaciones',
@@ -56,31 +47,31 @@ export const MENU_CONFIG: MenuSection[] = [
         id: 'catalogos',
         title: 'CATÁLOGOS',
         icon: 'LibraryBig',
-        rolesPermitidos: [1, 2],  // Admin, RRHH
+        rolesPermitidos: [1, 2],
         subItems: [
             {
                 path: '/TablaVacaciones/TablaVacaciones',
-                label: 'TablaVacaciones',
+                label: 'Tabla Vacaciones',
                 icon: 'FaTable',
-                rolesPermitidos: [1, 2]  // Admin, RRHH
+                rolesPermitidos: [1, 2]
             },
             {
                 path: '/Ubicaciones/Ubicaciones',
                 label: 'Ubicaciones',
                 icon: 'FaMapMarkerAlt',
-                rolesPermitidos: [1, 2]  // Admin, RRHH
+                rolesPermitidos: [1, 2]
             },
             {
                 path: '/Cargo/Cargo',
                 label: 'Cargo',
                 icon: 'FaBriefcase',
-                rolesPermitidos: [1, 2] // Admin, RRHH
+                rolesPermitidos: [1, 2]
             },
             {
                 path: '/Departamento/Departamento',
                 label: 'Departamento',
                 icon: 'FaBuilding',
-                rolesPermitidos: [1, 2]  // Admin, RRHH
+                rolesPermitidos: [1, 2]
             },
         ]
     },
@@ -88,91 +79,144 @@ export const MENU_CONFIG: MenuSection[] = [
         id: 'configuracion',
         title: 'CONFIGURACIÓN',
         icon: 'Settings',
-        rolesPermitidos: [1], // Solo Administrador
+        rolesPermitidos: [1, 2],
         subItems: [
             {
-                path: '/Usuarios/Usuarios',
-                label: 'Usuarios',
+                path: '/Usuario/Usuario',
+                label: 'Usuario',
                 icon: 'Users',
-                rolesPermitidos: [1] // Solo Administrador
+                rolesPermitidos: [1, 2]
             }
         ]
     }
 ];
 
-// Función para normalizar el ID del rol (convertir a número)
-export const normalizarRolId = (rolId: number | string | undefined): number | null => {
-    if (rolId === undefined || rolId === null) return null;
-    const numero = typeof rolId === 'string' ? parseInt(rolId, 10) : rolId;
-    return isNaN(numero) ? null : numero;
+// Función para obtener el nombre del rol
+export const obtenerNombreRol = (rolId: number | null): string => {
+    switch (rolId) {
+        case 1: return 'Administrador';
+        case 2: return 'Recursos Humanos';
+        case 3: return 'Supervisor';
+        default: return 'Sin rol';
+    }
 };
 
-// Función para verificar si un rol tiene acceso
-export const tieneAcceso = (rolId: number | string | undefined, rolesPermitidos: number[]): boolean => {
+export const normalizarRolId = (rolId: number | string | undefined | null): number | null => {
+    if (rolId === undefined || rolId === null) return null;
+    
+    // Si es número, devolver directamente
+    if (typeof rolId === 'number') return rolId;
+    
+    // Si es string, intentar convertir
+    if (typeof rolId === 'string') {
+        // Limpiar el string (remover espacios, etc.)
+        const cleaned = rolId.trim();
+        const numero = parseInt(cleaned, 10);
+        return isNaN(numero) ? null : numero;
+    }
+    
+    return null;
+};
+
+export const tieneAcceso = (rolId: number | string | undefined | null, rolesPermitidos: number[]): boolean => {
     const rolIdNormalizado = normalizarRolId(rolId);
     if (!rolIdNormalizado) return false;
     return rolesPermitidos.includes(rolIdNormalizado);
 };
 
-// Función para filtrar el menú según el rol del usuario
-export const filtrarMenuPorRol = (usuario: Usuario | null): MenuSection[] => {
-    if (!usuario?.IdRolUsuario) {
-        console.log('No hay usuario o IdRolUsuario');
+export const filtrarMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[] => {
+    if (!usuario) {
+        console.error('❌ filtrarMenuPorRol: usuario es null');
         return [];
     }
     
-    const rolId = usuario.IdRolUsuario;
+    const rolId = usuario.rol 
+    
+    console.log('🔍 filtrarMenuPorRol - Datos del usuario:', {
+        usuarioCompleto: usuario,
+        rolEncontrado: rolId,
+        tipoRol: typeof rolId,
+        propiedadesDisponibles: Object.keys(usuario)
+    });
+    
+    if (!rolId) {
+        console.error('❌ filtrarMenuPorRol: No se encontró rol en el usuario');
+        return [];
+    }
+    
     const rolIdNormalizado = normalizarRolId(rolId);
     
-    console.log('Filtrando menú para rol:', {
+    console.log('📊 Información del rol:', {
         original: rolId,
-        tipo: typeof rolId,
         normalizado: rolIdNormalizado,
-        nombre: usuario.RolUsuario
+        nombreRol: obtenerNombreRol(rolIdNormalizado)
     });
     
     if (!rolIdNormalizado) {
-        console.log('Rol ID no válido');
+        console.error('❌ filtrarMenuPorRol: No se pudo normalizar el rol ID');
         return [];
     }
     
-    const seccionesFiltradas = MENU_CONFIG.reduce<MenuSection[]>((sectionsFiltradas, section) => {
-        // Verificar si la sección está permitida
-        const seccionPermitida = tieneAcceso(rolIdNormalizado, section.rolesPermitidos);
+    const seccionesFiltradas = MENU_CONFIG.reduce<MenuSection[]>((acumulador, seccion) => {
+        console.log(`\n📁 Procesando sección: ${seccion.title}`);
+        console.log(`   Roles permitidos en sección: [${seccion.rolesPermitidos}]`);
+        
+        // Verificar si la sección es accesible para este rol
+        const seccionPermitida = tieneAcceso(rolIdNormalizado, seccion.rolesPermitidos);
         
         if (!seccionPermitida) {
-            return sectionsFiltradas;
+            console.log(`   ❌ Sección NO permitida para rol ${rolIdNormalizado}`);
+            return acumulador;
         }
         
-        // Filtrar los subitems permitidos
-        const subItemsFiltrados = section.subItems.filter(item =>
-            tieneAcceso(rolIdNormalizado, item.rolesPermitidos)
-        );
+        console.log(`   ✅ Sección permitida`);
         
-        // Solo incluir la sección si tiene subitems
-        if (subItemsFiltrados.length > 0) {
-            sectionsFiltradas.push({
-                ...section,
-                subItems: subItemsFiltrados
-            });
+        // Filtrar subItems accesibles
+        const subItemsFiltrados = seccion.subItems.filter(item => {
+            const permitido = tieneAcceso(rolIdNormalizado, item.rolesPermitidos);
+            console.log(`     📄 SubItem: ${item.label} - Roles: [${item.rolesPermitidos}] - ${permitido ? '✅ Permitido' : '❌ No permitido'}`);
+            return permitido;
+        });
+        
+        if (subItemsFiltrados.length === 0) {
+            console.log(`   ⚠️ Sección sin subItems válidos, se omite`);
+            return acumulador;
         }
         
-        return sectionsFiltradas;
+        console.log(`   ✅ Sección agregada con ${subItemsFiltrados.length} subItems`);
+        acumulador.push({
+            ...seccion,
+            subItems: subItemsFiltrados
+        });
+        
+        return acumulador;
     }, []);
     
-    console.log(`Secciones filtradas: ${seccionesFiltradas.length}`);
+    console.log(`\n🎯 RESULTADO FINAL: ${seccionesFiltradas.length} secciones accesibles`);
+    seccionesFiltradas.forEach(seccion => {
+        console.log(`   - ${seccion.title}: [${seccion.subItems.map(i => i.label).join(', ')}]`);
+    });
+    
     return seccionesFiltradas;
 };
 
-// Función para obtener el nombre del rol
-export const obtenerNombreRol = (rolId: number | null): string => {
-    const rolesMap: { [key: number]: string } = {
-        1: 'Administrador',
-        2: 'Operaciones',
-        3: 'Recursos Humanos',
-        4: 'Báscula',
-        5: 'Administrativo',
-        6: 'Comercial'
-    };
-    return rolId ? rolesMap[rolId] || `Rol ${rolId}` : 'Sin rol';
+// Función para obtener el menú según el rol (con manejo especial para admin)
+export const obtenerMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[] => {
+    if (!usuario) {
+        console.warn('⚠️ obtenerMenuPorRol: usuario nulo');
+        return [];
+    }
+    
+    const rolId = usuario.rol;
+    const rolNormalizado = normalizarRolId(rolId);
+    
+    // Si es administrador (rol 1), mostrar todo el menú completo
+    if (rolNormalizado === 1) {
+        console.log('👑 Usuario Administrador - Mostrando menú completo');
+        return MENU_CONFIG;
+    }
+    
+    // Para otros roles, filtrar
+    console.log(`🔒 Usuario ${obtenerNombreRol(rolNormalizado)} - Filtrando menú`);
+    return filtrarMenuPorRol(usuario);
 };

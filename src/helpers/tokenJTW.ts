@@ -1,8 +1,8 @@
 import { jwtDecode, type JwtPayload } from "jwt-decode"
-import type { Usuario } from "../interfaces/Usuario";
+import type { CatalogoUsuario } from "../interfaces/Usuario";
 
 export interface DecodedToken extends JwtPayload {
-    data: Usuario;
+    data: CatalogoUsuario;
 }
 
 export function decodificarJWT(token: string): DecodedToken | null {

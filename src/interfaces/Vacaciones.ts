@@ -10,15 +10,15 @@ export interface InterfaceVacaciones {
     FechaIngreso: string;
     FechaInicio: string;
     FechaFin: string;
-    DiasTomar: string;
+    DiasTomar: number | string;
     FechaRetornoLabores: string;
-    FechaAutoriza?: string;
-    UsuarioAutoriza?: string;
+    FechaAutoriza: string;
+    UsuarioAutoriza: string;
     Estatus: number;
 }
 
 export interface FiltrosVacaciones {
-    NoEmpleado: number;
+    NoEmpleado: number | string;
     NombreCompleto: string;
     FechaInicioVacaciones: string;
     FechaFinVacaciones: string;
@@ -29,12 +29,6 @@ export interface FiltrosVacaciones {
 }
 
 export interface OpcionSelect {
-    id: string | number; 
+    id: string;
     valor: string;
-}
-
-export interface OptionType {
-    value: string;
-    label: string;
-    [key: string]: any;
 }

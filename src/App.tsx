@@ -10,14 +10,13 @@ import { NotFound } from './pages/NotFound/NotFound';
 import { ToastContainer } from 'react-toastify';
 
 import { Personal } from './pages/Personal/Personal';
-import { HistorialPersonal } from './pages/HistorialPersonal/HistorialPersonal';
 import { Vacaciones } from './pages/Vacaciones/Vacaciones';
 
 import { TablaVacaciones } from './pages/TablaVacaciones/TablaVacaciones';
 
 import { Departamento } from './pages/Departamento/Departamento';
 import { Ubicaciones } from './pages/Ubicaciones/Ubicaciones';
-import { Usuarios } from './pages/Usuario/Usuario';
+import { Usuario } from './pages/Usuario/Usuario';
 import { Cargo } from './pages/Cargo/Cargo';
 import { RutaProtegida } from './components/RutaProtegida/RutaProtegida';
 import { Footer } from './components/Footer/Footer';
@@ -123,23 +122,6 @@ function App() {
               </RutaProtegida>
             } />
 
-            
-
-              {/* HistorialPersonal */}
-            <Route path="/HistorialPersonal/HistorialPersonal" element={
-              <RutaProtegida>
-                <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-                <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
-                  <Header onMenuToggle={toggleSidebar} />
-                  <div className="content-area">
-                    <HistorialPersonal />
-                  </div>
-                  <Footer />
-                </div>
-              </RutaProtegida>
-            } />
-
-            
 
 
               {/* Vacaciones */}
@@ -175,13 +157,13 @@ function App() {
             
 
             {/* Usuario */}
-            <Route path="/Usuario" element={
+            <Route path="/Usuario/Usuario" element={
               <RutaProtegida>
                 <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
                 <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
                   <Header onMenuToggle={toggleSidebar} />
                   <div className="content-area">
-                    <Usuarios />
+                    <Usuario />
                   </div>
                   <Footer />
                 </div>

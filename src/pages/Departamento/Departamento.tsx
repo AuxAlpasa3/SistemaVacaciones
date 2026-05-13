@@ -6,7 +6,7 @@ import './Departamento.css';
 // INTERFACES
 import type { InterfaceDepartamento } from '../../interfaces/Departamento';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario} from '../../interfaces/Usuario';
 // HELPERS
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';

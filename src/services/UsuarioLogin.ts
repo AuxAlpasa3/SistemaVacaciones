@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { Usuario } from '../interfaces/Usuario'
+import type { CatalogoUsuario } from '../interfaces/Usuario'
 
 interface UsuarioState {
     usr: string | null

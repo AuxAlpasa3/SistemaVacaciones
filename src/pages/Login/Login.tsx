@@ -9,7 +9,7 @@ import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
 import { useNavigate } from 'react-router-dom';
 import { useUsuarioStore } from '../../services/UsuarioLogin';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
-import backgroundImage from '../../assets/background.jpg'; // Cambiado de backgroundVideo a backgroundImage
+import backgroundImage from '../../assets/background.jpg'; 
 
 export function Login() {
     const navigate = useNavigate();

@@ -1,10 +1,10 @@
-import type { Usuario } from "../interfaces/Usuario";
+import type { CatalogoUsuario } from "../interfaces/Usuario";
 import { decodificarJWT, validarToken } from "./tokenJTW";
 import { decryptJWT } from "./desencriptar";
 import { eliminarLocalStorageKey, obtenerJSONLocalStorage } from "./localStorage";
 const key = import.meta.env.VITE_PHP_KEY;
 
-export function obtenerUsuarioSesion(): Usuario | null {
+export function obtenerUsuarioSesion(): CatalogoUsuario | null {
     try {
         const tokenLocalStorage = obtenerJSONLocalStorage('zk1dp');
         if (!tokenLocalStorage) {

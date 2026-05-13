@@ -6,7 +6,7 @@ import { SelectConBusqueda } from '../../components/Select/SelectConBusqueda';
 import './vacaciones.css';
 import type { InterfaceVacaciones, FiltrosVacaciones, OpcionSelect } from '../../interfaces/Vacaciones';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario } from '../../interfaces/Usuario';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';
 import { formatDateForServer, formatDateForInput } from '../../helpers/date';
@@ -20,6 +20,8 @@ interface EmpleadoResponse {
     FechaIngreso: string;
     IdPersonal: number;
 }
+
+type TabType = 'solicitadas' | 'validadas';
 
 const DeleteConfirmationModal: React.FC<{
     visible: boolean;
@@ -91,17 +93,20 @@ const ActionConfirmationModal: React.FC<{
     vacacion: InterfaceVacaciones | null;
     onConfirm: () => void;
     loading?: boolean;
-    actionType: 'authorize' | 'cancel';
+    actionType: 'validate' | 'cancel' | 'cancelValidated';
 }> = ({ visible, onClose, vacacion, onConfirm, loading = false, actionType }) => {
     if (!visible) return null;
 
-    const isAuthorize = actionType === 'authorize';
-    const title = isAuthorize ? 'Confirmar Autorización' : 'Confirmar Cancelación';
-    const message = isAuthorize 
-        ? '¿Está seguro de que desea autorizar esta solicitud de vacaciones?'
-        : '¿Está seguro de que desea cancelar esta solicitud de vacaciones?';
-    const confirmText = isAuthorize ? 'Autorizar' : 'Cancelar';
-    const confirmClass = isAuthorize ? 'btn-success' : 'btn-warning';
+    const isValidate = actionType === 'validate';
+    const isCancelValidated = actionType === 'cancelValidated';
+    const title = isValidate ? 'Confirmar Validación' : (isCancelValidated ? 'Confirmar Cancelación de Vacación Validada' : 'Confirmar Cancelación');
+    const message = isValidate 
+        ? '¿Está seguro de que desea validar esta solicitud de vacaciones?'
+        : (isCancelValidated 
+            ? '¿Está seguro de que desea CANCELAR esta solicitud de vacaciones YA VALIDADA? Esta acción cambiará el estatus a Cancelado.'
+            : '¿Está seguro de que desea cancelar esta solicitud de vacaciones?');
+    const confirmText = isValidate ? 'Validar' : 'Cancelar';
+    const confirmClass = isValidate ? 'btn-success' : 'btn-warning';
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -133,6 +138,11 @@ const ActionConfirmationModal: React.FC<{
                             <strong>Días:</strong> {vacacion?.DiasTomar}
                         </p>
                     </div>
+                    {isCancelValidated && (
+                        <p style={{ fontSize: '14px', color: '#DC3545', marginTop: '12px', fontWeight: 'bold' }}>
+                            Advertencia: Esta acción no se puede deshacer. La vacación quedará como Cancelada.
+                        </p>
+                    )}
                 </div>
                 <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px', borderTop: '1px solid #E0E0E0' }}>
                     <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
@@ -152,6 +162,17 @@ const ActionConfirmationModal: React.FC<{
     );
 };
 
+const StatusBadge: React.FC<{ estatus: number }> = ({ estatus }) => {
+    if (estatus === 0) {
+        return <span className="status-badge status-pending">Pendiente de Validar</span>;
+    } else if (estatus === 1) {
+        return <span className="status-badge status-validated">Validado</span>;
+    } else if (estatus === 2) {
+        return <span className="status-badge status-cancelled">Cancelado</span>;
+    }
+    return <span className="status-badge">Desconocido</span>;
+};
+
 const MemoizedActionButtons = React.memo(({
     row,
     openActionDropdown,
@@ -159,10 +180,12 @@ const MemoizedActionButtons = React.memo(({
     onView,
     onEdit,
     onDelete,
-    onAuthorize,
+    onValidate,
     onCancel,
-    canAuthorize = false,
-    canCancel = false
+    onCancelValidated,
+    idRolUsuario,
+    canEditDelete = false,
+    activeTab
 }: {
     row: InterfaceVacaciones;
     openActionDropdown: number | null;
@@ -170,14 +193,35 @@ const MemoizedActionButtons = React.memo(({
     onView: (row: InterfaceVacaciones) => void;
     onEdit: (row: InterfaceVacaciones) => void;
     onDelete: (row: InterfaceVacaciones) => void;
-    onAuthorize: (row: InterfaceVacaciones) => void;
+    onValidate: (row: InterfaceVacaciones) => void;
     onCancel: (row: InterfaceVacaciones) => void;
-    canAuthorize: boolean;
-    canCancel: boolean;
+    onCancelValidated: (row: InterfaceVacaciones) => void;
+    idRolUsuario: number;
+    canEditDelete: boolean;
+    activeTab: TabType;
 }) => {
-    const showAuthorizeButton = canAuthorize && row.Estatus === 1;
-    const showCancelButton = canCancel && row.Estatus === 1;
-    const showEditDeleteButtons = row.Estatus !== 2; // No mostrar editar/eliminar si está autorizado
+
+    const showValidateButton = (idRolUsuario === 2 || idRolUsuario === 1) && 
+                               row.Estatus === 0 &&
+                               activeTab === 'solicitadas';
+    
+   const showCancelButton = (idRolUsuario ===  1 || idRolUsuario === 2|| idRolUsuario === 3) && 
+                             row.Estatus === 0 &&
+                             activeTab === 'solicitadas';
+    
+    const showCancelValidatedButton = (idRolUsuario === 1 || idRolUsuario === 2) && 
+                                      row.Estatus === 1 &&
+                                      activeTab === 'validadas';
+    
+   const showEditDeleteButtons = canEditDelete && 
+                                  row.Estatus === 0 &&
+                                  activeTab === 'solicitadas';
+
+    if (idRolUsuario === 3) {
+        const showEditDeleteButtons = canEditDelete && 
+                                  row.Estatus === 0 &&
+                                  activeTab === 'solicitadas';
+    }
 
     return (
         <div className="actions-dropdown-container">
@@ -207,18 +251,18 @@ const MemoizedActionButtons = React.memo(({
                         <span>Ver</span>
                     </button>
                     
-                    {showAuthorizeButton && (
+                    {showValidateButton && (
                         <>
                             <div className="actions-dropdown-divider"></div>
                             <button 
-                                className="actions-dropdown-item authorize-action" 
+                                className="actions-dropdown-item validate-action" 
                                 onClick={() => { 
-                                    onAuthorize(row); 
+                                    onValidate(row); 
                                     setOpenActionDropdown(null); 
                                 }}
                             >
                                 <CheckCircle size={14} />
-                                <span>Autorizar</span>
+                                <span>Validar</span>
                             </button>
                         </>
                     )}
@@ -235,6 +279,22 @@ const MemoizedActionButtons = React.memo(({
                             >
                                 <XCircle size={14} />
                                 <span>Cancelar</span>
+                            </button>
+                        </>
+                    )}
+
+                    {showCancelValidatedButton && (
+                        <>
+                            <div className="actions-dropdown-divider"></div>
+                            <button 
+                                className="actions-dropdown-item cancel-validated-action" 
+                                onClick={() => { 
+                                    onCancelValidated(row); 
+                                    setOpenActionDropdown(null); 
+                                }}
+                            >
+                                <XCircle size={14} />
+                                <span>Cancelar Vacación</span>
                             </button>
                         </>
                     )}
@@ -290,7 +350,7 @@ export const Vacaciones: React.FC = () => {
         FechaRetornoLabores: '',
         FechaAutoriza: '',
         UsuarioAutoriza: '',
-        Estatus: 1
+        Estatus: 0
     });
     
     const [fechaInicioInput, setFechaInicioInput] = useState('');
@@ -298,7 +358,7 @@ export const Vacaciones: React.FC = () => {
     const [fechaIngresoInput, setFechaIngresoInput] = useState('');
     const [fechaSolicitudInput, setFechaSolicitudInput] = useState('');
     
-    const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
+    const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [vacaciones, setVacaciones] = useState<InterfaceVacaciones[]>([]);
     const [vacacionesFiltrados, setVacacionesFiltrados] = useState<InterfaceVacaciones[]>([]);
     const [loading, setLoading] = useState(false);
@@ -307,6 +367,7 @@ export const Vacaciones: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const [openActionDropdown, setOpenActionDropdown] = useState<number | null>(null);
     const [showFiltrosAvanzados, setShowFiltrosAvanzados] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabType>('solicitadas');
     
     const [empleados, setEmpleados] = useState<OpcionSelect[]>([]);
     const [loadingOptions, setLoadingOptions] = useState(false);
@@ -317,10 +378,13 @@ export const Vacaciones: React.FC = () => {
     
     const [actionModalVisible, setActionModalVisible] = useState(false);
     const [vacacionAccion, setVacacionAccion] = useState<InterfaceVacaciones | null>(null);
-    const [actionType, setActionType] = useState<'authorize' | 'cancel'>('authorize');
+    const [actionType, setActionType] = useState<'validate' | 'cancel' | 'cancelValidated'>('validate');
     const [accionEnProceso, setAccionEnProceso] = useState(false);
     
     const [selectedEmpleadoId, setSelectedEmpleadoId] = useState<string>('');
+    
+    const today = new Date().toISOString().split('T')[0];
+    const [filtroFecha, setFiltroFecha] = useState<string>(today);
     
     const [filtros, setFiltros] = useState<FiltrosVacaciones>({
         NoEmpleado: 0,
@@ -333,14 +397,9 @@ export const Vacaciones: React.FC = () => {
         Estatus: 0
     });
 
-    // Verificar roles del usuario
-    const userRole = usuarioSesion?.RolUsuario || '';
-    const isHR = userRole === 'Recursos Humanos';
-    const isAdmin = userRole === 'Administrador';
-    const isSupervisor = userRole === 'Supervisor';
-    
-    const canAuthorize = isHR || isAdmin; 
-    const canCancel = isHR || isAdmin || isSupervisor;
+    const idRolUsuario = Number(usuarioSesion?.rol) || 0;
+    const isHRorAdmin = idRolUsuario === 2 || idRolUsuario === 1 || idRolUsuario === 3;
+    const canEditDelete = isHRorAdmin;
 
     const cargarOpcionesCatalogos = useCallback(async () => {
         try {
@@ -524,15 +583,31 @@ export const Vacaciones: React.FC = () => {
     const aplicarFiltros = useCallback(() => {
         let filtrados = [...vacaciones];
 
-        if (filtros.NoEmpleado && filtros.NoEmpleado !== 0) {
+        if (activeTab === 'solicitadas') {
+            filtrados = filtrados.filter(v => v.Estatus === 0);
+        } else {
+            filtrados = filtrados.filter(v => v.Estatus === 1|| v.Estatus === 2) ;
+        }
+        
+
+        if (filtroFecha && filtroFecha.trim() !== '') {
+            filtrados = filtrados.filter(v => {
+                const fechaSolicitud = v.FechaSolicitud?.split(' ')[0] || '';
+                return fechaSolicitud === filtroFecha;
+            });
+        }
+
+        if (filtros.NoEmpleado && filtros.NoEmpleado !== 0 && filtros.NoEmpleado.toString().trim() !== '') {
+            const busquedaNoEmpleado = filtros.NoEmpleado.toString().toLowerCase();
             filtrados = filtrados.filter(v => 
-                v.NoEmpleado?.toString().toLowerCase().includes(filtros.NoEmpleado.toString().toLowerCase())
+                v.NoEmpleado?.toString().toLowerCase().includes(busquedaNoEmpleado)
             );
         }
 
-        if (filtros.NombreCompleto) {
+        if (filtros.NombreCompleto && filtros.NombreCompleto.trim() !== '') {
+            const busquedaNombre = filtros.NombreCompleto.toLowerCase();
             filtrados = filtrados.filter(v => 
-                v.NombreCompleto?.toLowerCase().includes(filtros.NombreCompleto.toLowerCase())
+                v.NombreCompleto?.toLowerCase().includes(busquedaNombre)
             );
         }
 
@@ -548,14 +623,14 @@ export const Vacaciones: React.FC = () => {
             );
         }
 
-        if (filtros.FechaSolicitud) {
+        if (filtros.FechaIngreso) {
             filtrados = filtrados.filter(v => 
-                v.FechaSolicitud === filtros.FechaSolicitud
+                v.FechaIngreso && v.FechaIngreso >= filtros.FechaIngreso
             );
         }
 
         setVacacionesFiltrados(filtrados);
-    }, [vacaciones, filtros]);
+    }, [vacaciones, filtros, activeTab, filtroFecha]);
 
     const handleFiltroChange = (campo: keyof FiltrosVacaciones, valor: string | number) => {
         setFiltros(prev => ({
@@ -575,7 +650,7 @@ export const Vacaciones: React.FC = () => {
             FechaSolicitud: '',
             Estatus: 0
         });
-        setVacacionesFiltrados(vacaciones);
+        setFiltroFecha(today);
     };
 
     const fetchVacaciones = useCallback(async () => {
@@ -584,9 +659,27 @@ export const Vacaciones: React.FC = () => {
             const response = await apiService.get<RespuestaAPI>('/vacaciones/ObtenerListado.php');
             
             if (response.status && response.data) {
-                const vacacionesData = response.data as InterfaceVacaciones[];
+                const vacacionesData = (response.data as any[]).map(item => ({
+                    ...item,
+                    IdVacaciones: Number(item.IdVacaciones),
+                    IdPersonal: Number(item.IdPersonal),
+                    DiasTomar: item.DiasTomar ? Number(item.DiasTomar) : 0,
+                    Estatus: Number(item.Estatus),
+                    FechaInicio: item.FechaInicio ? item.FechaInicio.split(' ')[0] : '',
+                    FechaFin: item.FechaFin ? item.FechaFin.split(' ')[0] : '',
+                    FechaSolicitud: item.FechaSolicitud ? item.FechaSolicitud.split(' ')[0] : '',
+                    FechaRetornoLabores: item.FechaRetornoLabores ? item.FechaRetornoLabores.split(' ')[0] : '',
+                    FechaAutoriza: item.FechaAutoriza ? item.FechaAutoriza.split(' ')[0] : '',
+                    FechaIngreso: item.FechaIngreso ? item.FechaIngreso.split(' ')[0] : '',
+                    NoEmpleado: item.NoEmpleado?.toString() || '',
+                    NombreCompleto: item.NombreCompleto || '',
+                    Departamento: item.Departamento || '',
+                    Cargo: item.Cargo || '',
+                    UsuarioSolicita: item.UsuarioSolicita || '',
+                    UsuarioAutoriza: item.UsuarioAutoriza || ''
+                })) as InterfaceVacaciones[];
+                
                 setVacaciones(vacacionesData);
-                setVacacionesFiltrados(vacacionesData);
             } else {
                 showToast({
                     text: response.message || 'Error al cargar vacaciones',
@@ -594,16 +687,15 @@ export const Vacaciones: React.FC = () => {
                     autoClose: 1500
                 });
                 setVacaciones([]);
-                setVacacionesFiltrados([]);
             }
         } catch (error) {
+            console.error('Error fetching vacations:', error);
             showToast({
                 text: 'Error al cargar vacaciones',
                 type: 'error',
                 autoClose: 1500
             });
             setVacaciones([]);
-            setVacacionesFiltrados([]);
         } finally {
             setLoading(false);
         }
@@ -657,10 +749,10 @@ export const Vacaciones: React.FC = () => {
             const datosNormalizados = {
                 ...vacacionesForm,
                 FechaRetornoLabores: fechaRetorno.toISOString().split('T')[0],
-                FechaAutoriza: vacacionesForm.Estatus === 2 ? new Date().toISOString().split('T')[0] : '',
+                FechaAutoriza: vacacionesForm.Estatus === 1 ? new Date().toISOString().split('T')[0] : '',
                 UsuarioSolicita: usuarioSesion?.IdUsuario?.toString() || '',
-                UsuarioAutoriza: vacacionesForm.Estatus === 2 ? usuarioSesion?.IdUsuario?.toString() : '',
-                Estatus: vacacionesForm.Estatus || 1
+                UsuarioAutoriza: vacacionesForm.Estatus === 1 ? usuarioSesion?.IdUsuario?.toString() : '',
+                Estatus: vacacionesForm.Estatus || 0
             };  
 
             const isUpdate = (vacacionesForm.IdVacaciones || 0) !== 0;
@@ -702,9 +794,9 @@ export const Vacaciones: React.FC = () => {
         }
     }, [vacacionesForm, usuarioSesion, fetchVacaciones, validateForm]);
 
-    const handleAuthorize = useCallback((vacacion: InterfaceVacaciones) => {
+    const handleValidate = useCallback((vacacion: InterfaceVacaciones) => {
         setVacacionAccion(vacacion);
-        setActionType('authorize');
+        setActionType('validate');
         setActionModalVisible(true);
     }, []);
 
@@ -714,21 +806,38 @@ export const Vacaciones: React.FC = () => {
         setActionModalVisible(true);
     }, []);
 
+    const handleCancelValidated = useCallback((vacacion: InterfaceVacaciones) => {
+        setVacacionAccion(vacacion);
+        setActionType('cancelValidated');
+        setActionModalVisible(true);
+    }, []);
+
     const confirmAction = useCallback(async () => {
         if (!vacacionAccion) return;
         
         try {
             setAccionEnProceso(true);
             
-            const newStatus = actionType === 'authorize' ? 2 : 3;
+            let newStatus: number;
+            if (actionType === 'validate') {
+                newStatus = 1;
+            } else {
+                newStatus = 2;
+            }
+            
             const url = `/vacaciones/cambiarEstatus.php?IdVacaciones=${vacacionAccion.IdVacaciones}&Estatus=${newStatus}&IdUsuario=${usuarioSesion?.IdUsuario}`;
             
             const response = await apiService.put<RespuestaAPI>(url, {});
             
             if (response.status) {
-                const message = actionType === 'authorize' 
-                    ? 'Solicitud de vacaciones autorizada correctamente'
-                    : 'Solicitud de vacaciones cancelada correctamente';
+                let message = '';
+                if (actionType === 'validate') {
+                    message = 'Solicitud de vacaciones validada correctamente';
+                } else if (actionType === 'cancelValidated') {
+                    message = 'Solicitud de vacaciones CANCELADA correctamente';
+                } else {
+                    message = 'Solicitud de vacaciones cancelada correctamente';
+                }
                     
                 showToast({
                     text: message,
@@ -741,7 +850,7 @@ export const Vacaciones: React.FC = () => {
                 setVacacionAccion(null);
             } else {
                 showToast({
-                    text: response.message || `Error al ${actionType === 'authorize' ? 'autorizar' : 'cancelar'} la solicitud`,
+                    text: response.message || `Error al ${actionType === 'validate' ? 'validar' : 'cancelar'} la solicitud`,
                     type: 'error',
                     autoClose: 1500
                 });
@@ -749,7 +858,7 @@ export const Vacaciones: React.FC = () => {
         } catch (error) {
             console.error('Error:', error);
             showToast({
-                text: `Error al ${actionType === 'authorize' ? 'autorizar' : 'cancelar'} la solicitud de vacaciones`,
+                text: `Error al ${actionType === 'validate' ? 'validar' : 'cancelar'} la solicitud de vacaciones`,
                 type: 'error',
                 autoClose: 1500
             });
@@ -839,7 +948,7 @@ export const Vacaciones: React.FC = () => {
             FechaRetornoLabores: '',
             FechaAutoriza: '',
             UsuarioAutoriza: '',
-            Estatus: 1
+            Estatus: 0
         });
         setFechaInicioInput('');
         setFechaFinInput('');
@@ -852,12 +961,12 @@ export const Vacaciones: React.FC = () => {
         resetForm();
         setShowForm(true);
         setTipoFormulario('Agregar');
-        const today = new Date().toISOString().split('T')[0];
-        setFechaSolicitudInput(today);
-        setVacacionesForm(prev => ({ ...prev, FechaSolicitud: today, Estatus: 1 }));
+        const todayDate = new Date().toISOString().split('T')[0];
+        setFechaSolicitudInput(todayDate);
+        setVacacionesForm(prev => ({ ...prev, FechaSolicitud: todayDate, Estatus: 0 }));
     }, [resetForm]);
 
-    const tableColumns: Column[] = useMemo(() => [
+    const solicitadasColumns: Column[] = useMemo(() => [
         {
             key: 'IdVacaciones',
             title: 'ID',
@@ -932,27 +1041,25 @@ export const Vacaciones: React.FC = () => {
             align: 'center',
             headerAlign: 'center',
             render: (value: string) => formatDateForServer(value)
-        }, 
+        },
+        {
+            key: 'UsuarioSolicita',
+            title: 'Usuario Solicita',
+            sortable: true,
+            searchable: false,
+            width: '150px',
+            align: 'center',
+            headerAlign: 'center'
+        },
         {
             key: 'Estatus',
             title: 'Estatus',
             sortable: true,
             searchable: false,
-            width: '120px',
+            width: '150px',
             align: 'center',
             headerAlign: 'center',
-            render: (value: number) => {
-                switch(value) {
-                    case 1:
-                        return <span className="status-badge status-pending">Pendiente</span>;
-                    case 2:
-                        return <span className="status-badge status-authorized">Autorizado</span>;
-                    case 3:
-                        return <span className="status-badge status-cancelled">Cancelado</span>;
-                    default:
-                        return <span className="status-badge">Desconocido</span>;
-                }
-            }
+            render: (value: number) => <StatusBadge estatus={value} />
         },
         {
             key: 'actions',
@@ -970,14 +1077,153 @@ export const Vacaciones: React.FC = () => {
                     onView={handleView}
                     onEdit={handleEdit}
                     onDelete={handleDeleteClick}
-                    onAuthorize={handleAuthorize}
+                    onValidate={handleValidate}
                     onCancel={handleCancel}
-                    canAuthorize={canAuthorize}
-                    canCancel={canCancel}
+                    onCancelValidated={handleCancelValidated}
+                    idRolUsuario={idRolUsuario}
+                    canEditDelete={canEditDelete}
+                    activeTab={activeTab}
                 />
             )
         }
-    ], [openActionDropdown, handleView, handleEdit, handleDeleteClick, handleAuthorize, handleCancel, canAuthorize, canCancel]);
+    ], [openActionDropdown, handleView, handleEdit, handleDeleteClick, handleValidate, handleCancel, handleCancelValidated, idRolUsuario, canEditDelete, activeTab]);
+
+    const validadasColumns: Column[] = useMemo(() => [
+        {
+            key: 'IdVacaciones',
+            title: 'ID',
+            sortable: true,
+            searchable: false,
+            width: '80px',
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            key: 'NoEmpleado',
+            title: 'No. Empleado',
+            sortable: true,
+            searchable: false,
+            width: '120px',
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            key: 'NombreCompleto',
+            title: 'Empleado',
+            sortable: true,
+            searchable: false,
+            width: '250px',
+            align: 'left',
+            headerAlign: 'center'
+        },
+        {
+            key: 'Departamento',
+            title: 'Departamento',
+            sortable: true,
+            searchable: false,
+            width: '120px',
+            align: 'left',
+            headerAlign: 'center'
+        },
+        {
+            key: 'FechaInicio',
+            title: 'Fecha Inicio',
+            sortable: true,
+            searchable: false,
+            width: '120px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value: string) => formatDateForServer(value)
+        },
+        {
+            key: 'FechaFin',
+            title: 'Fecha Fin',
+            sortable: true,
+            searchable: false,
+            width: '120px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value: string) => formatDateForServer(value)
+        },
+        {
+            key: 'DiasTomar',
+            title: 'Días',
+            sortable: true,
+            searchable: false,
+            width: '80px',
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            key: 'FechaSolicitud',
+            title: 'Fecha Solicitud',
+            sortable: true,
+            searchable: false,
+            width: '120px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value: string) => formatDateForServer(value)
+        },
+        {
+            key: 'UsuarioAutoriza',
+            title: 'Usuario Autoriza',
+            sortable: true,
+            searchable: false,
+            width: '150px',
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            key: 'FechaAutoriza',
+            title: 'Fecha Autorización',
+            sortable: true,
+            searchable: false,
+            width: '130px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value: string) => value ? formatDateForServer(value) : '-'
+        },
+        {
+            key: 'Estatus',
+            title: 'Estatus',
+            sortable: true,
+            searchable: false,
+            width: '150px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value: number) => <StatusBadge estatus={value} />
+        },
+        {
+            key: 'actions',
+            title: 'Acciones',
+            sortable: false,
+            searchable: false,
+            width: '160px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (_, row) => (
+                <MemoizedActionButtons
+                    row={row}
+                    openActionDropdown={openActionDropdown}
+                    setOpenActionDropdown={setOpenActionDropdown}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
+                    onValidate={handleValidate}
+                    onCancel={handleCancel}
+                    onCancelValidated={handleCancelValidated}
+                    idRolUsuario={idRolUsuario}
+                    canEditDelete={canEditDelete}
+                    activeTab={activeTab}
+                />
+            )
+        }
+    ], [openActionDropdown, handleView, handleEdit, handleDeleteClick, handleValidate, handleCancel, handleCancelValidated, idRolUsuario, canEditDelete, activeTab]);
+
+    const handleTabChange = (tab: TabType) => {
+        setActiveTab(tab);
+        setOpenActionDropdown(null);
+    };
 
     useEffect(() => {
         aplicarFiltros();
@@ -1003,7 +1249,7 @@ export const Vacaciones: React.FC = () => {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if ((event.ctrlKey || event.metaKey) && event.key === 'a' && !showForm) {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'a' && !showForm && isHRorAdmin) {
                 event.preventDefault();
                 handleShowForm();
             }
@@ -1011,7 +1257,7 @@ export const Vacaciones: React.FC = () => {
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [showForm, handleShowForm]);
+    }, [showForm, handleShowForm, isHRorAdmin]);
 
     useEffect(() => {
         document.body.style.overflow = showForm ? 'hidden' : 'auto';
@@ -1027,15 +1273,47 @@ export const Vacaciones: React.FC = () => {
             <div className="vacaciones-header">
                 <h1 className="page-title-vacaciones">Gestión de Solicitudes de Vacaciones</h1>
                 <div className="action-buttons">
-                    <button className="action-btn orange-button" onClick={handleShowForm}>
-                        <Plus size={18} />
-                        Nueva Solicitud
-                    </button>
+                        <button className="action-btn orange-button" onClick={handleShowForm}>
+                            <Plus size={18} />
+                            Nueva Solicitud
+                        </button>
                 </div>
+            </div>
+
+            <div className="vacaciones-tabs">
+                <button
+                    className={`tab-button ${activeTab === 'solicitadas' ? 'active' : ''}`}
+                    onClick={() => handleTabChange('solicitadas')}
+                >
+                    <FileText size={16} />
+                    Solicitadas
+                    <span className="tab-count">
+                        {vacaciones.filter(v => v.Estatus === 0).length}
+                    </span>
+                </button>
+                <button
+                    className={`tab-button ${activeTab === 'validadas' ? 'active' : ''}`}
+                    onClick={() => handleTabChange('validadas')}
+                >
+                    <CheckCircle size={16} />
+                    Validadas
+                    <span className="tab-count">
+                        {vacaciones.filter(v => v.Estatus === 1 || v.Estatus === 2).length}  
+                    </span>
+                </button>
             </div>
 
             <div className="filtros-container">
                 <div className="filtros-basicos">
+                    <div className="filtro-group">
+                        <label className="filtro-label">Fecha Solicitud:</label>
+                        <input
+                            type="date"
+                            className="filtro-input"
+                            value={filtroFecha}
+                            onChange={(e) => setFiltroFecha(e.target.value)}
+                        />
+                    </div>
                     <div className="filtro-group">
                         <label className="filtro-label">No. Empleado:</label>
                         <input
@@ -1054,15 +1332,6 @@ export const Vacaciones: React.FC = () => {
                             placeholder="Buscar por nombre..."
                             value={filtros.NombreCompleto}
                             onChange={(e) => handleFiltroChange('NombreCompleto', e.target.value)}
-                        />
-                    </div>
-                    <div className="filtro-group">
-                        <label className="filtro-label">Fecha Solicitud:</label>
-                        <input
-                            type="date"
-                            className="filtro-input"
-                            value={filtros.FechaSolicitud}
-                            onChange={(e) => handleFiltroChange('FechaSolicitud', e.target.value)}
                         />
                     </div>
 
@@ -1126,11 +1395,13 @@ export const Vacaciones: React.FC = () => {
                     </div>
                 )}
                 <Tabla
-                    columns={tableColumns}
+                    columns={activeTab === 'solicitadas' ? solicitadasColumns : validadasColumns}
                     data={vacacionesFiltrados}
                     pageSize={10}
                     pageSizeOptions={[5, 10, 25, 50]}
-                    emptyMessage="No se encontraron solicitudes de vacaciones"
+                    emptyMessage={activeTab === 'solicitadas' 
+                        ? "No hay solicitudes pendientes de validar" 
+                        : "No hay solicitudes validadas"}
                     className="full-height-table"
                     loading={loading}
                 />
@@ -1166,7 +1437,7 @@ export const Vacaciones: React.FC = () => {
                                                 value={selectedEmpleadoId}
                                                 onChange={handleEmpleadoChange}
                                                 placeholder="Seleccione un empleado..."
-                                                disabled={isViewMode}
+                                                disabled={isViewMode || !isHRorAdmin}
                                                 required
                                             />
                                         </div>
@@ -1214,7 +1485,7 @@ export const Vacaciones: React.FC = () => {
                                                 value={fechaSolicitudInput}
                                                 onChange={handleFechaSolicitudChange}
                                                 className="form-vacaciones-input"
-                                                disabled={isViewMode}
+                                                disabled={isViewMode || !isHRorAdmin}
                                             />
                                         </div>
                                     </div>
@@ -1230,7 +1501,7 @@ export const Vacaciones: React.FC = () => {
                                                 value={fechaInicioInput}
                                                 onChange={handleFechaInicioChange}
                                                 className="form-vacaciones-input"
-                                                disabled={isViewMode}
+                                                disabled={isViewMode || !isHRorAdmin}
                                                 required
                                             />
                                         </div>
@@ -1242,7 +1513,7 @@ export const Vacaciones: React.FC = () => {
                                                 value={fechaFinInput}
                                                 onChange={handleFechaFinChange}
                                                 className="form-vacaciones-input"
-                                                disabled={isViewMode}
+                                                disabled={isViewMode || !isHRorAdmin}
                                                 required
                                             />
                                         </div>
@@ -1256,7 +1527,7 @@ export const Vacaciones: React.FC = () => {
                                                 onChange={handleDiasTomarChange}
                                                 className="form-vacaciones-input"
                                                 placeholder="Días"
-                                                disabled={isViewMode}
+                                                disabled={isViewMode || !isHRorAdmin}
                                                 required
                                                 min="1"
                                             />
@@ -1304,7 +1575,7 @@ export const Vacaciones: React.FC = () => {
                                     >
                                         {isViewMode ? 'Cerrar' : 'Cancelar'}
                                     </button>
-                                    {!isViewMode && (
+                                    {!isViewMode && isHRorAdmin && (
                                         <button
                                             type="submit"
                                             className="btn btn-primary orange-button"

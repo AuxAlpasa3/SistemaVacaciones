@@ -6,7 +6,7 @@ import './Ubicaciones.css';
 // INTERFACES
 import type { InterfaceUbicacion } from '../../interfaces/Ubicacion';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario} from '../../interfaces/Usuario';
 // HELPERS
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';
@@ -61,7 +61,7 @@ export const Ubicaciones: React.FC = () => {
         Estado: '',
         Pais: ''
     });
-    const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
+    const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [ubicaciones, setUbicaciones] = useState<InterfaceUbicacion[]>([]);
     const [loading, setLoading] = useState(false);
     const [tipoFormulario, setTipoFormulario] = useState('Agregar');

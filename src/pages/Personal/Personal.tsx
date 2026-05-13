@@ -8,7 +8,7 @@ import './personal.css';
 import type { Interfacepersonal, OpcionSelect } from '../../interfaces/Personal';
 import type { FiltrosPersonal } from '../../interfaces/Personal';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario} from '../../interfaces/Usuario';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';
 import { formatDateForServer } from '../../helpers/date';
@@ -621,7 +621,7 @@ export const Personal: React.FC = () => {
         EsSupervisor: 'NO'
     });
     
-    const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
+    const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [personal, setPersonal] = useState<Interfacepersonal[]>([]);
     const [personalFiltrados, setPersonalFiltrados] = useState<Interfacepersonal[]>([]);
     const [loading, setLoading] = useState(false);

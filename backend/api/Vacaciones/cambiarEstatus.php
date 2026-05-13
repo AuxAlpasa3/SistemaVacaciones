@@ -19,131 +19,67 @@ if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
 
 include_once '../../db/Connection.php';
 
+$IdVacaciones = isset($_GET['IdVacaciones']) ? (int)$_GET['IdVacaciones'] : 0;
+$Estatus = isset($_GET['Estatus']) ? (int)$_GET['Estatus'] : 0;
+$IdUsuario = isset($_GET['IdUsuario']) ? (int)$_GET['IdUsuario'] : 0;
+
 try {
-    $idPersonal = isset($_GET['IdPersonal']) ? intval($_GET['IdPersonal']) : 0;
-    $nuevoStatus = isset($_GET['Status']) ? $_GET['Status'] : '';
-    $idUsuario = isset($_GET['IdUsuario']) ? intval($_GET['IdUsuario']) : 0;
+    if ($IdVacaciones == 0) {
+        throw new Exception('IdVacaciones es requerido');
+    }
     
-    if ($idPersonal <= 0) {
+    if (!in_array($Estatus, [1, 2])) {
+        throw new Exception('Estatus no válido');
+    }
+    
+    $querySelect = "SELECT Estatus FROM t_Vacaciones WHERE IdVacaciones = :IdVacaciones";
+    $stmtSelect = $Conexion->prepare($querySelect);
+    $stmtSelect->bindParam(':IdVacaciones', $IdVacaciones);
+    $stmtSelect->execute();
+    $current = $stmtSelect->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$current) {
+        throw new Exception('Solicitud de vacaciones no encontrada');
+    }
+    
+    if ($Estatus == 1 && $current['Estatus'] != 0) {
+        throw new Exception('Solo se pueden validar solicitudes pendientes');
+    }
+    
+    if ($Estatus == 1) {
+        $query = "UPDATE t_Vacaciones SET 
+                    Estatus = :Estatus,
+                    FechaAutoriza = GETDATE(),
+                    UsuarioAutoriza = :IdUsuario
+                  WHERE IdVacaciones = :IdVacaciones";
+    } else {
+        $query = "UPDATE t_Vacaciones SET Estatus = :Estatus 
+                  WHERE IdVacaciones = :IdVacaciones";
+    }
+    
+    $stmt = $Conexion->prepare($query);
+    $stmt->bindParam(':Estatus', $Estatus);
+    $stmt->bindParam(':IdVacaciones', $IdVacaciones);
+    if ($Estatus == 1) {
+        $stmt->bindParam(':IdUsuario', $IdUsuario);
+    }
+    
+    if ($stmt->execute()) {
+        $message = $Estatus == 1 ? 'Solicitud validada correctamente' : 'Solicitud cancelada correctamente';
         echo json_encode([
-            'status' => false,
-            'message' => 'ID de personal no válido'
+            'status' => true,
+            'data' => null,
+            'message' => $message
         ]);
-        exit();
+    } else {
+        throw new Exception('Error al cambiar el estatus');
     }
-    
-    if (!in_array($nuevoStatus, ['0', '1', '2'])) {
-        echo json_encode([
-            'status' => false,
-            'message' => 'Estatus no válido. Use 0 (Inactivo), 1 (Activo) o 2 (Desactivado)'
-        ]);
-        exit();
-    }
-    
-    if ($idUsuario <= 0) {
-        echo json_encode([
-            'status' => false,
-            'message' => 'ID de usuario no válido'
-        ]);
-        exit();
-    }
-    
-    $checkQuery = "SELECT IdPersonal, Status FROM t_personal WHERE IdPersonal = :idPersonal";
-    $checkStmt = $Conexion->prepare($checkQuery);
-    $checkStmt->bindParam(':idPersonal', $idPersonal);
-    $checkStmt->execute();
-    
-    if ($checkStmt->rowCount() === 0) {
-        echo json_encode([
-            'status' => false,
-            'message' => 'Empleado no encontrado'
-        ]);
-        exit();
-    }
-    
-    $empleadoActual = $checkStmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($empleadoActual['Status'] == $nuevoStatus) {
-        echo json_encode([
-            'status' => false,
-            'message' => 'El empleado ya tiene este estatus'
-        ]);
-        exit();
-    }
-    
-    $Conexion->beginTransaction();
-    
-    $updateQuery = "UPDATE t_personal SET Status = :status WHERE IdPersonal = :idPersonal";
-    $updateStmt = $Conexion->prepare($updateQuery);
-    $updateStmt->bindParam(':status', $nuevoStatus);
-    $updateStmt->bindParam(':idPersonal', $idPersonal);
-    
-    if (!$updateStmt->execute()) {
-        throw new Exception('Error al actualizar el estatus del empleado');
-    }
-    
-    $bitacoraQuery = "INSERT INTO Bitacora (Tabla, FolMovimiento, Fecha, Consulta, Usuario) 
-                      VALUES (:tabla, :folMovimiento, GETDATE(), :consulta, :usuario)";
-    $bitacoraStmt = $Conexion->prepare($bitacoraQuery);
-    $tabla = 't_personal';
-    $consulta = "UPDATE t_personal SET Status = $nuevoStatus WHERE IdPersonal = $idPersonal";
-    $bitacoraStmt->bindParam(':tabla', $tabla);
-    $bitacoraStmt->bindParam(':folMovimiento', $idPersonal);
-    $bitacoraStmt->bindParam(':consulta', $consulta);
-    $bitacoraStmt->bindParam(':usuario', $idUsuario);
-    $bitacoraStmt->execute();
-    
-    $Conexion->commit();
-    
-    $infoQuery = "SELECT NoEmpleado, CONCAT(Nombre, ' ', ApPaterno, ' ', ApMaterno) as NombreCompleto 
-                  FROM t_personal WHERE IdPersonal = :idPersonal";
-    $infoStmt = $Conexion->prepare($infoQuery);
-    $infoStmt->bindParam(':idPersonal', $idPersonal);
-    $infoStmt->execute();
-    $empleadoInfo = $infoStmt->fetch(PDO::FETCH_ASSOC);
-    
-    $statusTexto = '';
-    switch ($nuevoStatus) {
-        case '1':
-            $statusTexto = 'Activo';
-            break;
-        case '0':
-            $statusTexto = 'Inactivo';
-            break;
-        case '2':
-            $statusTexto = 'Desactivado';
-            break;
-    }
-    
-    echo json_encode([
-        'status' => true,
-        'message' => "Estatus del empleado {$empleadoInfo['NoEmpleado']} - {$empleadoInfo['NombreCompleto']} cambiado a: {$statusTexto}",
-        'data' => [
-            'IdPersonal' => $idPersonal,
-            'NoEmpleado' => $empleadoInfo['NoEmpleado'],
-            'NombreCompleto' => $empleadoInfo['NombreCompleto'],
-            'StatusNuevo' => $nuevoStatus,
-            'StatusTexto' => $statusTexto
-        ]
-    ]);
     
 } catch (Exception $e) {
-    if (isset($Conexion) && $Conexion->inTransaction()) {
-        $Conexion->rollBack();
-    }
-    
     echo json_encode([
         'status' => false,
-        'message' => 'Error al cambiar estatus: ' . $e->getMessage()
-    ]);
-} catch (PDOException $e) {
-    if (isset($Conexion) && $Conexion->inTransaction()) {
-        $Conexion->rollBack();
-    }
-    
-    echo json_encode([
-        'status' => false,
-        'message' => 'Error de base de datos: ' . $e->getMessage()
+        'data' => null,
+        'message' => $e->getMessage()
     ]);
 }
 ?>

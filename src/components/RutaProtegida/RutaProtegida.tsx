@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { LoadingSpinner } from '../LoadingSpinner/LoadingSpinner';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
-import type { Usuario } from '../../interfaces/Usuario';
+import type { CatalogoUsuario} from '../../interfaces/Usuario';
 
 interface RutaProtegida {
     children: React.ReactNode;

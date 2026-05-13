@@ -31,9 +31,7 @@ try {
                 exit;
             }
 
-            $query = "SELECT t1.IdUsuario, t1.Usuario,t1.Descripcion, t1.Contrasenia, t1.Estatus, t1.rol as IdRolUsuario,t2.RolUsuario, 
-            t1.Sesion FROM t_usuario as t1 inner join t_rolusuario as t2
-             on t1.rol = t2.IdRolUsuario
+            $query = "select*from t_usuario
             WHERE usuario = :username and Estatus = 1";
             $stmt = $Conexion->prepare($query);
             $stmt->bindParam(':username', $Username); 
