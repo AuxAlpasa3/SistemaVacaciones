@@ -18,7 +18,7 @@ try {
         exit;
     }
     
-    $queryUsuario = "SELECT rol, EmpleadoID FROM t_usuario WHERE IdUsuario = :idusuario AND Estatus = '1'";
+    $queryUsuario = "SELECT rol, EmpleadoID FROM t_usuario WHERE IdUsuario = :idusuario AND Estatus = 1";
     $stmtUsuario = $Conexion->prepare($queryUsuario);
     $stmtUsuario->execute([':idusuario' => $idusuario]);
     $usuario = $stmtUsuario->fetch(PDO::FETCH_ASSOC);
@@ -42,14 +42,12 @@ try {
             WHERE Status = '1'";
     
     if ($rol == 1 || $rol == 2) {
-        // Admin y RRHH pueden ver todos los empleados
         $query .= " ORDER BY Nombre, ApPaterno, ApMaterno";
         $params = [];
     } 
     elseif ($rol == 3) {
-        // Supervisor puede ver sus empleados Y a sí mismo
         if (!empty($empleadoID)) {
-            $query .= " AND (IdSupervisor = :empleadoID OR NoEmpleado = :propioEmpleado) ORDER BY Nombre, ApPaterno, ApMaterno";
+            $query .= " AND (IdSupervisor = :empleadoID OR IdPersonal = :propioEmpleado) ORDER BY Nombre, ApPaterno, ApMaterno";
             $params = [
                 ':empleadoID' => $empleadoID,
                 ':propioEmpleado' => $empleadoID
@@ -60,9 +58,8 @@ try {
         }
     } 
     elseif ($rol == 4) {
-        // Empleado normal SOLO puede verse a sí mismo
         if (!empty($empleadoID)) {
-            $query .= " AND NoEmpleado = :propioEmpleado ORDER BY Nombre, ApPaterno, ApMaterno";
+            $query .= " AND IdPersonal = :propioEmpleado ORDER BY Nombre, ApPaterno, ApMaterno";
             $params = [':propioEmpleado' => $empleadoID];
         } else {
             $query .= " AND 1=0 ORDER BY Nombre, ApPaterno, ApMaterno";
@@ -77,6 +74,7 @@ try {
         ]);
         exit;
     }
+    echo $query;
     
     $stmt = $Conexion->prepare($query);
     $stmt->execute($params);
