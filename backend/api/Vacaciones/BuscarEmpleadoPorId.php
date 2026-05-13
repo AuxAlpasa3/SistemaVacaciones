@@ -58,10 +58,20 @@ try {
             INNER JOIN t_departamento as t3 ON t1.Departamento = t3.IdDepartamento
             WHERE t1.NoEmpleado = :noEmpleado AND t1.Status = '1'";
     
-    if ($rol == 3) {
+    // Validación de permisos según el rol
+    if ($rol == 1 || $rol == 2) {
+        // Administrador o RRHH pueden ver cualquier empleado
+        $params = [':noEmpleado' => $noEmpleado];
+    } 
+    elseif ($rol == 3) {
+        // Supervisor puede ver a sus empleados Y a sí mismo
         if (!empty($empleadoID)) {
-            $query .= " AND t1.IdSupervisor = :empleadoID";
-            $params = [':noEmpleado' => $noEmpleado, ':empleadoID' => $empleadoID];
+            $query .= " AND (t1.IdSupervisor = :empleadoID OR t1.NoEmpleado = :propioEmpleado)";
+            $params = [
+                ':noEmpleado' => $noEmpleado,
+                ':empleadoID' => $empleadoID,
+                ':propioEmpleado' => $empleadoID
+            ];
         } else {
             echo json_encode([
                 'status' => false,
@@ -70,8 +80,22 @@ try {
             ]);
             exit;
         }
-    } else {
-        $params = [':noEmpleado' => $noEmpleado];
+    } 
+    elseif ($rol == 4) {
+        // Empleado normal SOLO puede verse a sí mismo
+        $query .= " AND t1.NoEmpleado = :propioEmpleado";
+        $params = [
+            ':noEmpleado' => $noEmpleado,
+            ':propioEmpleado' => $empleadoID
+        ];
+    }
+    else {
+        echo json_encode([
+            'status' => false,
+            'message' => 'Rol no autorizado',
+            'data' => null
+        ]);
+        exit;
     }
     
     $stmt = $Conexion->prepare($query);
@@ -82,13 +106,18 @@ try {
         echo json_encode([
             'status' => true,
             'message' => 'Empleado encontrado',
-            'data' => $empleado
+            'data' => $empleado,
+            'rol' => $rol,
+            'empleado_actual' => $empleadoID
         ]);
     } else {
         echo json_encode([
             'status' => false,
             'message' => 'Empleado no encontrado o no autorizado',
-            'data' => null
+            'data' => null,
+            'rol' => $rol,
+            'empleado_solicitado' => $noEmpleado,
+            'empleado_actual' => $empleadoID
         ]);
     }
     
