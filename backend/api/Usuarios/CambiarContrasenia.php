@@ -35,7 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         exit();
     }
     
-    // Verificar que el usuario exista
     $checkQuery = "SELECT IdUsuario, Usuario FROM t_usuario WHERE IdUsuario = :id";
     $checkStmt = $Conexion->prepare($checkQuery);
     $checkStmt->bindParam(':id', $idUsuario);
@@ -51,17 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     
     $usuario = $checkStmt->fetch(PDO::FETCH_ASSOC);
     
-    // Encriptar nueva contraseña
     $hashedPassword = password_hash($nuevaContrasenia, PASSWORD_DEFAULT);
     
-    // Actualizar contraseña
     $query = "UPDATE t_usuario SET Contrasenia = :contrasenia WHERE IdUsuario = :id";
     $stmt = $Conexion->prepare($query);
     $stmt->bindParam(':contrasenia', $hashedPassword);
     $stmt->bindParam(':id', $idUsuario);
     
     if ($stmt->execute()) {
-        // Registrar en bitácora
         if ($usuarioSesion) {
             $bitacoraQuery = "INSERT INTO t_bitacora (IdUsuario, Accion, Tabla, RegistroId, Descripcion, FechaHora) 
                               VALUES (:idUsuario, 'UPDATE_PASSWORD', 'usuarios', :registroId, :descripcion, NOW())";
