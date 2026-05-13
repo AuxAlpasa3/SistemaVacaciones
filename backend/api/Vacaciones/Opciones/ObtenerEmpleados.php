@@ -74,7 +74,6 @@ try {
         ]);
         exit;
     }
-    echo $query;
     
     $stmt = $Conexion->prepare($query);
     $stmt->execute($params);
