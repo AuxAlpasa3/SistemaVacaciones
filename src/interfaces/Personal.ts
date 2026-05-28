@@ -1,7 +1,9 @@
+// interfaces/Personal.ts
+
 export interface Interfacepersonal {
     IdPersonal: number;
     NoEmpleado: number;
-    NombreCompleto:string;
+    NombreCompleto: string;
     Nombre: string;
     ApPaterno: string;
     ApMaterno: string;
@@ -11,18 +13,22 @@ export interface Interfacepersonal {
     Empresa: string;
     Status: string;
     IdUbicacion: string;
-    NSS: string;
-    EsSupervisor: string;
     RutaFoto: string;
     Email: string;
     Contacto: string;
-    IdSupervisor: string;
+    IdJefeInmediato: string;
     TipoSangre: string;
     FechaCreacion: string;
+    NSS: string;
+    EsJefeInmediato: string;
+    Alergias: string;
+    Turno: string;           // Nuevo campo
+    FechadeNacimiento: string; // Nuevo campo
+    Direccion: string;       // Nuevo campo
 }
 
 export interface FiltrosPersonal {
-    NoEmpleado: number;
+    NoEmpleado: number | string;
     NombreCompleto: string;
     FechaIngresoInicio: string;
     FechaIngresoFin: string;
@@ -30,16 +36,39 @@ export interface FiltrosPersonal {
     Empresa: string;
     Departamento: string;
     Cargo: string;
-    IdSupervisor: string;
-    EsSupervisor: string;
+    IdJefeInmediato: string;
+    EsJefeInmediato: string;
 }
 
 export interface OpcionSelect {
-    id: string | number; 
+    id: string;
     valor: string;
 }
+export interface VacacionesPersonal {
+    IdPersonalVacaciones: number;
+    IdPersonal: number;
+    Año: number;
+    Dias: number;
+    DiasTomados: number;
+    DiasRestan: number;
+}
 
-export interface OptionType {
-    value: string;
-    label: string;
-    [key: string]: any; }
+
+export interface Vacas {
+    IdPersonalVacaciones: number;
+    IdPersonal: number;
+    Año: number;
+    Dias: number;
+    DiasTomados: number;
+    DiasRestan: number;
+}
+
+
+export interface DetalleVacacionesPersonal extends Interfacepersonal {
+    Vacaciones?: VacacionesPersonal[];
+    VacacionesActuales?: VacacionesPersonal;
+    TotalDiasTomados?: number;
+    TotalDiasDisponibles?: number;
+    DiasRestantesTotales?: number;
+}
+

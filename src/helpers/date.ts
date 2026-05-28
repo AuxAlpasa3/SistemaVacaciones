@@ -173,7 +173,6 @@ export const formatDateForServer = (date: Date | string | undefined): string => 
     const d = new Date(date);
     if (isNaN(d.getTime())) return '';
     
-    // Usar componentes locales para construir YYYY-MM-DD
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -184,12 +183,10 @@ export const formatDateForServer = (date: Date | string | undefined): string => 
 export const formatDateForDisplay = (dateString: string): string => {
     if (!dateString) return '';
     
-    // Si ya está en formato dd/mm/aaaa, regresarlo igual
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
         return dateString;
     }
     
-    // Convertir de yyyy-mm-dd a dd/mm/aaaa
     const [year, month, day] = dateString.split('-');
     if (year && month && day) {
         return `${day}/${month}/${year}`;

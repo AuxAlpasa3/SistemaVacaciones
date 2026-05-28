@@ -806,3 +806,68 @@
         padding: 16px;
     }
 }
+
+/* Agregar al final del archivo personal.css */
+
+/* Spinner para loading */
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #E85C0D;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Botón de acción de vacaciones */
+.action-icon-btn {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.action-icon-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+/* Textarea para alergias */
+.form-personal-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    resize: vertical;
+}
+
+.form-personal-textarea:focus {
+    outline: none;
+    border-color: #E85C0D;
+    box-shadow: 0 0 0 3px rgba(232, 92, 13, 0.1);
+}
+
+/* Mejoras responsivas para el modal de vacaciones */
+@media (max-width: 768px) {
+    .modal-container[style*="width: 700px"] {
+        width: 95vw !important;
+    }
+    
+    .modal-container div[style*="display: grid"][style*="grid-template-columns: repeat(3, 1fr)"] {
+        gap: 12px !important;
+    }
+    
+    .modal-container div[style*="display: grid"][style*="grid-template-columns: repeat(3, 1fr)"] > div {
+        padding: 12px !important;
+    }
+    
+    .modal-container div[style*="display: grid"][style*="grid-template-columns: repeat(3, 1fr)"] > div div[style*="font-size: 28px"] {
+        font-size: 22px !important;
+    }
+}

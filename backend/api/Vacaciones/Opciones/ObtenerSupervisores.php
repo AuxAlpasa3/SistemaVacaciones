@@ -10,7 +10,7 @@ include_once '../../../db/Connection.php';
 try {
     $query = "SELECT DISTINCT t1.IdPersonal,
         CONCAT(t1.Nombre, ' ', t1.ApPaterno, ' ', t1.ApMaterno) AS NombreCompleto
-    FROM t_personal as t1 where t1.esSupervisor=1;";
+    FROM t_personal as t1 where t1.EsJefeInmediato=1;";
     $stmt = $Conexion->prepare($query);
     $stmt->execute();
     

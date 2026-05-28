@@ -11,11 +11,11 @@ export interface InterfaceHistorialPersonal {
     Status: string;
     IdUbicacion: string;
     NSS: string;
-    EsSupervisor: string;
+    EsJefeInmediato: string;
     RutaFoto: string;
     Email: string;
     Contacto: string;
-    IdSupervisor: string;
+    IdJefeInmediato: string;
     TipoSangre: string;
     FechaModificacion: string;
     UsuarioModifico: string;

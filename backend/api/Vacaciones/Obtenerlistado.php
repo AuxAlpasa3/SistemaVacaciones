@@ -9,42 +9,64 @@ include_once '../../db/Connection.php';
 try {
     $query = "SELECT 
                 t1.IdVacaciones,
+                t1.Anio,
                 t1.FechaSolicitud,
-                CASE 
-                    WHEN t3.EmpleadoID IS NULL THEN 'Administrador'
-                    ELSE CONCAT(ISNULL(t3_personal.Nombre, ''), ' ', ISNULL(t3_personal.ApPaterno, ''), ' ', ISNULL(t3_personal.ApMaterno, ''))
-                END as UsuarioSolicita,
+                t3.IdPersonal as UsuarioSolicitaId,
+                CONCAT(ISNULL(t3.Nombre, ''), ' ', ISNULL(t3.ApPaterno, ''), ' ', ISNULL(t3.ApMaterno, '')) as UsuarioSolicita,
                 t2.NoEmpleado,
                 t2.IdPersonal,
                 CONCAT(ISNULL(t2.Nombre, ''), ' ', ISNULL(t2.ApPaterno, ''), ' ', ISNULL(t2.ApMaterno, '')) as NombreCompleto,
-                t6.NomDepto as Departamento,
-                t5.NomCargo as Cargo,
+                t7.NomDepto as Departamento,
+                t2.departamento,
+                t6.NomCargo as Cargo,
                 t2.FechaIngreso,
                 t1.FechaInicio,
                 t1.FechaFin,
                 t1.DiasTomar,
                 t1.FechaRetornoLabores,
-                t1.FechaAutoriza,
                 t1.Estatus,
+                t4.IdUsuario as UsuarioAutorizaId,
                 CASE 
                     WHEN t4.IdUsuario IS NULL THEN 'Pendiente'
                     WHEN t4.EmpleadoID IS NULL THEN 'Administrador'
                     ELSE CONCAT(ISNULL(t4_personal.Nombre, ''), ' ', ISNULL(t4_personal.ApPaterno, ''), ' ', ISNULL(t4_personal.ApMaterno, ''))
-                END as UsuarioAutoriza
+                END as UsuarioAutoriza,
+                t1.FechaAutoriza,
+                t5.IdUsuario as UsuarioValidaId,
+                CASE 
+                    WHEN t5.IdUsuario IS NULL THEN 'Pendiente'
+                    WHEN t5.EmpleadoID IS NULL THEN 'Administrador'
+                    ELSE CONCAT(ISNULL(t5_personal.Nombre, ''), ' ', ISNULL(t5_personal.ApPaterno, ''), ' ', ISNULL(t5_personal.ApMaterno, ''))
+                END as UsuarioValida,
+                t1.FechaValidado,
+                t1.Comentarios
             FROM t_Vacaciones as t1
             LEFT JOIN t_personal as t2 ON t1.IdPersonal = t2.IdPersonal
-            LEFT JOIN t_usuario as t3 ON t3.IdUsuario = t1.UsuarioSolicita
-            LEFT JOIN t_personal as t3_personal ON t3.EmpleadoID = t3_personal.IdPersonal
+            LEFT JOIN t_personal as t3 ON t3.IdPersonal = t1.UsuarioSolicita
             LEFT JOIN t_usuario as t4 ON t4.IdUsuario = t1.UsuarioAutoriza
             LEFT JOIN t_personal as t4_personal ON t4.EmpleadoID = t4_personal.IdPersonal
-            INNER JOIN t_cargo as t5 ON t5.IdCargo = t2.cargo
-            INNER JOIN t_departamento as t6 ON t6.IdDepartamento = t2.departamento
+            LEFT JOIN t_usuario as t5 ON t5.IdUsuario = t1.UsuarioValida
+            LEFT JOIN t_personal as t5_personal ON t5.EmpleadoID = t5_personal.IdPersonal
+            INNER JOIN t_cargo as t6 ON t6.IdCargo = t2.cargo
+            INNER JOIN t_departamento as t7 ON t7.IdDepartamento = t2.departamento
             ORDER BY t1.FechaSolicitud DESC";
     
     $stmt = $Conexion->prepare($query);
     $stmt->execute();
     
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Convertir estatus a entero
+    foreach ($result as &$row) {
+        $row['Estatus'] = (int)$row['Estatus'];
+        $row['Anio'] = (int)$row['Anio'];
+        $row['DiasTomar'] = (int)$row['DiasTomar'];
+        $row['IdVacaciones'] = (int)$row['IdVacaciones'];
+        $row['IdPersonal'] = (int)$row['IdPersonal'];
+        if (isset($row['UsuarioSolicitaId'])) $row['UsuarioSolicitaId'] = (int)$row['UsuarioSolicitaId'];
+        if (isset($row['UsuarioAutorizaId'])) $row['UsuarioAutorizaId'] = (int)$row['UsuarioAutorizaId'];
+        if (isset($row['UsuarioValidaId'])) $row['UsuarioValidaId'] = (int)$row['UsuarioValidaId'];
+    }
     
     echo json_encode([
         'status' => true,

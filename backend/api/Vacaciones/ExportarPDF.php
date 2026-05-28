@@ -32,7 +32,7 @@ $sql = "SELECT
         LEFT JOIN t_departamento t3 ON t1.Departamento = t3.IdDepartamento
         LEFT JOIN t_empresa t4 ON t1.Empresa = t4.IdEmpresa
         LEFT JOIN t_ubicacion t5 ON t1.IdUbicacion = t5.IdUbicacion
-        LEFT JOIN t_personal t6 ON t1.IdSupervisor = t6.IdPersonal
+        LEFT JOIN t_personal t6 ON t1.IdJefeInmediato = t6.IdPersonal
         LEFT JOIN t_vehiculos t7 ON t1.IdPersonal = t7.IdAsociado AND t7.TipoVehiculo = 1
         WHERE 1=1";
 
@@ -83,7 +83,7 @@ if (!empty($filtros['cargo']) && $filtros['cargo'] !== '0') {
 }
 
 if (!empty($filtros['supervisor']) && $filtros['supervisor'] !== '0') {
-    $conditions[] = "t1.IdSupervisor = ?";
+    $conditions[] = "t1.IdJefeInmediato = ?";
     $params[] = $filtros['supervisor'];
 }
 

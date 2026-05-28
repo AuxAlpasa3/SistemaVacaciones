@@ -126,64 +126,40 @@ export const tieneAcceso = (rolId: number | string | undefined | null, rolesPerm
 
 export const filtrarMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[] => {
     if (!usuario) {
-        console.error('❌ filtrarMenuPorRol: usuario es null');
+        console.error(' filtrarMenuPorRol: usuario es null');
         return [];
     }
     
     const rolId = usuario.rol 
     
-    console.log('🔍 filtrarMenuPorRol - Datos del usuario:', {
-        usuarioCompleto: usuario,
-        rolEncontrado: rolId,
-        tipoRol: typeof rolId,
-        propiedadesDisponibles: Object.keys(usuario)
-    });
-    
     if (!rolId) {
-        console.error('❌ filtrarMenuPorRol: No se encontró rol en el usuario');
+        console.error('filtrarMenuPorRol: No se encontró rol en el usuario');
         return [];
     }
     
     const rolIdNormalizado = normalizarRolId(rolId);
     
-    console.log('📊 Información del rol:', {
-        original: rolId,
-        normalizado: rolIdNormalizado,
-        nombreRol: obtenerNombreRol(rolIdNormalizado)
-    });
-    
     if (!rolIdNormalizado) {
-        console.error('❌ filtrarMenuPorRol: No se pudo normalizar el rol ID');
+        console.error(' filtrarMenuPorRol: No se pudo normalizar el rol ID');
         return [];
     }
     
     const seccionesFiltradas = MENU_CONFIG.reduce<MenuSection[]>((acumulador, seccion) => {
-        console.log(`\n📁 Procesando sección: ${seccion.title}`);
-        console.log(`   Roles permitidos en sección: [${seccion.rolesPermitidos}]`);
-        
-        // Verificar si la sección es accesible para este rol
         const seccionPermitida = tieneAcceso(rolIdNormalizado, seccion.rolesPermitidos);
         
         if (!seccionPermitida) {
-            console.log(`   ❌ Sección NO permitida para rol ${rolIdNormalizado}`);
             return acumulador;
         }
         
-        console.log(`   ✅ Sección permitida`);
-        
-        // Filtrar subItems accesibles
         const subItemsFiltrados = seccion.subItems.filter(item => {
             const permitido = tieneAcceso(rolIdNormalizado, item.rolesPermitidos);
-            console.log(`     📄 SubItem: ${item.label} - Roles: [${item.rolesPermitidos}] - ${permitido ? '✅ Permitido' : '❌ No permitido'}`);
             return permitido;
         });
         
         if (subItemsFiltrados.length === 0) {
-            console.log(`   ⚠️ Sección sin subItems válidos, se omite`);
             return acumulador;
         }
         
-        console.log(`   ✅ Sección agregada con ${subItemsFiltrados.length} subItems`);
         acumulador.push({
             ...seccion,
             subItems: subItemsFiltrados
@@ -192,7 +168,6 @@ export const filtrarMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[
         return acumulador;
     }, []);
     
-    console.log(`\n🎯 RESULTADO FINAL: ${seccionesFiltradas.length} secciones accesibles`);
     seccionesFiltradas.forEach(seccion => {
         console.log(`   - ${seccion.title}: [${seccion.subItems.map(i => i.label).join(', ')}]`);
     });
@@ -203,7 +178,7 @@ export const filtrarMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[
 // Función para obtener el menú según el rol (con manejo especial para admin)
 export const obtenerMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[] => {
     if (!usuario) {
-        console.warn('⚠️ obtenerMenuPorRol: usuario nulo');
+        console.warn('obtenerMenuPorRol: usuario nulo');
         return [];
     }
     
@@ -212,11 +187,8 @@ export const obtenerMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[
     
     // Si es administrador (rol 1), mostrar todo el menú completo
     if (rolNormalizado === 1) {
-        console.log('👑 Usuario Administrador - Mostrando menú completo');
         return MENU_CONFIG;
     }
     
-    // Para otros roles, filtrar
-    console.log(`🔒 Usuario ${obtenerNombreRol(rolNormalizado)} - Filtrando menú`);
     return filtrarMenuPorRol(usuario);
 };

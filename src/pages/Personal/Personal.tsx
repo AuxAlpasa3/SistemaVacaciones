@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Plus, X, FileText, Edit, Trash2, MoreVertical, Filter, ChevronDown, FileDown, Printer, Download, Upload, Eye, RefreshCw, Calendar } from 'lucide-react';
+import { Plus, X, FileText, Edit, MoreVertical, Filter, ChevronDown, FileDown, Printer, Download, Upload, Eye, RefreshCw, Calendar } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
 import { SelectConBusqueda } from '../../components/Select/SelectConBusqueda';
 import { SelectConBusquedayCrear } from '../../components/Select/SelectConBusquedayCrear';
+import { ModalVacaciones } from '../../components/Personal/ModalVacaciones';
 import './personal.css';
 import type { Interfacepersonal, OpcionSelect } from '../../interfaces/Personal';
 import type { FiltrosPersonal } from '../../interfaces/Personal';
@@ -614,11 +615,15 @@ export const Personal: React.FC = () => {
         RutaFoto: '',
         Email: '',
         Contacto: '',
-        IdSupervisor: '',
+        IdJefeInmediato: '',
         TipoSangre: '',
         FechaCreacion: '',
         NSS: '',
-        EsSupervisor: 'NO'
+        EsJefeInmediato: 'NO',
+        Alergias: '',
+        Turno: '',
+        FechadeNacimiento: '',
+        Direccion: ''
     });
     
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
@@ -639,7 +644,8 @@ export const Personal: React.FC = () => {
     const [departamentos, setDepartamentos] = useState<OpcionSelect[]>([]);
     const [empresas, setEmpresas] = useState<OpcionSelect[]>([]);
     const [ubicaciones, setUbicaciones] = useState<OpcionSelect[]>([]);
-    const [supervisores, setSupervisores] = useState<OpcionSelect[]>([]);
+    const [jefes, setSupervisores] = useState<OpcionSelect[]>([]);
+    const [turnos, setTurnos] = useState<OpcionSelect[]>([]);
     const [loadingOptions, setLoadingOptions] = useState(false);
 
     const [creatingNewOption, setCreatingNewOption] = useState<{type: string, value: string} | null>(null);
@@ -652,25 +658,29 @@ export const Personal: React.FC = () => {
         Empresa: '',
         Departamento: '',
         Cargo: '',
-        IdSupervisor: '',
-        EsSupervisor: ''
+        IdJefeInmediato: '',
+        EsJefeInmediato: ''
     });
 
     const [cambioEstatusModalVisible, setCambioEstatusModalVisible] = useState(false);
     const [personalCambioEstatus, setPersonalCambioEstatus] = useState<Interfacepersonal | null>(null);
     const [cambiandoEstatus, setCambiandoEstatus] = useState(false);
+    
+    const [vacacionesModalVisible, setVacacionesModalVisible] = useState(false);
+    const [personalVacaciones, setPersonalVacaciones] = useState<{id: number, nombre: string, noEmpleado: number} | null>(null);
 
     const cargarOpcionesCatalogos = useCallback(async () => {
         try {
             setLoadingOptions(true);
             
             const [cargosResponse, departamentosResponse, empresasResponse, 
-                    ubicacionesResponse, supervisoresResponse] = await Promise.all([
+                    ubicacionesResponse, supervisoresResponse, turnosResponse] = await Promise.all([
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerCargos.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerDepartamentos.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerEmpresas.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerUbicaciones.php'),
-                apiService.get<RespuestaAPI>('/personal/opciones/ObtenerSupervisores.php')
+                apiService.get<RespuestaAPI>('/personal/opciones/ObtenerSupervisores.php'),
+                apiService.get<RespuestaAPI>('/personal/opciones/ObtenerTurnos.php')
             ]);
 
             if (cargosResponse.status && cargosResponse.data) {
@@ -710,6 +720,14 @@ export const Personal: React.FC = () => {
                 setSupervisores(supervisoresData.map((s: any) => ({ 
                     id: s.id || s.IdPersonal || '', 
                     valor: s.NombreCompleto || s.valor || s.descripcion || '' 
+                })));
+            }
+
+            if (turnosResponse.status && turnosResponse.data) {
+                const turnosData = Array.isArray(turnosResponse.data) ? turnosResponse.data : [];
+                setTurnos(turnosData.map((t: any) => ({ 
+                    id: t.id?.toString() || t.IdTurno?.toString() || '', 
+                    valor: t.Turno || t.valor || t.descripcion || '' 
                 })));
             }
 
@@ -817,12 +835,13 @@ export const Personal: React.FC = () => {
         }
     }, [cargarOpcionesCatalogos, usuarioSesion, cargos, departamentos, empresas, handleSelectChange]);
 
-    const obtenerTextoPorId = useCallback((value: string | number, opciones: OpcionSelect[]): string => {
-        if (value === 0 || value === '0' || value === '' || value === null) {
+    const obtenerTextoPorId = useCallback((value: string | number | null | undefined, opciones: OpcionSelect[]): string => {
+        if (value === null || value === undefined || value === 0 || value === '0' || value === '') {
             return 'N/A';
         }
-        const opcion = opciones.find(op => op.id.toString() === value.toString());
-        return opcion ? opcion.valor : value.toString();
+        const valueStr = value.toString();
+        const opcion = opciones.find(op => op.id.toString() === valueStr);
+        return opcion ? opcion.valor : valueStr;
     }, []);
 
     const uploadPhoto = useCallback(async (file: File, idPersonal: number, nombreCompleto: string, noEmpleado: number): Promise<string | null> => {
@@ -946,9 +965,9 @@ export const Personal: React.FC = () => {
             filtrados = filtrados.filter(p => p.Cargo?.toString() === filtros.Cargo);
         }
 
-        if (filtros.IdSupervisor && filtros.IdSupervisor !== '0') {
+        if (filtros.IdJefeInmediato && filtros.IdJefeInmediato !== '0') {
             filtrados = filtrados.filter(p => 
-                p.IdSupervisor && p.IdSupervisor.toString() === filtros.IdSupervisor
+                p.IdJefeInmediato && p.IdJefeInmediato.toString() === filtros.IdJefeInmediato
             );
         }
 
@@ -972,8 +991,8 @@ export const Personal: React.FC = () => {
             Empresa: '',
             Departamento: '',
             Cargo: '',
-            IdSupervisor: '',
-            EsSupervisor: ''
+            IdJefeInmediato: '',
+            EsJefeInmediato: ''
         });
         setPersonalFiltrados(personal);
     };
@@ -1097,7 +1116,11 @@ export const Personal: React.FC = () => {
         setTipoFormulario('Modificar');
         setPersonalForm({
             ...personal,
-            FechaIngreso: personal.FechaIngreso || ''
+            FechaIngreso: personal.FechaIngreso || '',
+            Alergias: personal.Alergias || '',
+            Turno: personal.Turno?.toString() || '',
+            FechadeNacimiento: personal.FechadeNacimiento || '',
+            Direccion: personal.Direccion || ''
         });
         setPreviewFoto(personal.RutaFoto || '');
         setShowForm(true);
@@ -1106,6 +1129,15 @@ export const Personal: React.FC = () => {
     const handleCambiarEstatus = useCallback((personal: Interfacepersonal) => {
         setPersonalCambioEstatus(personal);
         setCambioEstatusModalVisible(true);
+    }, []);
+    
+    const handleVerVacaciones = useCallback((personal: Interfacepersonal) => {
+        setPersonalVacaciones({
+            id: personal.IdPersonal,
+            nombre: personal.NombreCompleto,
+            noEmpleado: personal.NoEmpleado
+        });
+        setVacacionesModalVisible(true);
     }, []);
 
     const handleConfirmarCambioEstatus = useCallback(async (nuevoEstatus: string) => {
@@ -1156,7 +1188,7 @@ export const Personal: React.FC = () => {
         }
     }, [personalCambioEstatus, fetchPersonal, usuarioSesion]);
 
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setPersonalForm((prev: any) => ({
             ...prev,
@@ -1168,6 +1200,13 @@ export const Personal: React.FC = () => {
         setPersonalForm((prev: any) => ({
             ...prev,
             FechaIngreso: value
+        }));
+    }, []);
+
+    const handleFechaNacimientoChange = useCallback((value: string) => {
+        setPersonalForm((prev: any) => ({
+            ...prev,
+            FechadeNacimiento: value
         }));
     }, []);
 
@@ -1189,7 +1228,8 @@ export const Personal: React.FC = () => {
             const dataToSend = {
                 ...personalForm,
                 UsuarioCreacion: usuarioSesion?.IdUsuario,
-                RutaFoto: selectedFile ? '' : personalForm.RutaFoto
+                RutaFoto: selectedFile ? '' : personalForm.RutaFoto,
+                Turno: personalForm.Turno ? (isNaN(Number(personalForm.Turno)) ? personalForm.Turno : Number(personalForm.Turno)) : null
             };
             
             if (isUpdate) {
@@ -1264,11 +1304,15 @@ export const Personal: React.FC = () => {
             RutaFoto: '',
             Email: '',
             Contacto: '',
-            IdSupervisor: '',
+            IdJefeInmediato: '',
             TipoSangre: '',
             FechaCreacion: '',
             NSS: '',
-            EsSupervisor: 'NO'
+            EsJefeInmediato: 'NO',
+            Alergias: '',
+            Turno: '',
+            FechadeNacimiento: '',
+            Direccion: ''
         });
         setPreviewFoto('');
         setSelectedFile(null);
@@ -1337,6 +1381,23 @@ export const Personal: React.FC = () => {
             render: (value: string) => formatDateForServer(value)
         },
         {
+            key: 'Turno',
+            title: 'Turno',
+            sortable: true,
+            searchable: false,
+            width: '120px',
+            align: 'center',
+            headerAlign: 'center',
+            render: (value: string | number | null) => {
+                if (value === null || value === undefined) {
+                    return <span>N/A</span>;
+                }
+                const turnoId = typeof value === 'string' ? parseInt(value) : value;
+                const turno = turnos.find(t => parseInt(t.id) === turnoId);
+                return <span>{turno?.valor || value.toString()}</span>;
+            }
+        },
+        {
             key: 'Cargo',
             title: 'Cargo',
             sortable: true,
@@ -1344,7 +1405,7 @@ export const Personal: React.FC = () => {
             width: '200px',
             align: 'center',
             headerAlign: 'center',
-            render: (value: number) => obtenerTextoPorId(value, cargos)
+            render: (value: string | number | null) => obtenerTextoPorId(value, cargos)
         },
         {
             key: 'Departamento',
@@ -1354,7 +1415,7 @@ export const Personal: React.FC = () => {
             width: '200px',
             align: 'center',
             headerAlign: 'center',
-            render: (value: number) => obtenerTextoPorId(value, departamentos)
+            render: (value: string | number | null) => obtenerTextoPorId(value, departamentos)
         },
         {
             key: 'Empresa',
@@ -1364,7 +1425,7 @@ export const Personal: React.FC = () => {
             width: '200px',
             align: 'center',
             headerAlign: 'center',
-            render: (value: number) => obtenerTextoPorId(value, empresas)
+            render: (value: string | number | null) => obtenerTextoPorId(value, empresas)
         },
         {
             key: 'IdUbicacion',
@@ -1374,17 +1435,17 @@ export const Personal: React.FC = () => {
             width: '200px',
             align: 'center',
             headerAlign: 'center',
-            render: (value: number) => obtenerTextoPorId(value, ubicaciones)
+            render: (value: string | number | null) => obtenerTextoPorId(value, ubicaciones)
         },
         {
-            key: 'IdSupervisor',
-            title: 'Supervisor',
+            key: 'IdJefeInmediato',
+            title: 'Jefe Inmediato',
             sortable: true,
             searchable: false,
             width: '200px',
             align: 'center',
             headerAlign: 'center',
-            render: (value: number) => obtenerTextoPorId(value, supervisores)
+            render: (value: string | number | null) => obtenerTextoPorId(value, jefes)
         },
         {
             key: 'Status',
@@ -1436,21 +1497,40 @@ export const Personal: React.FC = () => {
             title: 'Acciones',
             sortable: false,
             searchable: false,
-            width: '120px',
+            width: '160px',
             align: 'center',
             headerAlign: 'center',
             render: (_, row) => (
-                <MemoizedActionButtons
-                    row={row}
-                    openActionDropdown={openActionDropdown}
-                    setOpenActionDropdown={setOpenActionDropdown}
-                    onView={handleViewPersonal}
-                    onEdit={handleEditPersonal}
-                    onCambiarEstatus={handleCambiarEstatus}
-                />
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <button
+                        className="action-icon-btn"
+                        onClick={() => handleVerVacaciones(row)}
+                        title="Ver vacaciones"
+                        style={{
+                            background: '#4CAF50',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <Calendar size={16} color="white" />
+                    </button>
+                    <MemoizedActionButtons
+                        row={row}
+                        openActionDropdown={openActionDropdown}
+                        setOpenActionDropdown={setOpenActionDropdown}
+                        onView={handleViewPersonal}
+                        onEdit={handleEditPersonal}
+                        onCambiarEstatus={handleCambiarEstatus}
+                    />
+                </div>
             )
         }
-    ], [openActionDropdown, cargos, departamentos, empresas, ubicaciones, supervisores, obtenerTextoPorId, handleViewPersonal, handleEditPersonal, handleCambiarEstatus]);
+    ], [openActionDropdown, cargos, departamentos, empresas, ubicaciones, jefes, turnos, obtenerTextoPorId, handleViewPersonal, handleEditPersonal, handleCambiarEstatus, handleVerVacaciones]);
 
     useEffect(() => {
         aplicarFiltros();
@@ -1656,16 +1736,16 @@ export const Personal: React.FC = () => {
                             </div>
 
                             <div className="filtro-group">
-                                <label className="filtro-label">Supervisor:</label>
+                                <label className="filtro-label">Jefe Inmediato:</label>
                                 <select
                                     className="filtro-select"
-                                    value={filtros.IdSupervisor}
-                                    onChange={(e) => handleFiltroChange('IdSupervisor', e.target.value)}
+                                    value={filtros.IdJefeInmediato}
+                                    onChange={(e) => handleFiltroChange('IdJefeInmediato', e.target.value)}
                                 >
                                     <option value="">TODOS</option>
-                                    {supervisores.map(supervisor => (
-                                        <option key={supervisor.id} value={supervisor.id}>
-                                            {supervisor.valor}
+                                    {jefes.map(jefe => (
+                                        <option key={jefe.id} value={jefe.id}>
+                                            {jefe.valor}
                                         </option>
                                     ))}
                                 </select>
@@ -1795,7 +1875,7 @@ export const Personal: React.FC = () => {
                                             <div className="form-personal-group">
                                                 <label htmlFor='FechaIngreso' className="form-personal-label">Fecha de Ingreso</label>
                                                 <DatePickerInput
-                                                    value={personalForm.FechaIngreso}
+                                                    value={formatDateForServer(personalForm.FechaIngreso)}
                                                     onChange={handleFechaChange}
                                                     placeholder="dd/mm/aaaa"
                                                 />
@@ -1842,6 +1922,15 @@ export const Personal: React.FC = () => {
 
                                         <div className="form-personal-row two-columns">
                                             <div className="form-personal-group">
+                                                <label htmlFor='FechadeNacimiento' className="form-personal-label">Fecha de Nacimiento</label>
+                                                <DatePickerInput
+                                                    value={formatDateForServer(personalForm.FechadeNacimiento)}
+                                                    onChange={handleFechaNacimientoChange}
+                                                    placeholder="dd/mm/aaaa"
+                                                />
+                                            </div>
+
+                                            <div className="form-personal-group">
                                                 <label htmlFor='TipoSangre' className="form-personal-label">Tipo de Sangre</label>
                                                 <input
                                                     type="text"
@@ -1852,7 +1941,9 @@ export const Personal: React.FC = () => {
                                                     placeholder="A+, A-, B+, B-, O+, O-, AB+, AB-"
                                                 />
                                             </div>
+                                        </div>
 
+                                        <div className="form-personal-row two-columns">
                                             <div className="form-personal-group">
                                                 <label htmlFor='NSS' className="form-personal-label">NSS</label>
                                                 <input
@@ -1862,6 +1953,44 @@ export const Personal: React.FC = () => {
                                                     onChange={handleInputChange}
                                                     className="form-personal-input"
                                                     placeholder="Número de Seguro Social"
+                                                />
+                                            </div>
+
+                                            <div className="form-personal-group">
+                                                <label htmlFor='Turno' className="form-personal-label">Turno</label>
+                                                <SelectConBusqueda
+                                                    options={convertirOpcionesParaBusqueda(turnos)}
+                                                    value={personalForm.Turno?.toString() || ''}
+                                                    onChange={(value) => handleSelectChange('Turno', value)}
+                                                    placeholder="Seleccionar turno"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-personal-row">
+                                            <div className="form-personal-group">
+                                                <label htmlFor='Direccion' className="form-personal-label">Dirección</label>
+                                                <textarea
+                                                    name="Direccion"
+                                                    value={personalForm.Direccion || ''}
+                                                    onChange={handleInputChange}
+                                                    className="form-personal-textarea"
+                                                    placeholder="Dirección completa del personal"
+                                                    rows={2}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-personal-row">
+                                            <div className="form-personal-group">
+                                                <label htmlFor='Alergias' className="form-personal-label">Alergias</label>
+                                                <textarea
+                                                    name="Alergias"
+                                                    value={personalForm.Alergias || ''}
+                                                    onChange={handleInputChange}
+                                                    className="form-personal-textarea"
+                                                    placeholder="Registrar alergias del personal (medicamentos, alimentos, etc.)"
+                                                    rows={3}
                                                 />
                                             </div>
                                         </div>
@@ -1927,10 +2056,10 @@ export const Personal: React.FC = () => {
                                         
                                         <div className="form-personal-row two-columns">
                                             <div className="form-personal-group">
-                                                <label htmlFor='EsSupervisor' className="form-personal-label">Es Supervisor</label>
+                                                <label htmlFor='EsJefeInmediato' className="form-personal-label">Es Jefe Inmediato</label>
                                                 <select
-                                                    name="EsSupervisor"
-                                                    value={personalForm.EsSupervisor}
+                                                    name="EsJefeInmediato"
+                                                    value={personalForm.EsJefeInmediato}
                                                     onChange={handleInputChange}
                                                     className="form-personal-select"
                                                 >
@@ -1939,12 +2068,12 @@ export const Personal: React.FC = () => {
                                                 </select>
                                             </div>
                                             <div className="form-personal-group">
-                                                <label htmlFor='IdSupervisor' className="form-personal-label">Supervisor</label>
+                                                <label htmlFor='IdJefeInmediato' className="form-personal-label">Jefe Inmediato</label>
                                                 <SelectConBusqueda
-                                                    options={convertirOpcionesParaBusqueda(supervisores)}
-                                                    value={personalForm.IdSupervisor}
-                                                    onChange={(value) => handleSelectChange('IdSupervisor', value)}
-                                                    placeholder="Seleccionar supervisor"
+                                                    options={convertirOpcionesParaBusqueda(jefes)}
+                                                    value={personalForm.IdJefeInmediato}
+                                                    onChange={(value) => handleSelectChange('IdJefeInmediato', value)}
+                                                    placeholder="Seleccionar Jefe Inmediato"
                                                 />
                                             </div>
                                         </div>
@@ -2006,6 +2135,17 @@ export const Personal: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <ModalVacaciones
+                visible={vacacionesModalVisible}
+                onClose={() => {
+                    setVacacionesModalVisible(false);
+                    setPersonalVacaciones(null);
+                }}
+                idPersonal={personalVacaciones?.id || 0}
+                nombrePersonal={personalVacaciones?.nombre || ''}
+                noEmpleado={personalVacaciones?.noEmpleado || 0}
+            />
 
             <CambioEstatusModal
                 visible={cambioEstatusModalVisible}

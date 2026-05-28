@@ -103,6 +103,15 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
             {/* <div className="user-dropdown-divider"></div> */}
 
             <div className="user-dropdown-menu">
+               {/*  <button 
+                    className="user-dropdown-item" 
+                    onClick={() => 
+                    aria-label="Perfil"
+                >
+                    <Settings size={16} />
+                    <span>Perfil</span>
+                </button>
+ */}
                 <button 
                     className="user-dropdown-item logout-item" 
                     onClick={handleLogout}
@@ -127,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
                 </button>
             </div>
 
-            <div className="header-right">
+             <div className="header-right">
                 {/* Fullscreen Toggle */}
                 <button 
                     className="notification-btn" 

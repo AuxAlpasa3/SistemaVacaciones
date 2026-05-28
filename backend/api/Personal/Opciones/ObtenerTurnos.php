@@ -8,31 +8,29 @@ header('Access-Control-Allow-Headers: Content-Type');
 include_once '../../../db/Connection.php';
 
 try {
-    $query = "SELECT DISTINCT t1.IdPersonal,
-        CONCAT(t1.Nombre, ' ', t1.ApPaterno, ' ', t1.ApMaterno) AS NombreCompleto
-    FROM t_personal as t1 where t1.EsJefeInmediato=1;";
+    $query = "SELECT IdTurno, Turno FROM t_turno ORDER BY IdTurno ASC";
     $stmt = $Conexion->prepare($query);
     $stmt->execute();
     
-    $supervisores = [];
+    $cargos = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $supervisores[] = [
-            'id' => (int)$row['IdPersonal'],
-            'valor' => $row['NombreCompleto']
+        $cargos[] = [
+            'id' => (int)$row['IdTurno'],
+            'valor' => $row['Turno']
         ];
     }
     
     echo json_encode([
         'status' => true,
-        'data' => $supervisores,
-        'message' => 'Supervisores obtenidos correctamente'
+        'data' => $cargos,
+        'message' => 'Turnos obtenidos correctamente'
     ]);
     
 } catch (Exception $e) {
     echo json_encode([
         'status' => false,
         'data' => [],
-        'message' => 'Error al obtener supervisores: ' . $e->getMessage()
+        'message' => 'Error al obtener cargos: ' . $e->getMessage()
     ]);
 }
 ?>

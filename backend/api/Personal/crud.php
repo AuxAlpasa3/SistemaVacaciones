@@ -114,12 +114,12 @@ try {
             $IdUbicacion = $data['IdUbicacion'] ?? null;
             $Email = $data['Email'] ?? null;
             $Contacto = $data['Contacto'] ?? null;  
-            $IdSupervisor = $data['IdSupervisor'] ?? null;
+            $IdJefeInmediato = $data['IdJefeInmediato'] ?? null;
             $TipoSangre = $data['TipoSangre'] ?? null;
             $NSS = $data['NSS'] ?? null;
             $UsuarioCreacion = $data['UsuarioCreacion'] ?? null;
             $RutaFoto = $data['RutaFoto'] ?? null;
-            $EsSupervisor = isset($data['EsSupervisor']) ? ($data['EsSupervisor'] === 'SI' ? 1 : 0) : 0;
+            $EsJefeInmediato = isset($data['EsJefeInmediato']) ? ($data['EsJefeInmediato'] === 'SI' ? 1 : 0) : 0;
 
             $Conexion->beginTransaction();
 
@@ -127,11 +127,11 @@ try {
                 $query_per = "INSERT INTO t_personal (
                     NoEmpleado, FechaCreacion, FechaIngreso, Nombre, ApPaterno, ApMaterno, Cargo, 
                     Departamento, Empresa, Status, IdUbicacion, Email, Contacto, 
-                    IdSupervisor, TipoSangre, NSS, UsuarioCreacion, RutaFoto, EsSupervisor
+                    IdJefeInmediato, TipoSangre, NSS, UsuarioCreacion, RutaFoto, EsJefeInmediato
                 ) VALUES ( 
                     :NoEmpleado, :FechaCreacion, :FechaIngreso, :Nombre, :ApPaterno, :ApMaterno, :Cargo, 
                     :Departamento, :Empresa, :Status, :IdUbicacion, :Email, :Contacto, 
-                    :IdSupervisor, :TipoSangre, :NSS, :UsuarioCreacion, :RutaFoto, :EsSupervisor
+                    :IdJefeInmediato, :TipoSangre, :NSS, :UsuarioCreacion, :RutaFoto, :EsJefeInmediato
                 )";
 
                 $stmt_per = $Conexion->prepare($query_per);
@@ -148,12 +148,12 @@ try {
                 $stmt_per->bindParam(":IdUbicacion", $IdUbicacion);
                 $stmt_per->bindParam(":Email", $Email);
                 $stmt_per->bindParam(":Contacto", $Contacto);
-                $stmt_per->bindParam(":IdSupervisor", $IdSupervisor);
+                $stmt_per->bindParam(":IdJefeInmediato", $IdJefeInmediato);
                 $stmt_per->bindParam(":TipoSangre", $TipoSangre);
                 $stmt_per->bindParam(":NSS", $NSS);
                 $stmt_per->bindParam(":UsuarioCreacion", $UsuarioCreacion);
                 $stmt_per->bindParam(":RutaFoto", $RutaFoto);
-                $stmt_per->bindParam(":EsSupervisor", $EsSupervisor, PDO::PARAM_INT);
+                $stmt_per->bindParam(":EsJefeInmediato", $EsJefeInmediato, PDO::PARAM_INT);
 
                 if (!$stmt_per->execute()) {
                     $errorInfo = $stmt_per->errorInfo();
@@ -278,9 +278,9 @@ try {
                 $params[':Contacto'] = $input['Contacto'];
             }
             
-            if (isset($input['IdSupervisor'])) {
-                $update_fields[] = "IdSupervisor = :IdSupervisor";
-                $params[':IdSupervisor'] = $input['IdSupervisor'];
+            if (isset($input['IdJefeInmediato'])) {
+                $update_fields[] = "IdJefeInmediato = :IdJefeInmediato";
+                $params[':IdJefeInmediato'] = $input['IdJefeInmediato'];
             }
             
             if (isset($input['TipoSangre'])) {
@@ -298,9 +298,9 @@ try {
                 $params[':RutaFoto'] = $input['RutaFoto'];
             }
 
-            if (isset($input['EsSupervisor'])) {
-                $update_fields[] = "EsSupervisor = :EsSupervisor";
-                $params[':EsSupervisor'] = $input['EsSupervisor'] === 'SI' ? 1 : 0;
+            if (isset($input['EsJefeInmediato'])) {
+                $update_fields[] = "EsJefeInmediato = :EsJefeInmediato";
+                $params[':EsJefeInmediato'] = $input['EsJefeInmediato'] === 'SI' ? 1 : 0;
             }
     
             if (empty($update_fields)) {
