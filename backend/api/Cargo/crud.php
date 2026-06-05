@@ -16,7 +16,7 @@ $method = $_SERVER["REQUEST_METHOD"];
 try {
     switch ($method) {
         case "POST":
-            $Cargo = isset($_POST['Cargo']) ? trim($_POST['Cargo']) : null;
+            $Cargo = isset($_POST['NomCargo']) ? trim($_POST['NomCargo']) : null;
             $IdUsuario = isset($_POST['IdUsuario']) ? (int)$_POST['IdUsuario'] : null;
 
             if (!isset($Cargo)) {
@@ -71,7 +71,7 @@ try {
         case "PUT":
             $input = json_decode(file_get_contents('php://input'), true);
             $IdCargo = isset($input['IdCargo']) ? (int)$input['IdCargo'] : null;
-            $Cargo = isset($input['Cargo']) ? trim($input['Cargo']) : null;
+            $Cargo = isset($input['NomCargo']) ? trim($input['NomCargo']) : null;
             $IdUsuario = isset($input['IdUsuario']) ? (int)$input['IdUsuario'] : null;
             
             if (!$IdCargo) {
