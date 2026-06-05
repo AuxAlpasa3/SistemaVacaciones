@@ -91,11 +91,9 @@ try {
                         :Antiguedad
                       )";
             
-            $fechaSolicitud = date('Y-m-d H:i:s');
-            
             $stmt = $Conexion->prepare($query);
             $stmt->bindParam(':IdPersonal', $data['IdPersonal'], PDO::PARAM_INT);
-            $stmt->bindParam(':FechaSolicitud', $fechaSolicitud);
+            $stmt->bindParam(':FechaSolicitud',  $data['FechaSolicitud']);
             $stmt->bindParam(':UsuarioSolicita', $usuarioSolicita);
             $stmt->bindParam(':UsuarioAutoriza', $usuarioAutoriza);
             $stmt->bindParam(':FechaAutoriza', $fechaAutoriza);
