@@ -16,21 +16,30 @@ $method = $_SERVER["REQUEST_METHOD"];
 try {
     switch ($method) {
         case "POST":
-             $Ubicacion= $_POST['Ubicacion'];
-            if (!isset($Ubicacion)) {
+             $NomCorto= $_POST['NomCorto'];
+             $NomLargo= $_POST['NomLargo'];
+             $Ciudad= $_POST['Ciudad'];
+             $Estado= $_POST['Estado'];
+             $Pais= $_POST['Pais'];
+
+            if (!isset($NomCorto) || !isset($NomLargo) || !isset($Ciudad) || !isset($Estado) || !isset($Pais)) {
                 http_response_code(400); // Bad Request
                 echo json_encode(['status' => false, 'message' => 'Datos incompletos']);
                 exit;
             }
             
 
-           $query = "INSERT INTO t_ubicacion(Ubicacion)
-             values(:Ubicacion)";
+           $query = "INSERT INTO t_ubicacion(NomCorto, NomLargo, Ciudad, Estado, Pais)
+             values(:NomCorto, :NomLargo, :Ciudad, :Estado, :Pais)";
 
            $stmt = $Conexion->prepare($query);
 
             $fecha = date('Y-m-d');
-           $stmt->bindParam(":Ubicacion",$Ubicacion);
+           $stmt->bindParam(":NomCorto",$NomCorto);
+           $stmt->bindParam(":NomLargo",$NomLargo);
+           $stmt->bindParam(":Ciudad",$Ciudad);
+           $stmt->bindParam(":Estado",$Estado);
+           $stmt->bindParam(":Pais",$Pais);
 
             if ($stmt->execute()) {
                 http_response_code(201); // Created
@@ -50,12 +59,20 @@ try {
                 
                 $data = json_decode(file_get_contents("php://input"),true);
                 $IdUbicacion  = $_GET['IdUbicacion'];
-                $Ubicacion = $data['Ubicacion'];
+                $NomCorto = $data['NomCorto'];
+                $NomLargo = $data['NomLargo'];
+                $Ciudad = $data['Ciudad'];
+                $Estado = $data['Estado'];
+                $Pais = $data['Pais'];
 
-            $query = "UPDATE t_ubicacion SET Ubicacion = :Ubicacion WHERE IdUbicacion = :IdUbicacion";
+            $query = "UPDATE t_ubicacion SET NomCorto = :NomCorto, NomLargo = :NomLargo, Ciudad = :Ciudad, Estado = :Estado, Pais = :Pais WHERE IdUbicacion = :IdUbicacion";
             $stmt = $Conexion->prepare($query);
             $stmt->bindParam(":IdUbicacion",$IdUbicacion);
-            $stmt->bindParam(":Ubicacion",$Ubicacion);
+            $stmt->bindParam(":NomCorto",$NomCorto);
+            $stmt->bindParam(":NomLargo",$NomLargo);
+            $stmt->bindParam(":Ciudad",$Ciudad);
+            $stmt->bindParam(":Estado",$Estado);
+            $stmt->bindParam(":Pais",$Pais);
 
             $stmt->execute();
 
