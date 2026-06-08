@@ -1181,6 +1181,30 @@ export const Vacaciones: React.FC = () => {
             return false;
         }
         
+        // Validación de fecha de solicitud
+        if (!vacacionesForm.FechaSolicitud) {
+            showToast({ text: 'La fecha de solicitud es requerida', type: 'error' });
+            return false;
+        }
+        
+        // Validar que la fecha de solicitud no sea futura
+        const fechaSolicitud = new Date(vacacionesForm.FechaSolicitud);
+        const fechaActual = new Date();
+        fechaActual.setHours(0, 0, 0, 0);
+        
+        if (fechaSolicitud > fechaActual) {
+            showToast({ text: 'La fecha de solicitud no puede ser mayor a la fecha actual', type: 'error' });
+            return false;
+        }
+        
+        // Validar que la fecha de solicitud no sea muy antigua (opcional - 1 año)
+        const fechaLimite = new Date();
+        fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
+        if (fechaSolicitud < fechaLimite) {
+            showToast({ text: 'La fecha de solicitud no puede ser mayor a 1 año atrás', type: 'error' });
+            return false;
+        }
+        
         const fechaInicio = new Date(vacacionesForm.FechaInicio);
         const fechaFin = new Date(vacacionesForm.FechaFin);
         
@@ -1223,9 +1247,12 @@ export const Vacaciones: React.FC = () => {
             const esMismoUsuario = usuarioSolicitaId === usuarioAutorizaId;
             
             if (!esActualizacion) {
+                // Usar la fecha de solicitud seleccionada por el usuario, no la fecha actual
+                const fechaSolicitudSeleccionada = vacacionesForm.FechaSolicitud || new Date().toISOString().split('T')[0];
+                
                 datosNormalizados = {
                     ...datosNormalizados,
-                    FechaSolicitud: new Date().toISOString().split('T')[0],
+                    FechaSolicitud: fechaSolicitudSeleccionada,
                     UsuarioSolicita: usuarioSolicitaId,
                     Estatus: estatusInicial,
                     UsuarioAutoriza: esMismoUsuario ? '' : usuarioAutorizaId,
@@ -1630,9 +1657,10 @@ export const Vacaciones: React.FC = () => {
         resetForm();
         setShowForm(true);
         setTipoFormulario('Agregar');
-        const todayDate = new Date().toISOString().split('T')[0];
-        setFechaSolicitudInput(todayDate);
-        setVacacionesForm(prev => ({ ...prev, FechaSolicitud: todayDate, Estatus: 0 }));
+        // Inicializar el campo de fecha de solicitud como vacío en lugar de la fecha actual
+        // El usuario deberá seleccionar la fecha manualmente
+        setFechaSolicitudInput('');
+        setVacacionesForm(prev => ({ ...prev, FechaSolicitud: '', Estatus: 0 }));
     }, [resetForm]);
 
     useEffect(() => {
@@ -1926,7 +1954,23 @@ export const Vacaciones: React.FC = () => {
                                         <div className="form-vacaciones-group"><label className="form-vacaciones-label">Antigüedad</label><input type="text" value={`${vacacionesForm.Antiguedad || 0} años`} className="form-vacaciones-input" disabled={true} /></div>
                                     </div>
                                     <div className="form-vacaciones-row">
-                                        <div className="form-vacaciones-group"><label className="form-vacaciones-label">Fecha de Solicitud</label><input type="date" value={fechaSolicitudInput} onChange={handleFechaSolicitudChange} className="form-vacaciones-input" disabled={isViewMode || !isHRorAdmin} /></div>
+                                        <div className="form-vacaciones-group">
+                                            <label className="form-vacaciones-label required">Fecha de Solicitud</label>
+                                            <input 
+                                                type="date" 
+                                                value={fechaSolicitudInput} 
+                                                onChange={handleFechaSolicitudChange} 
+                                                className="form-vacaciones-input" 
+                                                disabled={isViewMode || !isHRorAdmin} 
+                                                required 
+                                                max={new Date().toISOString().split('T')[0]}
+                                            />
+                                            {!isViewMode && isHRorAdmin && (
+                                                <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                                                    Seleccione la fecha en que se realiza la solicitud
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="form-section">
