@@ -1,81 +1,81 @@
 <?php
-// /vacaciones/cambiarEstatus.php
+// vacaciones/cambiarEstatus.php
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-require_once '../../db/Connection.php';
-
-$method = $_SERVER['REQUEST_METHOD'];
-
-if ($method !== 'PUT') {
-    echo json_encode([
-        'status' => false,
-        'data' => null,
-        'message' => 'Método no permitido'
-    ]);
-    exit;
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
 }
 
-$idVacaciones = isset($_GET['IdVacaciones']) ? intval($_GET['IdVacaciones']) : 0;
-$nuevoEstatus = isset($_GET['Estatus']) ? intval($_GET['Estatus']) : 0;
-$idUsuario = isset($_GET['IdUsuario']) ? intval($_GET['IdUsuario']) : 0;
-
-$data = json_decode(file_get_contents('php://input'), true);
+require_once __DIR__ . '/../includes/Connection.php';
+require_once __DIR__ . '/../includes/VacacionesService.php';
 
 try {
-    $Conexion->beginTransaction();
+    $db = Connection::getInstance()->getConnection();
+    $service = new VacacionesService($db);
     
-    $query = "UPDATE t_vacaciones SET Estatus = :Estatus, Comentarios = :Comentarios WHERE IdVacaciones = :IdVacaciones";
-    $stmt = $Conexion->prepare($query);
-    $comentarios = $data['Comentarios'] ?? null;
-    $stmt->bindParam(':Estatus', $nuevoEstatus, PDO::PARAM_INT);
-    $stmt->bindParam(':Comentarios', $comentarios);
-    $stmt->bindParam(':IdVacaciones', $idVacaciones, PDO::PARAM_INT);
+    // Obtener parámetros
+    $idVacaciones = $_GET['IdVacaciones'] ?? null;
+    $nuevoEstatus = $_GET['Estatus'] ?? null;
+    $idUsuario = $_GET['IdUsuario'] ?? null;
+    
+    if (!$idVacaciones || $nuevoEstatus === null) {
+        throw new Exception('Faltan parámetros requeridos: IdVacaciones y Estatus');
+    }
+    
+    // Obtener comentarios del body
+    $input = json_decode(file_get_contents('php://input'), true);
+    $comentarios = $input['Comentarios'] ?? null;
+    $usuarioAutoriza = $input['UsuarioAutoriza'] ?? null;
+    $fechaAutoriza = $input['FechaAutoriza'] ?? null;
+    
+    // Actualizar estatus en la base de datos
+    $updateFields = "Estatus = ?";
+    $params = [$nuevoEstatus];
+    $types = "i";
+    
+    if ($nuevoEstatus == 1) { // Autorizada
+        $updateFields .= ", UsuarioAutoriza = ?, FechaAutoriza = ?";
+        $params[] = $usuarioAutoriza ?? $idUsuario;
+        $params[] = $fechaAutoriza ?? date('Y-m-d');
+        $types .= "ss";
+    } elseif ($nuevoEstatus == 2) { // Validada
+        $updateFields .= ", UsuarioValida = ?, FechaValidado = ?";
+        $params[] = $idUsuario;
+        $params[] = date('Y-m-d');
+        $types .= "ss";
+    }
+    
+    if ($comentarios !== null) {
+        $updateFields .= ", Comentarios = ?";
+        $params[] = $comentarios;
+        $types .= "s";
+    }
+    
+    $params[] = $idVacaciones;
+    $types .= "i";
+    
+    $stmt = $db->prepare("UPDATE vacaciones SET $updateFields WHERE IdVacaciones = ?");
+    $stmt->bind_param($types, ...$params);
     
     if (!$stmt->execute()) {
-        throw new Exception('Error al actualizar estatus');
+        throw new Exception('Error al actualizar el estatus');
     }
     
-    if ($nuevoEstatus == 1 && isset($data['UsuarioAutoriza']) && isset($data['FechaAutoriza'])) {
-        $query2 = "UPDATE t_vacaciones SET UsuarioAutoriza = :UsuarioAutoriza, FechaAutoriza = :FechaAutoriza WHERE IdVacaciones = :IdVacaciones";
-        $stmt2 = $Conexion->prepare($query2);
-        $fechaAutoriza = date('Y-m-d H:i:s');
-        $stmt2->bindParam(':UsuarioAutoriza', $data['UsuarioAutoriza']);
-        $stmt2->bindParam(':FechaAutoriza', $fechaAutoriza);
-        $stmt2->bindParam(':IdVacaciones', $idVacaciones, PDO::PARAM_INT);
-        if (!$stmt2->execute()) {
-            throw new Exception('Error al actualizar autorización');
-        }
-    }
-    
-    if ($nuevoEstatus == 2 && isset($data['UsuarioValida']) && isset($data['FechaValidado'])) {
-        $query3 = "UPDATE t_vacaciones SET UsuarioValida = :UsuarioValida, FechaValidado = :FechaValidado WHERE IdVacaciones = :IdVacaciones";
-        $stmt3 = $Conexion->prepare($query3);
-        $fechaValidado = date('Y-m-d H:i:s');
-        $stmt3->bindParam(':UsuarioValida', $data['UsuarioValida']);
-        $stmt3->bindParam(':FechaValidado', $fechaValidado);
-        $stmt3->bindParam(':IdVacaciones', $idVacaciones, PDO::PARAM_INT);
-        if (!$stmt3->execute()) {
-            throw new Exception('Error al actualizar validación');
-        }
-    }
-    
-    $Conexion->commit();
+     $result = $service->sendStatusNotification($idVacaciones, $nuevoEstatus, $comentarios);
     
     echo json_encode([
         'status' => true,
-        'data' => null,
-        'message' => 'Estatus actualizado correctamente'
+        'message' => 'Estatus actualizado correctamente',
+        'notificaciones_enviadas' => $result
     ]);
     
 } catch (Exception $e) {
-    $Conexion->rollBack();
     echo json_encode([
         'status' => false,
-        'data' => null,
-        'message' => 'Error al actualizar estatus: ' . $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 }
-?>

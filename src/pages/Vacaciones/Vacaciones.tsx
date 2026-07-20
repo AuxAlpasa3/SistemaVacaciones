@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Plus, X, FileText, Edit, Trash2, MoreVertical, Filter, ChevronDown, Eye, CheckCircle, XCircle, RefreshCw, AlertCircle, Info } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
@@ -552,6 +552,8 @@ export const Vacaciones: React.FC = () => {
     const [advertenciaAnticipacion, setAdvertenciaAnticipacion] = useState<string>('');
     const [advertenciaViernes, setAdvertenciaViernes] = useState<string>('');
 
+    const filtroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const idRolUsuario = Number(usuarioSesion?.rol) || 0;
     const isHRorAdmin = idRolUsuario === 1 || idRolUsuario === 2 || idRolUsuario === 3;
     const canEditDelete = isHRorAdmin;
@@ -1071,6 +1073,43 @@ export const Vacaciones: React.FC = () => {
             ...prev,
             [campo]: valor
         }));
+        
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        
+        filtroTimeoutRef.current = setTimeout(() => {
+            aplicarFiltros();
+        }, 300);
+    };
+
+    const handleFiltroFechaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setFiltroFecha(value);
+        
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        
+        filtroTimeoutRef.current = setTimeout(() => {
+            aplicarFiltros();
+        }, 300);
+    };
+
+    const handleAnioFiltroChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value ? Number(e.target.value) : 0;
+        setFiltros(prev => ({
+            ...prev,
+            Anio: value
+        }));
+        
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        
+        filtroTimeoutRef.current = setTimeout(() => {
+            aplicarFiltros();
+        }, 300);
     };
 
     const limpiarFiltros = () => {
@@ -1089,6 +1128,15 @@ export const Vacaciones: React.FC = () => {
         setVacacionesFiltrados([]);
         setFiltrosAplicados(false);
         setCantidadesFiltradas({ solicitadas: 0, autorizadas: 0, validadas: 0 });
+        
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        
+        setTimeout(() => {
+            aplicarFiltros();
+        }, 300);
+        
         showToast({
             text: 'Filtros limpiados',
             type: 'info',
@@ -1181,13 +1229,11 @@ export const Vacaciones: React.FC = () => {
             return false;
         }
         
-        // Validación de fecha de solicitud
         if (!vacacionesForm.FechaSolicitud) {
             showToast({ text: 'La fecha de solicitud es requerida', type: 'error' });
             return false;
         }
         
-        // Validar que la fecha de solicitud no sea futura
         const fechaSolicitud = new Date(vacacionesForm.FechaSolicitud);
         const fechaActual = new Date();
         fechaActual.setHours(0, 0, 0, 0);
@@ -1197,7 +1243,6 @@ export const Vacaciones: React.FC = () => {
             return false;
         }
         
-        // Validar que la fecha de solicitud no sea muy antigua (opcional - 1 año)
         const fechaLimite = new Date();
         fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
         if (fechaSolicitud < fechaLimite) {
@@ -1247,7 +1292,6 @@ export const Vacaciones: React.FC = () => {
             const esMismoUsuario = usuarioSolicitaId === usuarioAutorizaId;
             
             if (!esActualizacion) {
-                // Usar la fecha de solicitud seleccionada por el usuario, no la fecha actual
                 const fechaSolicitudSeleccionada = vacacionesForm.FechaSolicitud || new Date().toISOString().split('T')[0];
                 
                 datosNormalizados = {
@@ -1657,8 +1701,6 @@ export const Vacaciones: React.FC = () => {
         resetForm();
         setShowForm(true);
         setTipoFormulario('Agregar');
-        // Inicializar el campo de fecha de solicitud como vacío en lugar de la fecha actual
-        // El usuario deberá seleccionar la fecha manualmente
         setFechaSolicitudInput('');
         setVacacionesForm(prev => ({ ...prev, FechaSolicitud: '', Estatus: 0 }));
     }, [resetForm]);
@@ -1740,6 +1782,12 @@ export const Vacaciones: React.FC = () => {
     const handleTabChange = (tab: TabType) => {
         setActiveTab(tab);
         setOpenActionDropdown(null);
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        setTimeout(() => {
+            aplicarFiltros();
+        }, 300);
     };
 
     useEffect(() => {
@@ -1750,10 +1798,10 @@ export const Vacaciones: React.FC = () => {
     }, [fetchVacaciones, cargarOpcionesCatalogos]);
 
     useEffect(() => {
-        if (vacaciones.length > 0 && filtroFecha) {
+        if (vacaciones.length > 0) {
             aplicarFiltros();
         }
-    }, [vacaciones, activeTab, filtroFecha, aplicarFiltros]);
+    }, [vacaciones]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -1780,6 +1828,14 @@ export const Vacaciones: React.FC = () => {
         document.body.style.overflow = showForm ? 'hidden' : 'auto';
         return () => { document.body.style.overflow = 'auto'; };
     }, [showForm]);
+
+    useEffect(() => {
+        return () => {
+            if (filtroTimeoutRef.current) {
+                clearTimeout(filtroTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const isViewMode = tipoFormulario === 'Ver';
     const currentColumns = activeTab === 'solicitadas' ? solicitadasColumns : (activeTab === 'autorizadas' ? autorizadasColumns : validadasColumns);
@@ -1852,7 +1908,7 @@ export const Vacaciones: React.FC = () => {
                 <div className="filtros-basicos">
                     <div className="filtro-group">
                         <label className="filtro-label">Fecha Solicitud:</label>
-                        <input type="date" className="filtro-input" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)} />
+                        <input type="date" className="filtro-input" value={filtroFecha} onChange={handleFiltroFechaChange} />
                     </div>
                     <div className="filtro-group">
                         <label className="filtro-label">No. Empleado:</label>
@@ -1864,13 +1920,10 @@ export const Vacaciones: React.FC = () => {
                     </div>
                     <div className="filtro-group">
                         <label className="filtro-label">Año:</label>
-                        <select className="filtro-input" value={filtros.Anio || ''} onChange={(e) => handleFiltroChange('Anio', e.target.value ? Number(e.target.value) : 0)}>
+                        <select className="filtro-input" value={filtros.Anio || ''} onChange={handleAnioFiltroChange}>
                             <option value="">Todos</option>
                             {Array.from(new Set(vacaciones.map(v => v.Anio).filter(a => a > 0))).sort((a,b) => b - a).map(anio => (<option key={anio} value={anio}>{anio}</option>))}
                         </select>
-                    </div>
-                    <div className="filtro-group">
-                        <button type="button" className="btn btn-primary buscar-btn" onClick={aplicarFiltros} style={{ marginTop: '24px', backgroundColor: '#F57C00', border: 'none', color: 'white', padding: '8px 24px', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>Buscar</button>
                     </div>
                     <button className="filtros-avanzados-btn" onClick={() => setShowFiltrosAvanzados(!showFiltrosAvanzados)}>
                         <Filter size={16} /> <span>Filtros Avanzados</span> <ChevronDown size={16} className={`chevron ${showFiltrosAvanzados ? 'rotated' : ''}`} />
