@@ -7,6 +7,16 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 include_once '../../db/Connection.php';
 
 try {
+    $estatus = isset($_GET['estatus']) ? $_GET['estatus'] : '';
+    $noEmpleado = isset($_GET['noEmpleado']) ? $_GET['noEmpleado'] : '';
+    $nombreCompleto = isset($_GET['nombreCompleto']) ? $_GET['nombreCompleto'] : '';
+    $departamento = isset($_GET['departamento']) ? $_GET['departamento'] : '';
+    $fechaInicioVac = isset($_GET['fechaInicioVacaciones']) ? $_GET['fechaInicioVacaciones'] : '';
+    $fechaFinVac = isset($_GET['fechaFinVacaciones']) ? $_GET['fechaFinVacaciones'] : '';
+    $fechaSolicitud = isset($_GET['fechaSolicitud']) ? $_GET['fechaSolicitud'] : '';
+    $anio = isset($_GET['anio']) ? $_GET['anio'] : '';
+    $fechaIngreso = isset($_GET['fechaIngreso']) ? $_GET['fechaIngreso'] : '';
+    
     $query = "SELECT 
                 t1.IdVacaciones,
                 t1.Anio,
@@ -49,14 +59,76 @@ try {
             LEFT JOIN t_personal as t5_personal ON t5.EmpleadoID = t5_personal.IdPersonal
             INNER JOIN t_cargo as t6 ON t6.IdCargo = t2.cargo
             INNER JOIN t_departamento as t7 ON t7.IdDepartamento = t2.departamento
-            ORDER BY t1.FechaSolicitud DESC";
+            WHERE 1=1";
+    
+    $params = [];
+    
+    if (!empty($estatus)) {
+        if (strpos($estatus, ',') !== false) {
+            $estatusArray = explode(',', $estatus);
+            $placeholders = implode(',', array_fill(0, count($estatusArray), '?'));
+            $query .= " AND t1.Estatus IN ($placeholders)";
+            $params = array_merge($params, $estatusArray);
+        } else {
+            $query .= " AND t1.Estatus = ?";
+            $params[] = $estatus;
+        }
+    }
+    
+    if (!empty($noEmpleado)) {
+        $query .= " AND t2.NoEmpleado LIKE ?";
+        $params[] = "%$noEmpleado%";
+    }
+    
+    if (!empty($nombreCompleto)) {
+        $query .= " AND (t2.Nombre LIKE ? OR t2.ApPaterno LIKE ? OR t2.ApMaterno LIKE ?)";
+        $params[] = "%$nombreCompleto%";
+        $params[] = "%$nombreCompleto%";
+        $params[] = "%$nombreCompleto%";
+    }
+    
+    if (!empty($departamento)) {
+        $query .= " AND t7.NomDepto LIKE ?";
+        $params[] = "%$departamento%";
+    }
+    
+    if (!empty($fechaInicioVac)) {
+        $query .= " AND t1.FechaInicio >= ?";
+        $params[] = $fechaInicioVac;
+    }
+    
+    if (!empty($fechaFinVac)) {
+        $query .= " AND t1.FechaFin <= ?";
+        $params[] = $fechaFinVac;
+    }
+    
+    if (!empty($fechaSolicitud)) {
+        $query .= " AND DATE(t1.FechaSolicitud) = ?";
+        $params[] = $fechaSolicitud;
+    }
+    
+    if (!empty($anio)) {
+        $query .= " AND t1.Anio = ?";
+        $params[] = $anio;
+    }
+    
+    if (!empty($fechaIngreso)) {
+        $query .= " AND t2.FechaIngreso >= ?";
+        $params[] = $fechaIngreso;
+    }
+    
+    $query .= " ORDER BY t1.FechaSolicitud DESC";
     
     $stmt = $Conexion->prepare($query);
-    $stmt->execute();
+    
+    if (!empty($params)) {
+        $stmt->execute($params);
+    } else {
+        $stmt->execute();
+    }
     
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Convertir estatus a entero
     foreach ($result as &$row) {
         $row['Estatus'] = (int)$row['Estatus'];
         $row['Anio'] = (int)$row['Anio'];
@@ -71,7 +143,8 @@ try {
     echo json_encode([
         'status' => true,
         'message' => 'Vacaciones obtenidas correctamente',
-        'data' => $result
+        'data' => $result,
+        'total' => count($result)
     ]);
     
 } catch (Exception $e) {

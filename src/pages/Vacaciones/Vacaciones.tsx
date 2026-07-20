@@ -494,7 +494,6 @@ export const Vacaciones: React.FC = () => {
     
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [vacaciones, setVacaciones] = useState<InterfaceVacaciones[]>([]);
-    const [vacacionesFiltrados, setVacacionesFiltrados] = useState<InterfaceVacaciones[]>([]);
     const [loading, setLoading] = useState(false);
     const [tipoFormulario, setTipoFormulario] = useState<'Agregar' | 'Modificar' | 'Ver'>('Agregar');
     const [submitting, setSubmitting] = useState(false);
@@ -519,7 +518,7 @@ export const Vacaciones: React.FC = () => {
     const [selectedEmpleadoId, setSelectedEmpleadoId] = useState<string>('');
     
     const today = new Date().toISOString().split('T')[0];
-    const [filtroFecha, setFiltroFecha] = useState<string>(today);
+    const [filtroFecha, setFiltroFecha] = useState<string>('');
     
     const [filtros, setFiltros] = useState<FiltrosVacaciones>({
         NoEmpleado: 0,
@@ -535,12 +534,6 @@ export const Vacaciones: React.FC = () => {
     });
 
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-    
-    const [cantidadesFiltradas, setCantidadesFiltradas] = useState({
-        solicitadas: 0,
-        autorizadas: 0,
-        validadas: 0
-    });
     
     const [periodosVacaciones, setPeriodosVacaciones] = useState<PeriodoVacaciones[]>([]);
     const [aniosDisponibles, setAniosDisponibles] = useState<OpcionSelect[]>([]);
@@ -996,158 +989,66 @@ export const Vacaciones: React.FC = () => {
         setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: isoDate }));
     }, []);
 
-    const aplicarFiltros = useCallback(() => {
-        let filtrados = [...vacaciones];
-
-        if (filtroFecha && filtroFecha.trim() !== '') {
-            filtrados = filtrados.filter(v => {
-                const fechaSolicitud = v.FechaSolicitud?.split(' ')[0] || '';
-                return fechaSolicitud === filtroFecha;
-            });
-        }
-
-        if (activeTab === 'solicitadas') {
-            filtrados = filtrados.filter(v => v.Estatus === 0);
-        } else if (activeTab === 'autorizadas') {
-            filtrados = filtrados.filter(v => v.Estatus === 1 || v.Estatus === 4);
-        } else {
-            filtrados = filtrados.filter(v => v.Estatus === 2 || v.Estatus === 3);
-        }
-
-        if (filtros.NoEmpleado && filtros.NoEmpleado !== 0 && filtros.NoEmpleado.toString().trim() !== '') {
-            const busquedaNoEmpleado = filtros.NoEmpleado.toString().toLowerCase();
-            filtrados = filtrados.filter(v => 
-                v.NoEmpleado?.toString().toLowerCase().includes(busquedaNoEmpleado)
-            );
-        }
-
-        if (filtros.NombreCompleto && filtros.NombreCompleto.trim() !== '') {
-            const busquedaNombre = filtros.NombreCompleto.toLowerCase();
-            filtrados = filtrados.filter(v => 
-                v.NombreCompleto?.toLowerCase().includes(busquedaNombre)
-            );
-        }
-
-        if (filtros.Departamento && filtros.Departamento.trim() !== '') {
-            const busquedaDepartamento = filtros.Departamento.toLowerCase();
-            filtrados = filtrados.filter(v => 
-                v.Departamento?.toLowerCase().includes(busquedaDepartamento)
-            );
-        }
-
-        if (filtros.FechaInicioVacaciones) {
-            filtrados = filtrados.filter(v => 
-                v.FechaInicio && v.FechaInicio >= filtros.FechaInicioVacaciones
-            );
-        }
-
-        if (filtros.FechaFinVacaciones) {
-            filtrados = filtrados.filter(v => 
-                v.FechaFin && v.FechaFin <= filtros.FechaFinVacaciones
-            );
-        }
-
-        if (filtros.FechaIngreso) {
-            filtrados = filtrados.filter(v => 
-                v.FechaIngreso && v.FechaIngreso >= filtros.FechaIngreso
-            );
-        }
-
-        if (filtros.Anio && filtros.Anio !== 0) {
-            filtrados = filtrados.filter(v => v.Anio === filtros.Anio);
-        }
-
-        setVacacionesFiltrados(filtrados);
-        setFiltrosAplicados(true);
-        
-        const cantidades = {
-            solicitadas: filtrados.filter(v => v.Estatus === 0).length,
-            autorizadas: filtrados.filter(v => v.Estatus === 1 || v.Estatus === 4).length,
-            validadas: filtrados.filter(v => v.Estatus === 2 || v.Estatus === 3).length
-        };
-        setCantidadesFiltradas(cantidades);
-    }, [vacaciones, filtros, activeTab, filtroFecha]);
-
-    const handleFiltroChange = (campo: keyof FiltrosVacaciones, valor: string | number) => {
-        setFiltros(prev => ({
-            ...prev,
-            [campo]: valor
-        }));
-        
-        if (filtroTimeoutRef.current) {
-            clearTimeout(filtroTimeoutRef.current);
-        }
-        
-        filtroTimeoutRef.current = setTimeout(() => {
-            aplicarFiltros();
-        }, 300);
-    };
-
-    const handleFiltroFechaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setFiltroFecha(value);
-        
-        if (filtroTimeoutRef.current) {
-            clearTimeout(filtroTimeoutRef.current);
-        }
-        
-        filtroTimeoutRef.current = setTimeout(() => {
-            aplicarFiltros();
-        }, 300);
-    };
-
-    const handleAnioFiltroChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value ? Number(e.target.value) : 0;
-        setFiltros(prev => ({
-            ...prev,
-            Anio: value
-        }));
-        
-        if (filtroTimeoutRef.current) {
-            clearTimeout(filtroTimeoutRef.current);
-        }
-        
-        filtroTimeoutRef.current = setTimeout(() => {
-            aplicarFiltros();
-        }, 300);
-    };
-
-    const limpiarFiltros = () => {
-        setFiltros({
-            NoEmpleado: 0,
-            NombreCompleto: '',
-            Departamento: '',
-            FechaInicioVacaciones: '',
-            FechaFinVacaciones: '',
-            Supervisor: '',
-            FechaIngreso: '',
-            FechaSolicitud: '',
-            Estatus: 0,
-            Anio: 0
-        });
-        setVacacionesFiltrados([]);
-        setFiltrosAplicados(false);
-        setCantidadesFiltradas({ solicitadas: 0, autorizadas: 0, validadas: 0 });
-        
-        if (filtroTimeoutRef.current) {
-            clearTimeout(filtroTimeoutRef.current);
-        }
-        
-        setTimeout(() => {
-            aplicarFiltros();
-        }, 300);
-        
-        showToast({
-            text: 'Filtros limpiados',
-            type: 'info',
-            autoClose: 1500
-        });
-    };
-
-    const fetchVacaciones = useCallback(async () => {
+    const fetchVacacionesPorTab = useCallback(async (tab: TabType) => {
         try {
             setLoading(true);
-            const response = await apiService.get<RespuestaAPI>('/vacaciones/ObtenerListado.php');
+            
+            let estatusParam = '';
+            switch (tab) {
+                case 'solicitadas':
+                    estatusParam = '0';
+                    break;
+                case 'autorizadas':
+                    estatusParam = '1';
+                    break;
+                case 'validadas':
+                    estatusParam = '2,3,4';
+                    break;
+                default:
+                    estatusParam = '';
+            }
+            
+            const params = new URLSearchParams();
+            
+            if (estatusParam) {
+                params.append('estatus', estatusParam);
+            }
+            
+            if (filtroFecha) {
+                params.append('fechaSolicitud', filtroFecha);
+            }
+            
+            if (filtros.NoEmpleado && filtros.NoEmpleado !== 0) {
+                params.append('noEmpleado', filtros.NoEmpleado.toString());
+            }
+            
+            if (filtros.NombreCompleto) {
+                params.append('nombreCompleto', filtros.NombreCompleto);
+            }
+            
+            if (filtros.Departamento) {
+                params.append('departamento', filtros.Departamento);
+            }
+            
+            if (filtros.FechaInicioVacaciones) {
+                params.append('fechaInicioVacaciones', filtros.FechaInicioVacaciones);
+            }
+            
+            if (filtros.FechaFinVacaciones) {
+                params.append('fechaFinVacaciones', filtros.FechaFinVacaciones);
+            }
+            
+            if (filtros.FechaIngreso) {
+                params.append('fechaIngreso', filtros.FechaIngreso);
+            }
+            
+            if (filtros.Anio && filtros.Anio !== 0) {
+                params.append('anio', filtros.Anio.toString());
+            }
+            
+            const url = `/vacaciones/ObtenerListado.php${params.toString() ? '?' + params.toString() : ''}`;
+            
+            const response = await apiService.get<RespuestaAPI>(url);
             
             if (response.status && response.data) {
                 const vacacionesData = (response.data as any[]).map(item => ({
@@ -1178,6 +1079,7 @@ export const Vacaciones: React.FC = () => {
                 })) as InterfaceVacaciones[];
                 
                 setVacaciones(vacacionesData);
+                setFiltrosAplicados(true);
             } else {
                 showToast({
                     text: response.message || 'Error al cargar vacaciones',
@@ -1197,7 +1099,80 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [filtroFecha, filtros]);
+
+    const handleFiltroChange = (campo: keyof FiltrosVacaciones, valor: string | number) => {
+        setFiltros(prev => ({
+            ...prev,
+            [campo]: valor
+        }));
+        
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        
+        filtroTimeoutRef.current = setTimeout(() => {
+            fetchVacacionesPorTab(activeTab);
+        }, 500);
+    };
+
+    const handleFiltroFechaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setFiltroFecha(value);
+        
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        
+        filtroTimeoutRef.current = setTimeout(() => {
+            fetchVacacionesPorTab(activeTab);
+        }, 500);
+    };
+
+    const handleAnioFiltroChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value ? Number(e.target.value) : 0;
+        setFiltros(prev => ({
+            ...prev,
+            Anio: value
+        }));
+        
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        
+        filtroTimeoutRef.current = setTimeout(() => {
+            fetchVacacionesPorTab(activeTab);
+        }, 500);
+    };
+
+    const limpiarFiltros = () => {
+        setFiltros({
+            NoEmpleado: 0,
+            NombreCompleto: '',
+            Departamento: '',
+            FechaInicioVacaciones: '',
+            FechaFinVacaciones: '',
+            Supervisor: '',
+            FechaIngreso: '',
+            FechaSolicitud: '',
+            Estatus: 0,
+            Anio: 0
+        });
+        setFiltroFecha('');
+        setFiltrosAplicados(false);
+        
+        if (filtroTimeoutRef.current) {
+            clearTimeout(filtroTimeoutRef.current);
+        }
+        
+        fetchVacacionesPorTab(activeTab);
+        
+        showToast({
+            text: 'Filtros limpiados',
+            type: 'info',
+            autoClose: 1500
+        });
+    };
 
     const validateForm = useCallback((): boolean => {
         if (!vacacionesForm.NoEmpleado?.trim()) {
@@ -1350,7 +1325,7 @@ export const Vacaciones: React.FC = () => {
                 setShowForm(false);
                 resetForm();
                 setTipoFormulario('Agregar');
-                fetchVacaciones();
+                fetchVacacionesPorTab(activeTab);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -1362,7 +1337,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [vacacionesForm, usuarioSesion, fetchVacaciones, validateForm, selectedAnio, isAuthorizer, isValidator]);
+    }, [vacacionesForm, usuarioSesion, validateForm, selectedAnio, isAuthorizer, isValidator, activeTab, fetchVacacionesPorTab]);
 
     const handleAuthorize = useCallback((vacacion: InterfaceVacaciones) => {
         setVacacionAccion(vacacion);
@@ -1498,7 +1473,7 @@ export const Vacaciones: React.FC = () => {
                     autoClose: 1500
                 });
                 
-                fetchVacaciones();
+                fetchVacacionesPorTab(activeTab);
                 setActionModalVisible(false);
                 setVacacionAccion(null);
             } else {
@@ -1518,7 +1493,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setAccionEnProceso(false);
         }
-    }, [vacacionAccion, actionType, usuarioSesion, fetchVacaciones]);
+    }, [vacacionAccion, actionType, usuarioSesion, activeTab, fetchVacacionesPorTab]);
 
     const handleEdit = useCallback(async (vacacion: InterfaceVacaciones) => {
         setTipoFormulario('Modificar');
@@ -1633,7 +1608,7 @@ export const Vacaciones: React.FC = () => {
                     type: 'success',
                     autoClose: 1500
                 });
-                fetchVacaciones();
+                fetchVacacionesPorTab(activeTab);
                 setDeleteModalVisible(false);
                 setVacacionAEliminar(null);
             } else {
@@ -1653,7 +1628,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setEliminando(false);
         }
-    }, [vacacionAEliminar, usuarioSesion?.IdUsuario, fetchVacaciones]);
+    }, [vacacionAEliminar, usuarioSesion?.IdUsuario, activeTab, fetchVacacionesPorTab]);
 
     const resetForm = useCallback(() => {
         setVacacionesForm({
@@ -1782,26 +1757,15 @@ export const Vacaciones: React.FC = () => {
     const handleTabChange = (tab: TabType) => {
         setActiveTab(tab);
         setOpenActionDropdown(null);
-        if (filtroTimeoutRef.current) {
-            clearTimeout(filtroTimeoutRef.current);
-        }
-        setTimeout(() => {
-            aplicarFiltros();
-        }, 300);
+        fetchVacacionesPorTab(tab);
     };
 
     useEffect(() => {
         const usuario = obtenerUsuarioSesion();
         setUsuarioSesion(usuario);
-        fetchVacaciones();
         cargarOpcionesCatalogos();
-    }, [fetchVacaciones, cargarOpcionesCatalogos]);
-
-    useEffect(() => {
-        if (vacaciones.length > 0) {
-            aplicarFiltros();
-        }
-    }, [vacaciones]);
+        fetchVacacionesPorTab(activeTab);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -1855,21 +1819,15 @@ export const Vacaciones: React.FC = () => {
             <div className="vacaciones-tabs">
                 <button className={`tab-button ${activeTab === 'solicitadas' ? 'active' : ''}`} onClick={() => handleTabChange('solicitadas')}>
                     <FileText size={16} /> Solicitadas 
-                    <span className="tab-count">
-                        {filtrosAplicados ? cantidadesFiltradas.solicitadas : vacaciones.filter(v => v.Estatus === 0).length}
-                    </span>
+                    <span className="tab-count">{vacaciones.filter(v => v.Estatus === 0).length}</span>
                 </button>
                 <button className={`tab-button ${activeTab === 'autorizadas' ? 'active' : ''}`} onClick={() => handleTabChange('autorizadas')}>
                     <CheckCircle size={16} /> Autorizadas 
-                    <span className="tab-count">
-                        {filtrosAplicados ? cantidadesFiltradas.autorizadas : vacaciones.filter(v => v.Estatus === 1 || v.Estatus === 4).length}
-                    </span>
+                    <span className="tab-count">{vacaciones.filter(v => v.Estatus === 1).length}</span>
                 </button>
                 <button className={`tab-button ${activeTab === 'validadas' ? 'active' : ''}`} onClick={() => handleTabChange('validadas')}>
                     <CheckCircle size={16} /> Validadas / Canceladas 
-                    <span className="tab-count">
-                        {filtrosAplicados ? cantidadesFiltradas.validadas : vacaciones.filter(v => v.Estatus === 2 || v.Estatus === 3).length}
-                    </span>
+                    <span className="tab-count">{vacaciones.filter(v => v.Estatus > 1).length}</span>
                 </button>
             </div>
 
@@ -1959,7 +1917,7 @@ export const Vacaciones: React.FC = () => {
 
             <div className="vacaciones-content">
                 {loadingOptions && (<div className="loading-options"><span>Cargando opciones...</span></div>)}
-                <Tabla columns={currentColumns} data={vacacionesFiltrados} pageSize={10} pageSizeOptions={[5, 10, 25, 50]} emptyMessage={!filtrosAplicados ? "Aplique filtros y presione 'Buscar' para ver las solicitudes" : (activeTab === 'solicitadas' ? "No hay solicitudes pendientes que coincidan con los filtros" : (activeTab === 'autorizadas' ? "No hay solicitudes autorizadas que coincidan con los filtros" : "No hay solicitudes validadas/canceladas que coincidan con los filtros"))} className="full-height-table" loading={loading} />
+                <Tabla columns={currentColumns} data={vacaciones} pageSize={10} pageSizeOptions={[5, 10, 25, 50]} emptyMessage={activeTab === 'solicitadas' ? "No hay solicitudes pendientes" : (activeTab === 'autorizadas' ? "No hay solicitudes autorizadas" : "No hay solicitudes validadas/canceladas")} className="full-height-table" loading={loading} />
             </div>
 
             {showForm && (
