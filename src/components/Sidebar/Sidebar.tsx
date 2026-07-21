@@ -79,15 +79,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const location = useLocation();
     const sidebarRef = useRef<HTMLDivElement>(null);
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
+    const [expandedSections, setExpandedSections] = useState<string[]>([]);
     
     // Filtrar el menú basado en el rol del usuario
     const menuSections = useMemo(() => {
         if (!usuarioSesion) {
-            console.log('No hay usuario sesión');
+            console.log('No hay usuario en sesión');
             return [];
         }
         
-        const rolIdNormalizado = normalizarRolId(usuarioSesion.rol );
+        const rolIdNormalizado = normalizarRolId(usuarioSesion.rol);
         
         // Si es administrador (ID 1), mostrar todo el menú
         if (rolIdNormalizado === 1) {
@@ -100,19 +101,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         console.log(`Menú filtrado: ${seccionesFiltradas.length} secciones`);
         return seccionesFiltradas;
     }, [usuarioSesion]);
-    
-    const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
     // Actualizar expandedSections cuando cambia el menú
     useEffect(() => {
         if (menuSections.length > 0 && expandedSections.length === 0) {
-            const currentSection = location.pathname.split('/')[1].toLowerCase();
+            const currentPath = location.pathname;
             const activeSection = menuSections.find(section => 
-                section.id === currentSection
+                section.subItems.some(item => item.path === currentPath)
             );
+            
             if (activeSection) {
                 setExpandedSections([activeSection.id]);
-            } else if (menuSections.length > 0) {
+            } else {
+                // Expandir la primera sección por defecto
                 setExpandedSections([menuSections[0].id]);
             }
         }
@@ -137,6 +138,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         }
     }, [onClose]);
 
+    // Cerrar sidebar al hacer clic fuera
     useEffect(() => {
         if (window.innerWidth > 768 || !isOpen) return;
 
@@ -155,17 +157,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         };
     }, [isOpen, onClose]);
 
+    // Cerrar con tecla Escape
     useEffect(() => {
-        const currentPath = location.pathname;
-        const activeSection = menuSections.find(section => 
-            section.subItems.some(item => item.path === currentPath)
-        );
-        
-        if (activeSection && !expandedSections.includes(activeSection.id)) {
-            setExpandedSections(prev => [...prev, activeSection.id]);
-        }
-    }, [location.pathname, menuSections]);
+        const handleEscapeKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
 
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscapeKey);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscapeKey);
+        };
+    }, [isOpen, onClose]);
+
+    // Cargar usuario al montar
     useEffect(() => {
         const usuario = obtenerUsuarioSesion();
         console.log('Usuario cargado desde sesión:', usuario);
@@ -185,21 +194,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         setUsuarioSesion(usuario);
     }, []);
 
+    // Actualizar sección activa cuando cambia la ruta
     useEffect(() => {
-        const handleEscapeKey = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' && isOpen) {
-                onClose();
-            }
-        };
-
-        if (isOpen) {
-            document.addEventListener('keydown', handleEscapeKey);
+        const currentPath = location.pathname;
+        const activeSection = menuSections.find(section => 
+            section.subItems.some(item => item.path === currentPath)
+        );
+        
+        if (activeSection && !expandedSections.includes(activeSection.id)) {
+            setExpandedSections(prev => [...prev, activeSection.id]);
         }
-
-        return () => {
-            document.removeEventListener('keydown', handleEscapeKey);
-        };
-    }, [isOpen, onClose]);
+    }, [location.pathname, menuSections]);
 
     const renderNavigation = () => {
         if (!usuarioSesion) {
@@ -213,15 +218,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         if (menuSections.length === 0) {
             const rolIdNormalizado = normalizarRolId(usuarioSesion.rol);
+            const rolNombre = usuarioSesion.rol || obtenerNombreRol(rolIdNormalizado);
+            
             return (
                 <div className="nav-message">
                     <Icons.Shield size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
                     <p>No tienes acceso a ninguna opción</p>
                     <div className="debug-info">
                         <p><strong>Información:</strong></p>
-                        <p>Usuario: {usuarioSesion.Usuario}</p>
-                        <p>Rol ID: {usuarioSesion.rol} ({typeof usuarioSesion.rol})</p>
-                        <p>Rol: {usuarioSesion.rol || obtenerNombreRol(rolIdNormalizado)}</p>
+                        <p>Usuario: {usuarioSesion.Usuario || 'Sin nombre'}</p>
+                        <p>Rol ID: {usuarioSesion.rol || 'Sin rol'}</p>
+                        <p>Rol: {rolNombre}</p>
                         <p className="nav-submessage">Contacta al administrador para solicitar permisos</p>
                     </div>
                 </div>
@@ -290,7 +297,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         const rolNombre = usuarioSesion.rol || obtenerNombreRol(rolIdNormalizado);
         
         return {
-            nombre: rolNombre,
+            nombre: (rolNombre == 1 ? 'ADMINISTRADOR' :
+                     rolNombre == 2 ? 'RECURSOS HUMANOS' :
+                     rolNombre == 4 ? 'SUPERVISOR' :
+                     rolNombre == 5 ? 'OPERADOR' :
+                     'Sin rol'),
             id: usuarioSesion.rol,
             idNormalizado: rolIdNormalizado
         };
@@ -341,6 +352,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <div className="user-info">
                         <h3>{usuarioSesion?.Usuario || 'Usuario'}</h3>
                         <p>{usuarioSesion?.Descripcion || 'Cargando...'}</p>
+                        <div className="user-role">
+                            <span className="role-badge">
+                                {rolInfo.nombre}
+                            </span>
+                        </div>
                     </div>
                 </div>
 

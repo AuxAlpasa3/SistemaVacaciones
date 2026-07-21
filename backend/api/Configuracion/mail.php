@@ -3,9 +3,9 @@ return [
     'smtp' => [
         'host' => 'smtp.office365.com', 
         'port' => 587,
-        'username' => 'sistema@alpasa.com.mx',
-        'password' => 'tu_contraseña_aqui',
-        'from_email' => 'sistema@alpasa.com.mx',
+        'username' => 'mailto:noreply@alpasa.com.mx',
+        'password' => 'Baf81593zl',
+        'from_email' => 'mailto:noreply@alpasa.com.mx',
         'from_name' => 'Sistema de Vacaciones - Alpasa',
     ],
     // 'destinatarios' => [

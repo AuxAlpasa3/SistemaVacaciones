@@ -164,14 +164,12 @@ export const Tabla: React.FC<DataTableProps> = ({
         
         return baseColumns;
     }, [columns, showActions, onEdit, onDelete]);
-
-    // Filter visible columns
+ 
     const visibleColumns = useMemo(() => 
         tableColumns.filter(col => columnVisibility[col.key] !== false),
         [tableColumns, columnVisibility]
     );
-
-    // Filter data based on search terms
+ 
     const filteredData = useMemo(() => {
         return data.filter(row => {
             return Object.entries(searchTerms).every(([columnKey, searchTerm]) => {
@@ -184,8 +182,7 @@ export const Tabla: React.FC<DataTableProps> = ({
             });
         });
     }, [data, searchTerms]);
-
-    // Sort filtered data
+ 
     const sortedData = useMemo(() => {
         if (!sortConfig.key || !sortConfig.direction) {
             return filteredData;

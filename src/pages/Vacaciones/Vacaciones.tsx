@@ -1803,6 +1803,17 @@ export const Vacaciones: React.FC = () => {
 
     const isViewMode = tipoFormulario === 'Ver';
     const currentColumns = activeTab === 'solicitadas' ? solicitadasColumns : (activeTab === 'autorizadas' ? autorizadasColumns : validadasColumns);
+    
+    // Filtrar datos según la pestaña activa
+    const datosFiltrados = useMemo(() => {
+        if (activeTab === 'solicitadas') {
+            return vacaciones.filter(v => v.Estatus === 0);
+        } else if (activeTab === 'autorizadas') {
+            return vacaciones.filter(v => v.Estatus === 1);
+        } else {
+            return vacaciones.filter(v => v.Estatus > 1);
+        }
+    }, [vacaciones, activeTab]);
 
     return (
         <div className="vacaciones-container">
@@ -1917,7 +1928,15 @@ export const Vacaciones: React.FC = () => {
 
             <div className="vacaciones-content">
                 {loadingOptions && (<div className="loading-options"><span>Cargando opciones...</span></div>)}
-                <Tabla columns={currentColumns} data={vacaciones} pageSize={10} pageSizeOptions={[5, 10, 25, 50]} emptyMessage={activeTab === 'solicitadas' ? "No hay solicitudes pendientes" : (activeTab === 'autorizadas' ? "No hay solicitudes autorizadas" : "No hay solicitudes validadas/canceladas")} className="full-height-table" loading={loading} />
+                <Tabla 
+                    columns={currentColumns} 
+                    data={datosFiltrados} 
+                    pageSize={10} 
+                    pageSizeOptions={[5, 10, 25, 50]} 
+                    emptyMessage={activeTab === 'solicitadas' ? "No hay solicitudes pendientes" : (activeTab === 'autorizadas' ? "No hay solicitudes autorizadas" : "No hay solicitudes validadas/canceladas")} 
+                    className="full-height-table" 
+                    loading={loading} 
+                />
             </div>
 
             {showForm && (
