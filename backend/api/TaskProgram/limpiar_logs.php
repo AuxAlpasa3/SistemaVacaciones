@@ -1,9 +1,7 @@
 <?php
-// cron/limpiar_logs.php
-// Ejecutar mensualmente: 0 0 1 * * php /ruta/cron/limpiar_logs.php
 
-require_once __DIR__ . '/../db/Connection.php';
-require_once __DIR__ . '/../includes/Mailer.php';
+include_once '../../db/Connection.php';
+require_once '../includes/Mailer.php';
 
 date_default_timezone_set('America/Mexico_City');
 

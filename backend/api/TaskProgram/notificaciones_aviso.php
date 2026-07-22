@@ -1,8 +1,6 @@
-<?php 
-// Ejecutar diariamente: 0 6 * * * php /ruta/cron/notificaciones_aviso.php
-
-require_once __DIR__ . '/../db/Connection.php';
-require_once __DIR__ . '/../includes/VacacionesService.php';
+<?php  
+include_once '../../db/Connection.php';
+require_once '../includes/VacacionesService.php';
  
 date_default_timezone_set('America/Mexico_City');
  

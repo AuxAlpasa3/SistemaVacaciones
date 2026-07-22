@@ -1,8 +1,7 @@
 <?php 
-// Ejecutar cada 5 minutos: */5 * * * * php /ruta/cron/procesar_cola_email.php
 
-require_once __DIR__ . '/../db/Connection.php';
-require_once __DIR__ . '/../includes/Mailer.php';
+include_once '../../db/Connection.php';
+require_once '../includes/Mailer.php';
 
 // Configurar zona horaria
 date_default_timezone_set('America/Mexico_City');

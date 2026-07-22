@@ -989,30 +989,11 @@ export const Vacaciones: React.FC = () => {
         setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: isoDate }));
     }, []);
 
-    const fetchVacacionesPorTab = useCallback(async (tab: TabType) => {
+    const fetchVacaciones = useCallback(async () => {
         try {
             setLoading(true);
             
-            let estatusParam = '';
-            switch (tab) {
-                case 'solicitadas':
-                    estatusParam = '0';
-                    break;
-                case 'autorizadas':
-                    estatusParam = '1';
-                    break;
-                case 'validadas':
-                    estatusParam = '2,3,4';
-                    break;
-                default:
-                    estatusParam = '';
-            }
-            
             const params = new URLSearchParams();
-            
-            if (estatusParam) {
-                params.append('estatus', estatusParam);
-            }
             
             if (filtroFecha) {
                 params.append('fechaSolicitud', filtroFecha);
@@ -1112,7 +1093,7 @@ export const Vacaciones: React.FC = () => {
         }
         
         filtroTimeoutRef.current = setTimeout(() => {
-            fetchVacacionesPorTab(activeTab);
+            fetchVacaciones();
         }, 500);
     };
 
@@ -1125,7 +1106,7 @@ export const Vacaciones: React.FC = () => {
         }
         
         filtroTimeoutRef.current = setTimeout(() => {
-            fetchVacacionesPorTab(activeTab);
+            fetchVacaciones();
         }, 500);
     };
 
@@ -1141,7 +1122,7 @@ export const Vacaciones: React.FC = () => {
         }
         
         filtroTimeoutRef.current = setTimeout(() => {
-            fetchVacacionesPorTab(activeTab);
+            fetchVacaciones();
         }, 500);
     };
 
@@ -1165,7 +1146,7 @@ export const Vacaciones: React.FC = () => {
             clearTimeout(filtroTimeoutRef.current);
         }
         
-        fetchVacacionesPorTab(activeTab);
+        fetchVacaciones();
         
         showToast({
             text: 'Filtros limpiados',
@@ -1325,7 +1306,7 @@ export const Vacaciones: React.FC = () => {
                 setShowForm(false);
                 resetForm();
                 setTipoFormulario('Agregar');
-                fetchVacacionesPorTab(activeTab);
+                fetchVacaciones();
             }
         } catch (error) {
             console.error('Error:', error);
@@ -1337,7 +1318,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [vacacionesForm, usuarioSesion, validateForm, selectedAnio, isAuthorizer, isValidator, activeTab, fetchVacacionesPorTab]);
+    }, [vacacionesForm, usuarioSesion, validateForm, selectedAnio, isAuthorizer, isValidator, fetchVacaciones]);
 
     const handleAuthorize = useCallback((vacacion: InterfaceVacaciones) => {
         setVacacionAccion(vacacion);
@@ -1473,7 +1454,7 @@ export const Vacaciones: React.FC = () => {
                     autoClose: 1500
                 });
                 
-                fetchVacacionesPorTab(activeTab);
+                fetchVacaciones();
                 setActionModalVisible(false);
                 setVacacionAccion(null);
             } else {
@@ -1493,7 +1474,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setAccionEnProceso(false);
         }
-    }, [vacacionAccion, actionType, usuarioSesion, activeTab, fetchVacacionesPorTab]);
+    }, [vacacionAccion, actionType, usuarioSesion, fetchVacaciones]);
 
     const handleEdit = useCallback(async (vacacion: InterfaceVacaciones) => {
         setTipoFormulario('Modificar');
@@ -1608,7 +1589,7 @@ export const Vacaciones: React.FC = () => {
                     type: 'success',
                     autoClose: 1500
                 });
-                fetchVacacionesPorTab(activeTab);
+                fetchVacaciones();
                 setDeleteModalVisible(false);
                 setVacacionAEliminar(null);
             } else {
@@ -1628,12 +1609,12 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setEliminando(false);
         }
-    }, [vacacionAEliminar, usuarioSesion?.IdUsuario, activeTab, fetchVacacionesPorTab]);
+    }, [vacacionAEliminar, usuarioSesion?.IdUsuario, fetchVacaciones]);
 
     const resetForm = useCallback(() => {
         setVacacionesForm({
             IdVacaciones: 0,
-            FechaSolicitud: '',
+            FechaSolicitud: today,
             UsuarioSolicita: '',
             IdPersonal: 0,
             NoEmpleado: '',
@@ -1659,7 +1640,7 @@ export const Vacaciones: React.FC = () => {
         setFechaInicioInput('');
         setFechaFinInput('');
         setFechaIngresoInput('');
-        setFechaSolicitudInput('');
+        setFechaSolicitudInput(today);
         setFechaRetornoInput('');
         setSelectedEmpleadoId('');
         setPeriodosVacaciones([]);
@@ -1670,14 +1651,12 @@ export const Vacaciones: React.FC = () => {
         setPeriodoSeleccionado(null);
         setAdvertenciaAnticipacion('');
         setAdvertenciaViernes('');
-    }, []);
+    }, [today]);
 
     const handleShowForm = useCallback(() => {
         resetForm();
         setShowForm(true);
         setTipoFormulario('Agregar');
-        setFechaSolicitudInput('');
-        setVacacionesForm(prev => ({ ...prev, FechaSolicitud: '', Estatus: 0 }));
     }, [resetForm]);
 
     useEffect(() => {
@@ -1757,14 +1736,13 @@ export const Vacaciones: React.FC = () => {
     const handleTabChange = (tab: TabType) => {
         setActiveTab(tab);
         setOpenActionDropdown(null);
-        fetchVacacionesPorTab(tab);
     };
 
     useEffect(() => {
         const usuario = obtenerUsuarioSesion();
         setUsuarioSesion(usuario);
         cargarOpcionesCatalogos();
-        fetchVacacionesPorTab(activeTab);
+        fetchVacaciones();
     }, []);
 
     useEffect(() => {
@@ -1804,7 +1782,6 @@ export const Vacaciones: React.FC = () => {
     const isViewMode = tipoFormulario === 'Ver';
     const currentColumns = activeTab === 'solicitadas' ? solicitadasColumns : (activeTab === 'autorizadas' ? autorizadasColumns : validadasColumns);
     
-    // Filtrar datos según la pestaña activa
     const datosFiltrados = useMemo(() => {
         if (activeTab === 'solicitadas') {
             return vacaciones.filter(v => v.Estatus === 0);

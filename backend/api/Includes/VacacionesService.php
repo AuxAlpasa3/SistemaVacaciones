@@ -1,6 +1,4 @@
 <?php
-// includes/VacacionesService.php
-
 require_once __DIR__ . '/Mailer.php';
 
 class VacacionesService {
@@ -11,23 +9,17 @@ class VacacionesService {
     public function __construct($db) {
         $this->db = $db;
         $this->mailer = new Mailer($db);
-        $this->config = include(__DIR__ . '/../config/mail.php');
+        $this->config = include('../Configuracion/mail.php');
     }
-    
-    /**
-     * Obtiene los datos del jefe inmediato de un empleado
-     */
-    private function getJefeInmediato($idPersonal) {
-        // Primero obtener el IdJefeInmediato del empleado
+     
+    private function getJefeInmediato($idPersonal) { 
         $stmt = $this->db->prepare("
             SELECT IdJefeInmediato 
-            FROM personal 
-            WHERE IdPersonal = ?
+            FROM t_personal 
+            WHERE IdPersonal = :idPersonal
         ");
-        $stmt->bind_param('i', $idPersonal);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $empleado = $result->fetch_assoc();
+        $stmt->execute([':idPersonal' => $idPersonal]);
+        $empleado = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$empleado || !$empleado['IdJefeInmediato']) {
             return [
@@ -39,18 +31,16 @@ class VacacionesService {
                 'Departamento' => 'RRHH'
             ];
         }
-        
-        // Obtener datos del jefe
+         
         $stmt = $this->db->prepare("
             SELECT IdPersonal, NoEmpleado, 
                    CONCAT(Nombre, ' ', ApPaterno, ' ', ApMaterno) as NombreCompleto,
                    Email, Cargo, Departamento
-            FROM personal 
-            WHERE IdPersonal = ?
+            FROM t_personal 
+            WHERE IdPersonal = :idJefe
         ");
-        $stmt->bind_param('i', $empleado['IdJefeInmediato']);
-        $stmt->execute();
-        $jefe = $stmt->get_result()->fetch_assoc();
+        $stmt->execute([':idJefe' => $empleado['IdJefeInmediato']]);
+        $jefe = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($jefe && $jefe['Email']) {
             return $jefe;
@@ -80,36 +70,29 @@ class VacacionesService {
                    p.FechaIngreso,
                    p.Email as EmailEmpleado,
                    p.IdJefeInmediato
-            FROM vacaciones v
-            INNER JOIN personal p ON v.IdPersonal = p.IdPersonal
-            WHERE v.IdVacaciones = ?
+            FROM t_vacaciones v
+            INNER JOIN t_personal p ON v.IdPersonal = p.IdPersonal
+            WHERE v.IdVacaciones = :idVacaciones
         ");
-        $stmt->bind_param('i', $idVacaciones);
-        $stmt->execute();
-        return $stmt->get_result()->fetch_assoc();
+        $stmt->execute([':idVacaciones' => $idVacaciones]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    
-    /**
-     * Envía notificaciones según el cambio de estatus
-     */
+     
     public function sendStatusNotification($idVacaciones, $nuevoEstatus, $comentarios = null) {
         switch ($nuevoEstatus) {
-            case 1: // Autorizada
+            case 1: 
                 return $this->notifyAuthorization($idVacaciones, $comentarios);
-            case 2: // Validada
+            case 2:  
                 return $this->notifyValidation($idVacaciones, $comentarios);
-            case 3: // Cancelada
+            case 3:  
                 return $this->notifyCancellation($idVacaciones, $comentarios);
-            case 4: // En Revisión
+            case 4:  
                 return $this->notifyReview($idVacaciones, $comentarios);
             default:
                 return false;
         }
     }
-    
-    /**
-     * Notifica cuando se autoriza una vacación
-     */
+     
     public function notifyAuthorization($idVacaciones, $comentarios = null) {
         $vacacion = $this->getVacacionCompleta($idVacaciones);
         if (!$vacacion) return false;
@@ -126,15 +109,13 @@ class VacacionesService {
             $cuerpo,
             'autorizacion',
             null,
-            $this->config['destinatarios']['rh']
+            //$this->config['destinatarios']['rh']
+            'Auxiliarsistemas3@alpasa.com.mx'
         );
         
         return true;
-    }
-    
-    /**
-     * Notifica cuando se valida una vacación
-     */
+    } 
+
     public function notifyValidation($idVacaciones, $comentarios = null) {
         $vacacion = $this->getVacacionCompleta($idVacaciones);
         if (!$vacacion) return false;
@@ -211,6 +192,7 @@ class VacacionesService {
      * Envía avisos de vacaciones próximas (15 y 7 días antes)
      */
     public function sendAdvanceNotices() {
+        // SQL Server: usar DATEADD en lugar de DATE_ADD
         $fecha15Dias = date('Y-m-d', strtotime('+15 days'));
         $fecha7Dias = date('Y-m-d', strtotime('+7 days'));
         
@@ -236,19 +218,18 @@ class VacacionesService {
                    p.Cargo,
                    p.Email as EmailEmpleado,
                    p.IdJefeInmediato
-            FROM vacaciones v
-            INNER JOIN personal p ON v.IdPersonal = p.IdPersonal
-            WHERE v.FechaInicio = ? 
+            FROM t_vacaciones v
+            INNER JOIN t_personal p ON v.IdPersonal = p.IdPersonal
+            WHERE v.FechaInicio = :fechaInicio
               AND v.Estatus IN (1, 2)
               AND v.{$campoFlag} = 0
         ");
-        $stmt->bind_param('s', $fechaInicio);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->execute([':fechaInicio' => $fechaInicio]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         $contador = 0;
         
-        while ($vacacion = $result->fetch_assoc()) {
+        foreach ($result as $vacacion) {
             $jefe = $this->getJefeInmediato($vacacion['IdPersonal']);
             
             if (!$jefe || !$jefe['Email']) continue;
@@ -265,23 +246,16 @@ class VacacionesService {
                 null,
                 $this->config['destinatarios']['rh']
             );
-            
-            // Marcar como enviado
-            $updateStmt = $this->db->prepare("UPDATE vacaciones SET {$campoFlag} = 1 WHERE IdVacaciones = ?");
-            $updateStmt->bind_param('i', $vacacion['IdVacaciones']);
-            $updateStmt->execute();
+             
+            $updateStmt = $this->db->prepare("UPDATE t_vacaciones SET {$campoFlag} = 1 WHERE IdVacaciones = :idVacaciones");
+            $updateStmt->execute([':idVacaciones' => $vacacion['IdVacaciones']]);
             
             $contador++;
         }
         
         return $contador;
     }
-    
-    /**
-     * Verifica vacaciones AUTORIZADAS (Estatus = 1) pero NO VALIDADAS (Estatus ≠ 2)
-     * SOLO si la fecha de inicio es FUTURA (mayor a hoy)
-     * Y han pasado más de 1 día desde la solicitud
-     */
+     
     public function checkUnvalidatedVacations() {
         $fechaActual = date('Y-m-d');
         $fechaLimiteSolicitud = date('Y-m-d', strtotime('-1 day'));
@@ -295,21 +269,23 @@ class VacacionesService {
                    p.Cargo,
                    p.Email as EmailEmpleado,
                    p.IdJefeInmediato
-            FROM vacaciones v
-            INNER JOIN personal p ON v.IdPersonal = p.IdPersonal
-            WHERE DATE(v.FechaSolicitud) <= ? 
-              AND v.FechaInicio > ? 
+            FROM t_vacaciones v
+            INNER JOIN t_personal p ON v.IdPersonal = p.IdPersonal
+            WHERE CAST(v.FechaSolicitud AS DATE) <= :fechaLimiteSolicitud
+              AND v.FechaInicio > :fechaActual
               AND v.Estatus = 1
               AND v.EmailRecordatorioRH = 0
             ORDER BY v.FechaSolicitud ASC
         ");
-        $stmt->bind_param('ss', $fechaLimiteSolicitud, $fechaActual);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->execute([
+            ':fechaLimiteSolicitud' => $fechaLimiteSolicitud,
+            ':fechaActual' => $fechaActual
+        ]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         $contador = 0;
         
-        while ($vacacion = $result->fetch_assoc()) {
+        foreach ($result as $vacacion) {
             $jefe = $this->getJefeInmediato($vacacion['IdPersonal']);
             
             // Calcular días desde que se solicitó
@@ -342,11 +318,9 @@ class VacacionesService {
                         'recordatorio_rh'
                     );
                 }
-                
-                // Marcar como enviado
-                $updateStmt = $this->db->prepare("UPDATE vacaciones SET EmailRecordatorioRH = 1 WHERE IdVacaciones = ?");
-                $updateStmt->bind_param('i', $vacacion['IdVacaciones']);
-                $updateStmt->execute();
+                 
+                $updateStmt = $this->db->prepare("UPDATE t_vacaciones SET EmailRecordatorioRH = 1 WHERE IdVacaciones = :idVacaciones");
+                $updateStmt->execute([':idVacaciones' => $vacacion['IdVacaciones']]);
                 
                 $contador++;
             }
@@ -354,10 +328,7 @@ class VacacionesService {
         
         return $contador;
     }
-    
-    /**
-     * Construye plantilla de correo para el jefe
-     */
+     
     private function buildEmailTemplate($tipo, $vacacion, $jefe, $comentarios = null) {
         $iconos = [
             'autorizacion' => '✅',
@@ -751,10 +722,7 @@ class VacacionesService {
         </body>
         </html>";
     }
-    
-    /**
-     * Obtiene el texto del estatus
-     */
+     
     private function getStatusText($estatus) {
         $statusMap = [
             0 => 'Solicitada',
@@ -771,30 +739,27 @@ class VacacionesService {
      */
     public function getNotificationStats() {
         $stats = [];
-        
-        // Estadísticas de la cola
+         
         $queueStats = $this->mailer->getQueueStats();
         $stats['queue'] = $queueStats;
-        
-        // Total de vacaciones por estatus
+         
         $stmt = $this->db->query("
             SELECT Estatus, COUNT(*) as total 
-            FROM vacaciones 
+            FROM t_vacaciones 
             GROUP BY Estatus
         ");
         $statusCounts = [];
-        while ($row = $stmt->fetch_assoc()) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $statusCounts[$row['Estatus']] = (int)$row['total'];
         }
         $stats['vacaciones_por_estatus'] = $statusCounts;
-        
-        // Envíos de correos hoy
+         
         $stmt = $this->db->query("
             SELECT COUNT(*) as total 
             FROM email_logs 
-            WHERE DATE(FechaEnvio) = CURDATE()
+            WHERE CAST(FechaEnvio AS DATE) = CAST(GETDATE() AS DATE)
         ");
-        $stats['envios_hoy'] = (int)$stmt->fetch_assoc()['total'];
+        $stats['envios_hoy'] = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         return $stats;
     }

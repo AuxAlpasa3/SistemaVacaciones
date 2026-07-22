@@ -1,7 +1,7 @@
 <?php
 // includes/Mailer.php
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once '../../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -14,7 +14,7 @@ class Mailer {
     
     public function __construct($db) {
         $this->db = $db;
-        $this->config = include(__DIR__ . '/../config/mail.php');
+        $this->config = include(__DIR__ . '/../Configuracion/mail.php');
         $this->smtpConfig = $this->config['smtp'];
     }
     
@@ -74,7 +74,7 @@ class Mailer {
         $stmt = $this->db->prepare("
             INSERT INTO email_queue 
             (IdVacaciones, Destinatario, DestinatarioCC, Asunto, CuerpoHTML, TipoNotificacion, FechaProgramada, Estado, MaxIntentos) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+            VALUES (:idVacaciones, :destinatario, :destinatarioCC, :asunto, :cuerpoHTML, :tipo, :fechaProgramada, 'pending', :maxIntentos)
         ");
         
         $ccStr = is_array($cc) ? implode(',', array_filter($cc, function($email) {
@@ -83,19 +83,16 @@ class Mailer {
         
         $maxIntentos = $this->config['max_intentos'] ?? 3;
         
-        $stmt->bind_param(
-            'issssssi',
-            $idVacaciones,
-            $destinatario,
-            $ccStr,
-            $asunto,
-            $cuerpoHTML,
-            $tipo,
-            $fechaProgramada,
-            $maxIntentos
-        );
-        
-        return $stmt->execute();
+        return $stmt->execute([
+            ':idVacaciones' => $idVacaciones,
+            ':destinatario' => $destinatario,
+            ':destinatarioCC' => $ccStr,
+            ':asunto' => $asunto,
+            ':cuerpoHTML' => $cuerpoHTML,
+            ':tipo' => $tipo,
+            ':fechaProgramada' => $fechaProgramada,
+            ':maxIntentos' => $maxIntentos
+        ]);
     }
     
     /**
@@ -107,22 +104,22 @@ class Mailer {
         }
         
         $stmt = $this->db->prepare("
-            SELECT IdEmailQueue, IdVacaciones, Destinatario, DestinatarioCC,
+            SELECT TOP :limit 
+                   IdEmailQueue, IdVacaciones, Destinatario, DestinatarioCC,
                    Asunto, CuerpoHTML, TipoNotificacion, Intentos, MaxIntentos
             FROM email_queue 
             WHERE Estado = 'pending' 
-              AND (FechaProgramada IS NULL OR FechaProgramada <= NOW())
+              AND (FechaProgramada IS NULL OR FechaProgramada <= GETDATE())
             ORDER BY FechaCreacion ASC
-            LIMIT ?
         ");
-        $stmt->bind_param('i', $limit);
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
-        $result = $stmt->get_result();
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         $sentCount = 0;
         $failedCount = 0;
         
-        while ($row = $result->fetch_assoc()) {
+        foreach ($result as $row) {
             $cc = $row['DestinatarioCC'] ? explode(',', $row['DestinatarioCC']) : null;
             
             $emailSent = $this->sendEmail(
@@ -137,11 +134,10 @@ class Mailer {
                 // Actualizar estado a sent
                 $updateStmt = $this->db->prepare("
                     UPDATE email_queue 
-                    SET Estado = 'sent', FechaEnvio = NOW() 
-                    WHERE IdEmailQueue = ?
+                    SET Estado = 'sent', FechaEnvio = GETDATE() 
+                    WHERE IdEmailQueue = :idEmailQueue
                 ");
-                $updateStmt->bind_param('i', $row['IdEmailQueue']);
-                $updateStmt->execute();
+                $updateStmt->execute([':idEmailQueue' => $row['IdEmailQueue']]);
                 $sentCount++;
                 
                 // Guardar log
@@ -155,11 +151,15 @@ class Mailer {
                 
                 $updateStmt = $this->db->prepare("
                     UPDATE email_queue 
-                    SET Estado = ?, Intentos = ?, ErrorMensaje = ? 
-                    WHERE IdEmailQueue = ?
+                    SET Estado = :estado, Intentos = :intentos, ErrorMensaje = :error 
+                    WHERE IdEmailQueue = :idEmailQueue
                 ");
-                $updateStmt->bind_param('sisi', $estado, $newIntentos, $emailSent['error'], $row['IdEmailQueue']);
-                $updateStmt->execute();
+                $updateStmt->execute([
+                    ':estado' => $estado,
+                    ':intentos' => $newIntentos,
+                    ':error' => $emailSent['error'],
+                    ':idEmailQueue' => $row['IdEmailQueue']
+                ]);
                 $failedCount++;
                 
                 // Guardar log de error
@@ -179,10 +179,17 @@ class Mailer {
         $stmt = $this->db->prepare("
             INSERT INTO email_logs 
             (IdVacaciones, IdEmailQueue, TipoNotificacion, Destinatario, Asunto, Estado, ErrorMensaje) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (:idVacaciones, :idEmailQueue, :tipo, :destinatario, :asunto, :estado, :error)
         ");
-        $stmt->bind_param('iisssss', $idVacaciones, $idEmailQueue, $tipo, $destinatario, $asunto, $estado, $error);
-        return $stmt->execute();
+        return $stmt->execute([
+            ':idVacaciones' => $idVacaciones,
+            ':idEmailQueue' => $idEmailQueue,
+            ':tipo' => $tipo,
+            ':destinatario' => $destinatario,
+            ':asunto' => $asunto,
+            ':estado' => $estado,
+            ':error' => $error
+        ]);
     }
     
     /**
@@ -196,7 +203,7 @@ class Mailer {
             FROM email_queue 
             GROUP BY Estado
         ");
-        while ($row = $stmt->fetch_assoc()) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $stats[$row['Estado']] = (int)$row['total'];
         }
         
@@ -211,9 +218,8 @@ class Mailer {
         
         $stmt = $this->db->prepare("
             DELETE FROM email_logs 
-            WHERE FechaEnvio < ?
+            WHERE FechaEnvio < :fechaLimite
         ");
-        $stmt->bind_param('s', $fechaLimite);
-        return $stmt->execute();
+        return $stmt->execute([':fechaLimite' => $fechaLimite]);
     }
 }
