@@ -26,3 +26,7 @@ dist-ssr
 .htaccess
 .env
 /backend/temp
+/backend/vendor
+/backend/.htaccess
+/backend/.env
+/backend/Personal/Fotografias
