@@ -544,6 +544,7 @@ export const Vacaciones: React.FC = () => {
     const [periodoSeleccionado, setPeriodoSeleccionado] = useState<PeriodoVacaciones | null>(null);
     const [advertenciaAnticipacion, setAdvertenciaAnticipacion] = useState<string>('');
     const [advertenciaViernes, setAdvertenciaViernes] = useState<string>('');
+    const [advertenciaRetornoDomingo, setAdvertenciaRetornoDomingo] = useState<string>('');
 
     const filtroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -552,6 +553,32 @@ export const Vacaciones: React.FC = () => {
     const canEditDelete = isHRorAdmin;
     const isAuthorizer = idRolUsuario === 3;
     const isValidator = idRolUsuario === 2;
+
+    const verificarRetornoDomingo = useCallback(() => {
+        const fechaRetorno = vacacionesForm.FechaRetornoLabores;
+        const departamento = vacacionesForm.Departamento || '';
+        
+        if (!fechaRetorno) {
+            setAdvertenciaRetornoDomingo('');
+            return;
+        }
+        
+        const esAdministracion = departamento === 'Administración' || departamento === '1';
+        
+        if (!esAdministracion) {
+            setAdvertenciaRetornoDomingo('');
+            return;
+        }
+        
+        const retorno = new Date(fechaRetorno);
+        const esDomingo = retorno.getDay() === 0;
+        
+        if (esDomingo) {
+            setAdvertenciaRetornoDomingo("ADVERTENCIA: Para el departamento de Administración, la fecha de retorno no puede ser domingo. Debe ajustar la fecha.");
+        } else {
+            setAdvertenciaRetornoDomingo('');
+        }
+    }, [vacacionesForm.FechaRetornoLabores, vacacionesForm.Departamento]);
 
     const verificarAnticipacionSolicitud = useCallback(() => {
         const fechaSolicitud = vacacionesForm.FechaSolicitud;
@@ -805,6 +832,50 @@ export const Vacaciones: React.FC = () => {
         }
     }, [usuarioSesion?.IdUsuario, cargarPeriodosVacaciones, resetEmpleadoData]);
 
+    const resetForm = useCallback(() => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        setVacacionesForm({
+            IdVacaciones: 0,
+            FechaSolicitud: '',
+            UsuarioSolicita: '',
+            IdPersonal: 0,
+            NoEmpleado: '',
+            NombreCompleto: '',
+            Departamento: '',
+            Cargo: '',
+            FechaIngreso: '',
+            FechaInicio: '',
+            FechaFin: '',
+            DiasTomar: 0,
+            FechaRetornoLabores: '',
+            FechaAutoriza: '',
+            UsuarioAutoriza: '',
+            UsuarioValida: '',
+            FechaValidado: '',
+            Estatus: 0,
+            Anio: 0,
+            SaldoDias: 0,
+            DiasCorresponden: 0,
+            Antiguedad: 0,
+            Comentarios: null
+        });
+        setFechaInicioInput('');
+        setFechaFinInput('');
+        setFechaIngresoInput('');
+        setFechaSolicitudInput('');
+        setFechaRetornoInput('');
+        setSelectedEmpleadoId('');
+        setPeriodosVacaciones([]);
+        setAniosDisponibles([]);
+        setSelectedAnio(null);
+        setDiasDisponiblesPeriodo(0);
+        setSaldoRestante(0);
+        setPeriodoSeleccionado(null);
+        setAdvertenciaAnticipacion('');
+        setAdvertenciaViernes('');
+        setAdvertenciaRetornoDomingo('');
+    }, []);
+
     const handleEmpleadoChange = useCallback((selectedId: string) => {
         if (tipoFormulario === 'Modificar') {
             showToast({
@@ -873,7 +944,11 @@ export const Vacaciones: React.FC = () => {
         const fechaRetornoStr = retorno.toISOString().split('T')[0];
         setFechaRetornoInput(fechaRetornoStr);
         setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: fechaRetornoStr }));
-    }, []);
+        
+        setTimeout(() => {
+            verificarRetornoDomingo();
+        }, 50);
+    }, [verificarRetornoDomingo]);
 
     const calcularDiasDesdeFechas = useCallback((fechaInicio: string, fechaFin: string) => {
         if (!fechaInicio || !fechaFin) return;
@@ -987,7 +1062,11 @@ export const Vacaciones: React.FC = () => {
         setFechaRetornoInput(value);
         const isoDate = value || '';
         setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: isoDate }));
-    }, []);
+        
+        setTimeout(() => {
+            verificarRetornoDomingo();
+        }, 50);
+    }, [verificarRetornoDomingo]);
 
     const fetchVacaciones = useCallback(async () => {
         try {
@@ -1176,15 +1255,14 @@ export const Vacaciones: React.FC = () => {
             showToast({ text: 'Los días a solicitar son requeridos y deben ser mayores a 0', type: 'error' });
             return false;
         }
-        if (!selectedAnio) {
+        if (!selectedAnio && !vacacionesForm.Anio) {
             showToast({ text: 'Debe seleccionar el año del período de vacaciones', type: 'error' });
             return false;
         }
-        if (vacacionesForm.DiasTomar > diasDisponiblesPeriodo) {
+        if (vacacionesForm.DiasTomar > diasDisponiblesPeriodo && diasDisponiblesPeriodo > 0) {
             showToast({ text: `No hay suficientes días disponibles. Máximo: ${diasDisponiblesPeriodo} días`, type: 'error' });
             return false;
         }
-        
         if (!vacacionesForm.FechaSolicitud) {
             showToast({ text: 'La fecha de solicitud es requerida', type: 'error' });
             return false;
@@ -1194,24 +1272,23 @@ export const Vacaciones: React.FC = () => {
         const fechaActual = new Date();
         fechaActual.setHours(0, 0, 0, 0);
         
-        if (fechaSolicitud > fechaActual) {
-            showToast({ text: 'La fecha de solicitud no puede ser mayor a la fecha actual', type: 'error' });
-            return false;
-        }
-        
-        const fechaLimite = new Date();
-        fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
-        if (fechaSolicitud < fechaLimite) {
-            showToast({ text: 'La fecha de solicitud no puede ser mayor a 1 año atrás', type: 'error' });
-            return false;
-        }
-        
         const fechaInicio = new Date(vacacionesForm.FechaInicio);
         const fechaFin = new Date(vacacionesForm.FechaFin);
         
         if (fechaFin < fechaInicio) {
             showToast({ text: 'La fecha de fin debe ser mayor o igual a la fecha de inicio', type: 'error' });
             return false;
+        }
+
+        const departamento = vacacionesForm.Departamento || '';
+        const esAdministracion = departamento === 'Administración' || departamento === '1';
+        
+        if (esAdministracion && vacacionesForm.FechaRetornoLabores) {
+            const retorno = new Date(vacacionesForm.FechaRetornoLabores);
+            if (retorno.getDay() === 0) {
+                showToast({ text: 'Para el departamento de Administración, la fecha de retorno no puede ser domingo', type: 'error' });
+                return false;
+            }
         }
         
         return true;
@@ -1220,12 +1297,21 @@ export const Vacaciones: React.FC = () => {
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (!validateForm()) return;
+        if (!validateForm()) {
+            return;
+        }
         
         try {
             setSubmitting(true);
             
             const esActualizacion = (vacacionesForm.IdVacaciones || 0) !== 0;
+            const anioParaEnviar = selectedAnio || vacacionesForm.Anio;
+            
+            if (!anioParaEnviar) {
+                showToast({ text: 'No se puede determinar el año de vacaciones', type: 'error' });
+                setSubmitting(false);
+                return;
+            }
             
             let estatusInicial = 0;
             if (!esActualizacion && (isAuthorizer || isValidator)) {
@@ -1235,12 +1321,12 @@ export const Vacaciones: React.FC = () => {
             let datosNormalizados: any = {
                 ...vacacionesForm,
                 IdPersonal: vacacionesForm.IdPersonal,
-                Anio: selectedAnio,
+                Anio: anioParaEnviar,
                 DiasTomar: vacacionesForm.DiasTomar,
                 FechaRetornoLabores: vacacionesForm.FechaRetornoLabores,
-                SaldoDias: vacacionesForm.SaldoDias,
-                DiasCorresponden: vacacionesForm.DiasCorresponden,
-                Antiguedad: vacacionesForm.Antiguedad
+                SaldoDias: vacacionesForm.SaldoDias || diasDisponiblesPeriodo,
+                DiasCorresponden: vacacionesForm.DiasCorresponden || 0,
+                Antiguedad: vacacionesForm.Antiguedad || 0
             };
             
             const usuarioSolicitaId = vacacionesForm.IdPersonal?.toString() || '';
@@ -1318,7 +1404,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [vacacionesForm, usuarioSesion, validateForm, selectedAnio, isAuthorizer, isValidator, fetchVacaciones]);
+    }, [vacacionesForm, usuarioSesion, validateForm, selectedAnio, isAuthorizer, isValidator, fetchVacaciones, resetForm, diasDisponiblesPeriodo]);
 
     const handleAuthorize = useCallback((vacacion: InterfaceVacaciones) => {
         setVacacionAccion(vacacion);
@@ -1546,8 +1632,9 @@ export const Vacaciones: React.FC = () => {
         setTimeout(() => {
             verificarAnticipacionSolicitud();
             verificarViernes();
+            verificarRetornoDomingo();
         }, 100);
-    }, [verificarAnticipacionSolicitud, verificarViernes, buscarEmpleado]);
+    }, [verificarAnticipacionSolicitud, verificarViernes, verificarRetornoDomingo, buscarEmpleado]);
 
     const handleView = useCallback((vacacion: InterfaceVacaciones) => {
         setTipoFormulario('Ver');
@@ -1611,48 +1698,6 @@ export const Vacaciones: React.FC = () => {
         }
     }, [vacacionAEliminar, usuarioSesion?.IdUsuario, fetchVacaciones]);
 
-    const resetForm = useCallback(() => {
-        setVacacionesForm({
-            IdVacaciones: 0,
-            FechaSolicitud: today,
-            UsuarioSolicita: '',
-            IdPersonal: 0,
-            NoEmpleado: '',
-            NombreCompleto: '',
-            Departamento: '',
-            Cargo: '',
-            FechaIngreso: '',
-            FechaInicio: '',
-            FechaFin: '',
-            DiasTomar: 0,
-            FechaRetornoLabores: '',
-            FechaAutoriza: '',
-            UsuarioAutoriza: '',
-            UsuarioValida: '',
-            FechaValidado: '',
-            Estatus: 0,
-            Anio: 0,
-            SaldoDias: 0,
-            DiasCorresponden: 0,
-            Antiguedad: 0,
-            Comentarios: null
-        });
-        setFechaInicioInput('');
-        setFechaFinInput('');
-        setFechaIngresoInput('');
-        setFechaSolicitudInput(today);
-        setFechaRetornoInput('');
-        setSelectedEmpleadoId('');
-        setPeriodosVacaciones([]);
-        setAniosDisponibles([]);
-        setSelectedAnio(null);
-        setDiasDisponiblesPeriodo(0);
-        setSaldoRestante(0);
-        setPeriodoSeleccionado(null);
-        setAdvertenciaAnticipacion('');
-        setAdvertenciaViernes('');
-    }, [today]);
-
     const handleShowForm = useCallback(() => {
         resetForm();
         setShowForm(true);
@@ -1662,7 +1707,8 @@ export const Vacaciones: React.FC = () => {
     useEffect(() => {
         verificarAnticipacionSolicitud();
         verificarViernes();
-    }, [vacacionesForm.FechaInicio, vacacionesForm.FechaSolicitud, vacacionesForm.DiasTomar, verificarAnticipacionSolicitud, verificarViernes]);
+        verificarRetornoDomingo();
+    }, [vacacionesForm.FechaInicio, vacacionesForm.FechaSolicitud, vacacionesForm.DiasTomar, vacacionesForm.FechaRetornoLabores, vacacionesForm.Departamento, verificarAnticipacionSolicitud, verificarViernes, verificarRetornoDomingo]);
 
     const solicitadasColumns: Column[] = useMemo(() => [
         { key: 'IdVacaciones', title: 'ID', sortable: true, searchable: false, width: '80px', align: 'center', headerAlign: 'center' },
@@ -1786,9 +1832,9 @@ export const Vacaciones: React.FC = () => {
         if (activeTab === 'solicitadas') {
             return vacaciones.filter(v => v.Estatus === 0);
         } else if (activeTab === 'autorizadas') {
-            return vacaciones.filter(v => v.Estatus === 1);
+            return vacaciones.filter(v => v.Estatus === 1 || v.Estatus === 4);
         } else {
-            return vacaciones.filter(v => v.Estatus > 1);
+            return vacaciones.filter(v => v.Estatus === 3 ||  v.Estatus === 2);
         }
     }, [vacaciones, activeTab]);
 
@@ -1811,7 +1857,7 @@ export const Vacaciones: React.FC = () => {
                 </button>
                 <button className={`tab-button ${activeTab === 'autorizadas' ? 'active' : ''}`} onClick={() => handleTabChange('autorizadas')}>
                     <CheckCircle size={16} /> Autorizadas 
-                    <span className="tab-count">{vacaciones.filter(v => v.Estatus === 1).length}</span>
+                    <span className="tab-count">{vacaciones.filter(v => v.Estatus === 1 || v.Estatus === 4).length}</span>
                 </button>
                 <button className={`tab-button ${activeTab === 'validadas' ? 'active' : ''}`} onClick={() => handleTabChange('validadas')}>
                     <CheckCircle size={16} /> Validadas / Canceladas 
@@ -1910,7 +1956,7 @@ export const Vacaciones: React.FC = () => {
                     data={datosFiltrados} 
                     pageSize={10} 
                     pageSizeOptions={[5, 10, 25, 50]} 
-                    emptyMessage={activeTab === 'solicitadas' ? "No hay solicitudes pendientes" : (activeTab === 'autorizadas' ? "No hay solicitudes autorizadas" : "No hay solicitudes validadas/canceladas")} 
+                    emptyMessage={activeTab === 'solicitadas' ? "No hay solicitudes pendientes" : (activeTab === 'autorizadas' ? "No hay solicitudes autorizadas o en revisión" : "No hay solicitudes validadas/canceladas")} 
                     className="full-height-table" 
                     loading={loading} 
                 />
@@ -1924,10 +1970,14 @@ export const Vacaciones: React.FC = () => {
                             <button className="close-button" onClick={() => { setShowForm(false); resetForm(); setTipoFormulario('Agregar'); }}><X size={20} /></button>
                         </div>
                         <div className="form-vacaciones-modal-body">
-                            {(advertenciaAnticipacion || advertenciaViernes) && (
+                            {(advertenciaAnticipacion || advertenciaViernes || advertenciaRetornoDomingo) && (
                                 <div className="advertencias-container" style={{ backgroundColor: '#FFF3CD', borderLeft: '4px solid #FFC107', padding: '12px 16px', marginBottom: '20px', borderRadius: '4px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><AlertCircle size={18} color="#856404" /><strong style={{ color: '#856404' }}>Advertencias:</strong></div>
-                                    <ul style={{ margin: 0, paddingLeft: '20px', color: '#856404' }}>{advertenciaAnticipacion && <li>{advertenciaAnticipacion}</li>}{advertenciaViernes && <li>{advertenciaViernes}</li>}</ul>
+                                    <ul style={{ margin: 0, paddingLeft: '20px', color: '#856404' }}>
+                                        {advertenciaAnticipacion && <li>{advertenciaAnticipacion}</li>}
+                                        {advertenciaViernes && <li>{advertenciaViernes}</li>}
+                                        {advertenciaRetornoDomingo && <li>{advertenciaRetornoDomingo}</li>}
+                                    </ul>
                                 </div>
                             )}
                             <form onSubmit={handleSubmit}>
@@ -1970,7 +2020,6 @@ export const Vacaciones: React.FC = () => {
                                                 className="form-vacaciones-input" 
                                                 disabled={isViewMode || !isHRorAdmin} 
                                                 required 
-                                                max={new Date().toISOString().split('T')[0]}
                                             />
                                             {!isViewMode && isHRorAdmin && (
                                                 <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
@@ -2056,7 +2105,15 @@ export const Vacaciones: React.FC = () => {
                                 </div>
                                 <div className="form-vacaciones-actions">
                                     <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); setTipoFormulario('Agregar'); }}>{isViewMode ? 'Cerrar' : 'Cancelar'}</button>
-                                    {!isViewMode && isHRorAdmin && (<button type="submit" className="btn btn-primary orange-button" disabled={submitting || cargandoPeriodos || aniosDisponibles.length === 0 || !selectedAnio}>{submitting ? 'Guardando...' : 'Guardar'}</button>)}
+                                    {!isViewMode && isHRorAdmin && (
+                                        <button 
+                                            type="submit" 
+                                            className="btn btn-primary orange-button" 
+                                            disabled={submitting || cargandoPeriodos || (!selectedAnio && !vacacionesForm.Anio)}
+                                        >
+                                            {submitting ? 'Guardando...' : 'Guardar'}
+                                        </button>
+                                    )}
                                 </div>
                             </form>
                         </div>

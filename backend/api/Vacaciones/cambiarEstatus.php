@@ -1,6 +1,4 @@
 <?php
-// vacaciones/cambiarEstatus.php
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
@@ -17,12 +15,14 @@ define('ESTATUS_SOLICITUD', 0);
 define('ESTATUS_AUTORIZADA', 1);
 define('ESTATUS_VALIDADA', 2);
 define('ESTATUS_CANCELADA', 3);
+define('ESTATUS_ENREVISION', 4);
  
 const ESTATUS_MENSAJES = [
     ESTATUS_SOLICITUD => 'Solicitada',
     ESTATUS_AUTORIZADA => 'Autorizada',
-    ESTATUS_VALIDADA => 'Validada',
-    ESTATUS_CANCELADA => 'Cancelada'
+   ESTATUS_VALIDADA => 'Validada',
+    ESTATUS_CANCELADA => 'Cancelada',
+    ESTATUS_ENREVISION => 'En Revisión'
 ];
 
 try { 
@@ -44,10 +44,6 @@ try {
         throw new Exception('Estatus no proporcionado');
     }
      
-    if (!array_key_exists($nuevoEstatus, ESTATUS_MENSAJES)) {
-        throw new Exception('Estatus inválido. Debe ser 0, 1, 2 o 3');
-    }
-    
     if (!$idUsuario || $idUsuario <= 0) {
         throw new Exception('IdUsuario inválido o no proporcionado');
     }
@@ -89,10 +85,11 @@ try {
     $idPersonal = (int)$vacacionData['IdPersonal'];
      
     $validTransitions = [
-        ESTATUS_SOLICITUD => [ESTATUS_AUTORIZADA, ESTATUS_VALIDADA, ESTATUS_CANCELADA],
-        ESTATUS_AUTORIZADA => [ESTATUS_VALIDADA, ESTATUS_CANCELADA],
-        ESTATUS_VALIDADA => [],
-        ESTATUS_CANCELADA => []
+        ESTATUS_SOLICITUD => [ESTATUS_AUTORIZADA, ESTATUS_VALIDADA, ESTATUS_CANCELADA, ESTATUS_ENREVISION],
+        ESTATUS_AUTORIZADA => [ESTATUS_VALIDADA, ESTATUS_CANCELADA, ESTATUS_ENREVISION],
+        ESTATUS_VALIDADA => [ESTATUS_ENREVISION],
+        ESTATUS_CANCELADA => [],
+        ESTATUS_ENREVISION => [ESTATUS_AUTORIZADA, ESTATUS_CANCELADA]
     ];
     
     if (!in_array($nuevoEstatus, $validTransitions[$currentStatus])) {
@@ -109,7 +106,6 @@ try {
     $Conexion->beginTransaction();
     
     try {  
-         
         $updateFields = ["Estatus = ?"];
         $params = [$nuevoEstatus];
         $updateLog = [];
@@ -134,8 +130,8 @@ try {
                 break;
                 
             case ESTATUS_VALIDADA: 
-                if ($currentStatus != ESTATUS_AUTORIZADA) {
-                    throw new Exception('La solicitud debe estar autorizada antes de ser validada');
+                if ($currentStatus != ESTATUS_AUTORIZADA && $currentStatus != ESTATUS_ENREVISION) {
+                    throw new Exception('La solicitud debe estar autorizada o en revisión antes de ser validada');
                 }
                 
                 $updateFields[] = "UsuarioValida = ?";
@@ -169,9 +165,25 @@ try {
                 
                 $updateLog[] = "Cancelada por usuario ID: {$idUsuario}, Motivo: {$motivoCancelacion}";
                 break;
+                
+            case ESTATUS_ENREVISION:
+                if (empty($comentarios)) {
+                    throw new Exception('Se requiere un comentario para enviar a revisión');
+                }
+                
+                $updateFields[] = "Comentarios = CONCAT(ISNULL(Comentarios, ''), ' | Envío a Revisión: ', ?)";
+                $params[] = $comentarios;
+                
+                $updateFields[] = "UsuarioRevision = ?";
+                $params[] = $idUsuario;
+                
+                $updateFields[] = "FechaRevision = GETDATE()";
+                
+                $updateLog[] = "Enviada a revisión por usuario ID: {$idUsuario}";
+                break;
         }
          
-        if ($comentarios !== null && $comentarios !== '') {
+        if ($comentarios !== null && $comentarios !== '' && $nuevoEstatus != ESTATUS_ENREVISION) {
             $updateFields[] = "Comentarios = CONCAT(ISNULL(Comentarios, ''), ' | ', ?)";
             $params[] = $comentarios;
             $updateLog[] = "Comentarios agregados: {$comentarios}";
@@ -198,7 +210,6 @@ try {
             throw new Exception('No se realizaron cambios. El estatus puede ser el mismo.');
         }
           
-         
         $notificationResult = $service->sendStatusNotification($idVacaciones, $nuevoEstatus, $comentarios);
          
         if ($nuevoEstatus == ESTATUS_VALIDADA) {
@@ -262,7 +273,7 @@ function verificarPermisos($Conexion, $idUsuario, $idPersonal, $nuevoEstatus) {
     }
      
     if ($nuevoEstatus == ESTATUS_AUTORIZADA) {
-        return esJefeDelPersonal($Conexion, $idUsuario, $idPersonal);
+        return esJefeDelPersonal($Conexion, $idUsuario, $idPersonal) || ($idUsuario == $idPersonal) ;
     }
      
     if ($nuevoEstatus == ESTATUS_VALIDADA) {
@@ -270,19 +281,24 @@ function verificarPermisos($Conexion, $idUsuario, $idPersonal, $nuevoEstatus) {
     }
      
     if ($nuevoEstatus == ESTATUS_CANCELADA) {
-        return ($idUsuario == $idPersonal) || esSuperAdmin($Conexion, $idUsuario);
+        return ($idUsuario == $idPersonal) || esSuperAdmin($Conexion, $idUsuario) || esRecursosHumanos($Conexion, $idUsuario)||  esJefeDelPersonal($Conexion, $idUsuario, $idPersonal);;
+    }
+    
+    if ($nuevoEstatus == ESTATUS_ENREVISION) {
+        return esRecursosHumanos($Conexion, $idUsuario) ||  ($idUsuario == $idPersonal) || esJefeDelPersonal($Conexion, $idUsuario, $idPersonal);
     }
     
     return false;
 }
  
 function esSuperAdmin($Conexion, $idUsuario) { 
-    $sql = "SELECT COUNT(*) as total FROM t_rolUsuario 
-            WHERE   IdRolUsuario = 1"; 
+    $sql = "SELECT COUNT(*) as total FROM t_rolUsuario ru
+            INNER JOIN t_usuario u ON u.rol = ru.IdRolUsuario
+            WHERE u.IdUsuario = ? AND ru.IdRolUsuario = 1";
     $stmt = $Conexion->prepare($sql);
-    $stmt->execute();
+    $stmt->execute([$idUsuario]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $row['total'] > 0;
+    return ($row['total'] ?? 0) > 0;
 }
  
 function esJefeDelPersonal($Conexion, $idUsuario, $idPersonal) { 
@@ -295,14 +311,14 @@ function esJefeDelPersonal($Conexion, $idUsuario, $idPersonal) {
 }
  
 function esRecursosHumanos($Conexion, $idUsuario) { 
-    $sql = "SELECT COUNT(*) as total FROM t_rolUsuario 
-            WHERE  IdRolUsuario = 2";  
+    $sql = "SELECT COUNT(*) as total FROM t_rolUsuario ru
+            INNER JOIN t_usuario u ON u.rol = ru.IdRolUsuario
+            WHERE u.IdUsuario = ? AND ru.IdRolUsuario = 2";
     $stmt = $Conexion->prepare($sql);
-    $stmt->execute();
+    $stmt->execute([$idUsuario]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $row['total'] > 0;
+    return ($row['total'] ?? 0) > 0;
 }
- 
  
 function calcularDiasCorresponden($Conexion, $idPersonal) { 
     $sql = "SELECT Antiguedad FROM t_vacaciones WHERE IdPersonal = ? ORDER BY FechaSolicitud DESC";
@@ -321,7 +337,6 @@ function calcularDiasCorresponden($Conexion, $idPersonal) {
 }
  
 function recalcularSaldoDias($Conexion, $idPersonal, $fechaInicio, $fechaFin) {
-  
     $diasPorAntiguedad = calcularDiasCorresponden($Conexion, $idPersonal);
      
     $anio = date('Y');
@@ -350,17 +365,18 @@ function actualizarDiasTomados($Conexion, $idPersonal, $fechaInicio, $fechaFin) 
 function calcularDiasHabiles($fechaInicio, $fechaFin) {
     $start = new DateTime($fechaInicio);
     $end = new DateTime($fechaFin);
+    $end->modify('+1 day');
     $days = 0;
+    $interval = new DateInterval('P1D');
+    $period = new DatePeriod($start, $interval, $end);
     
-    while ($start <= $end) { 
-        if ($start->format('N') < 6) {
+    foreach ($period as $date) {
+        if ($date->format('N') < 6) {
             $days++;
         }
-        $start->modify('+1 day');
     }
     return $days;
 }
- 
  
 function obtenerTextoEstatus($estatus) {
     return ESTATUS_MENSAJES[$estatus] ?? 'Desconocido';

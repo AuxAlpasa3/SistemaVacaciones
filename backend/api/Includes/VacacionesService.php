@@ -330,670 +330,542 @@ class VacacionesService {
         ];
         
         $colores = [
-            'autorizacion' => '#5bc102',
-            'validacion' => '#2196F3',
-            'revision' => '#FF9800',
-            'cancelacion' => '#F44336'
+            'autorizacion' => '#28A745',
+            'validacion' => '#007BFF',
+            'revision' => '#FF8C00',
+            'cancelacion' => '#DC3545'
+        ];
+        
+        $coloresHover = [
+            'autorizacion' => '#218838',
+            'validacion' => '#0069D9',
+            'revision' => '#E67E00',
+            'cancelacion' => '#C82333'
         ];
          
         $titulo = $titulos[$tipo] ?? 'Actualización de Vacaciones';
-        $color = $colores[$tipo] ?? '#F57C00';
+        $color = $colores[$tipo] ?? '#FF8C00';
+        $colorHover = $coloresHover[$tipo] ?? '#E67E00';
         
         $estatusTexto = $this->getStatusText($vacacion['Estatus']);
         $nombreJefe = $jefe['NombreCompleto'] ?? 'Jefe';
-         
-        $logoUrl = $this->config['url_base'] . 'IMG/icportada.png';
-        $headerImageUrl = $this->config['url_base'] . 'IMG/LogoAlpasa.png';
+        $logoUrl = $this->config['url_base_img'] . 'IMG/LogoAlpasa.png';
         
-        $html = "
+        $html = '
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset='UTF-8'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <style>
-                body { 
-                    font-family: 'Segoe UI', Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #333; 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: #eef2f7; 
-                }
-                
-                .container { 
-                    max-width: 650px; 
-                    margin: 0 auto; 
-                }
-                
-                /* CARD PRINCIPAL */
-                .card { 
-                    background: #ffffff; 
-                    border-radius: 16px; 
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-                    overflow: hidden;
-                }
-                
-                /* HEADER CON IMAGEN DE FONDO */
-                .card-header { 
-                    background: linear-gradient(135deg, {$color}, " . $this->adjustBrightness($color, -30) . ");
-                    padding: 0;
-                    position: relative;
-                    min-height: 120px;
-                }
-                
-                .header-image {
-                    width: 100%;
-                    height: 120px;
-                    object-fit: cover;
-                    opacity: 0.15;
-                    display: block;
-                }
-                
-                .header-content {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    color: white;
-                    padding: 20px;
-                    text-align: center;
-                }
-                
-                .header-content h2 { 
-                    margin: 0; 
-                    font-size: 24px; 
-                    font-weight: 700;
-                    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                }
-                
-                .header-content p { 
-                    margin: 5px 0 0; 
-                    opacity: 0.95; 
-                    font-size: 14px;
-                    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-                }
-                
-                .logo-container {
-                    display: flex;
-                    justify-content: center;
-                    margin-top: -40px;
-                    margin-bottom: 10px;
-                    position: relative;
-                    z-index: 2;
-                }
-                
-                .logo-circle {
-                    background: white;
-                    border-radius: 50%;
-                    width: 80px;
-                    height: 80px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                    padding: 5px;
-                }
-                
-                .logo-circle img {
-                    max-width: 70px;
-                    max-height: 70px;
-                    border-radius: 50%;
-                }
-                
-                /* CUERPO DEL CARD */
-                .card-body { 
-                    padding: 25px 30px; 
-                }
-                
-                .greeting {
-                    font-size: 16px;
-                    margin-bottom: 15px;
-                }
-                
-                .greeting strong {
-                    color: {$color};
-                }
-                
-                .info-grid { 
-                    display: grid; 
-                    grid-template-columns: 1fr 1fr; 
-                    gap: 12px; 
-                    margin: 20px 0; 
-                }
-                
-                .info-item { 
-                    background: #f8f9fa; 
-                    padding: 12px 15px; 
-                    border-radius: 8px; 
-                    border-left: 4px solid {$color}; 
-                    transition: all 0.2s;
-                }
-                
-                .info-item .label { 
-                    font-size: 11px; 
-                    text-transform: uppercase; 
-                    color: #888; 
-                    font-weight: 600; 
-                    display: block; 
-                    letter-spacing: 0.5px;
-                }
-                
-                .info-item .value { 
-                    font-size: 15px; 
-                    font-weight: 500; 
-                    color: #333; 
-                    margin-top: 2px;
-                }
-                
-                .info-item-full { 
-                    grid-column: span 2; 
-                }
-                
-                .badge { 
-                    display: inline-block; 
-                    padding: 4px 14px; 
-                    background: {$color}; 
-                    color: white; 
-                    border-radius: 20px; 
-                    font-size: 12px; 
-                    font-weight: bold; 
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-                
-                .comentarios { 
-                    background: #FFF8E1; 
-                    padding: 15px 18px; 
-                    border-left: 4px solid #FF9800; 
-                    margin: 20px 0; 
-                    border-radius: 8px; 
-                }
-                
-                .comentarios strong { 
-                    color: #E65100; 
-                }
-                
-                .btn-container {
-                    text-align: center; 
-                    margin: 25px 0 10px;
-                }
-                
-                .btn { 
-                    display: inline-block; 
-                    background: {$color}; 
-                    color: white; 
-                    padding: 12px 35px; 
-                    text-decoration: none; 
-                    border-radius: 50px; 
-                    font-weight: 600; 
-                    font-size: 14px;
-                    transition: all 0.3s;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                }
-                
-                .btn:hover { 
-                    opacity: 0.9; 
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-                }
-                
-                .footer { 
-                    text-align: center; 
-                    margin-top: 25px; 
-                    padding-top: 20px; 
-                    border-top: 1px solid #e0e0e0; 
-                    font-size: 12px; 
-                    color: #999; 
-                }
-                
-                .footer p {
-                    margin: 5px 0;
-                }
-                
-                .company-name { 
-                    font-weight: bold; 
-                }
-                
-                /* Responsive */
-                @media (max-width: 480px) {
-                    .card-body { padding: 20px; }
-                    .info-grid { grid-template-columns: 1fr; }
-                    .info-item-full { grid-column: span 1; }
-                    .header-content h2 { font-size: 20px; }
-                    .logo-circle { width: 60px; height: 60px; }
-                    .logo-circle img { max-width: 50px; max-height: 50px; }
-                }
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <title>' . $titulo . '</title>
+            <!--[if (gte mso 9)|(IE)]>
+            <style type="text/css">
+                table {border-collapse: collapse;}
+                .btn {border-radius: 50px !important;}
             </style>
+            <![endif]-->
         </head>
-        <body>
-            <div class='container'>
-                <div class='card'>
-                    <!-- HEADER CON IMAGEN -->
-                    <div class='card-header'>
-                        <img src='{$headerImageUrl}' alt='' class='header-image'>
-                        <div class='header-content'>
-                            <h2>{$titulo}</h2>
-                            <p>Sistema de Vacaciones - <span class='company-name'>{$this->config['empresa']}</span></p>
-                        </div>
-                    </div>
-                    
-                    <!-- LOGO -->
-                    <div class='logo-container'>
-                        <div class='logo-circle'>
-                            <img src='{$logoUrl}' alt='Logo {$this->config['empresa']}'>
-                        </div>
-                    </div>
-                    
-                    <!-- CUERPO -->
-                    <div class='card-body'>
-                        <p class='greeting'>Estimado(a) <strong>{$nombreJefe}</strong>,</p>
-                        <p>Se ha actualizado el estatus de la solicitud de vacaciones del siguiente empleado a su cargo:</p>
+        <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #E8ECF1; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+            
+            <!--[if (gte mso 9)|(IE)]>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #E8ECF1;">
+                <tr>
+                    <td align="center">
+            <![endif]-->
+            
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #E8ECF1; min-height: 100vh;">
+                <tr>
+                    <td align="center" style="padding: 30px 15px;">
                         
-                        <div class='info-grid'>
-                            <div class='info-item'>
-                                <span class='label'>👤 Empleado</span>
-                                <span class='value'>{$vacacion['NombreCompleto']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>🆔 No. Empleado</span>
-                                <span class='value'>{$vacacion['NoEmpleado']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>🏢 Departamento</span>
-                                <span class='value'>{$vacacion['Departamento']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>💼 Cargo</span>
-                                <span class='value'>{$vacacion['Cargo']}</span>
-                            </div>
-                            <div class='info-item info-item-full'>
-                                <span class='label'>📅 Período de Vacaciones</span>
-                                <span class='value'>" . date('d/m/Y', strtotime($vacacion['FechaInicio'])) . " al " . 
-                                date('d/m/Y', strtotime($vacacion['FechaFin'])) . "</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>📆 Días a Tomar</span>
-                                <span class='value'>{$vacacion['DiasTomar']} días</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>📊 Estatus Actual</span>
-                                <span class='value'><span class='badge'>{$estatusTexto}</span></span>
-                            </div>
-                            <div class='info-item info-item-full'>
-                                <span class='label'>📝 Fecha de Solicitud</span>
-                                <span class='value'>" . date('d/m/Y', strtotime($vacacion['FechaSolicitud'])) . "</span>
-                            </div>
-                        </div>";
-        
+                        <!-- CARD PRINCIPAL -->
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #FFFFFF; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                            
+                            <!-- HEADER -->
+                            <tr>
+                                <td style="padding: 30px 30px 20px; text-align: center; background-color: ' . $color . '; border-radius: 12px 12px 0 0; background: linear-gradient(135deg, ' . $color . ', ' . $colorHover . '); mso-background-color: ' . $color . ';">
+                                    
+                                    <!-- Logo -->
+                                    <img src="' . $logoUrl . '" width="200" alt="ALPASA" style="display: block; margin: 0 auto 10px; max-width: 200px; height: auto; border: 0; outline: none; text-decoration: none;">
+                                    
+                                    <!-- Título -->
+                                    <div style="font-size: 20px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; margin: 10px 0 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+                                        ' . $titulo . '
+                                    </div>
+                                    
+                                    <!-- Subtítulo -->
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 400; letter-spacing: 0.3px;">
+                                        Sistema de Gestión de Vacaciones
+                                    </div>
+                                    
+                                    <!-- Línea decorativa -->
+                                    <div style="width: 50px; height: 3px; background-color: rgba(255,255,255,0.3); margin: 12px auto 0; border-radius: 2px;"></div>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <!-- CUERPO -->
+                            <tr>
+                                <td style="padding: 30px 30px 25px; background-color: #FFFFFF;">
+                                    
+                                    <!-- Saludo -->
+                                    <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: #333333;">
+                                        Estimado(a) <strong style="color: ' . $color . ';">' . $nombreJefe . '</strong>,
+                                    </p>
+                                    <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #555555;">
+                                        Se ha actualizado el estatus de la solicitud de vacaciones del siguiente empleado a su cargo:
+                                    </p>
+                                    
+                                    <!-- TABLA DE INFORMACIÓN -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8F9FA; border-radius: 8px; border: 1px solid #E9ECEF; margin-bottom: 20px;">
+                                        <tr>
+                                            <td style="padding: 15px 18px;">
+                                                
+                                                <!-- Empleado -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0 0 5px 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Empleado</div>
+                                                            <div style="font-size: 16px; font-weight: 600; color: #222;">' . $vacacion['NombreCompleto'] . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- No. Empleado y Departamento -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="50%" style="padding: 0 10px 0 0; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">No. Empleado</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['NoEmpleado'] . '</div>
+                                                        </td>
+                                                        <td width="50%" style="padding: 0 0 0 10px; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Departamento</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['Departamento'] . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Cargo -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Cargo</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['Cargo'] . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Separador -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                    <tr>
+                                                        <td style="padding: 8px 0; border-bottom: 1px dashed #E0E0E0;"></td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Período de Vacaciones -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 10px; margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Período de Vacaciones</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . date('d/m/Y', strtotime($vacacion['FechaInicio'])) . ' al ' . date('d/m/Y', strtotime($vacacion['FechaFin'])) . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Días a Tomar y Estatus -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="50%" style="padding: 0 10px 0 0; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Días a Tomar</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['DiasTomar'] . ' días</div>
+                                                        </td>
+                                                        <td width="50%" style="padding: 0 0 0 10px; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Estatus Actual</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333; margin-top: 2px;">
+                                                                <span style="display: inline-block; padding: 4px 16px; background-color: ' . $color . '; color: #FFFFFF; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">' . $estatusTexto . '</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Fecha de Solicitud -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Fecha de Solicitud</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . date('d/m/Y', strtotime($vacacion['FechaSolicitud'])) . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                            </td>
+                                        </tr>
+                                    </table>';
+    
         if ($comentarios) {
-            $html .= "
-                        <div class='comentarios'>
-                            <strong>📝 Comentarios:</strong><br>
-                            {$comentarios}
-                        </div>";
+            $html .= '
+                                    <!-- COMENTARIOS -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFF8E1; border-radius: 8px; border-left: 4px solid #FF9800; margin-bottom: 20px;">
+                                        <tr>
+                                            <td style="padding: 14px 18px;">
+                                                <div style="font-size: 12px; font-weight: 700; color: #E65100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Comentarios</div>
+                                                <div style="font-size: 14px; color: #333; line-height: 1.5;">' . $comentarios . '</div>
+                                            </td>
+                                        </tr>
+                                    </table>';
         }
-        
-        $html .= "
-                        <div class='btn-container'>
-                            <a href='{$this->config['url_base']}/vacaciones' class='btn'>
-                                🔍 Ver en el Sistema
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- FOOTER -->
-                    <div class='footer'>
-                        <p>Este es un mensaje automático del Sistema de Vacaciones de {$this->config['empresa']}.</p>
-                        <p>Por favor no responda a este correo. Si tiene dudas, contacte a RRHH.</p>
-                        <p>© " . date('Y') . " - {$this->config['empresa']} | Todos los derechos reservados</p>
-                    </div>
-                </div>
-            </div>
+    
+        $html .= '
+                                    <!-- DESPEDIDA -->
+                                    <p style="margin: 0 0 5px; font-size: 15px; color: #333333;">
+                                        Atentamente,
+                                    </p>
+                                    <p style="margin: 0 0 20px; font-size: 15px; color: #333333; font-weight: 600;">
+                                        El equipo de ALPASA
+                                    </p>
+                                    
+                                    <!-- BOTÓN -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td align="center" style="padding: 5px 0 10px;">
+                                                <!--[if (gte mso 9)|(IE)]>
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                                                    <tr>
+                                                        <td align="center" bgcolor="' . $color . '" style="border-radius: 50px; padding: 0;">
+                                                <![endif]-->
+                                                <a href="' . $this->config['url_base'] . '/vacaciones" 
+                                                   target="_blank"
+                                                   style="display: inline-block;
+                                                          background-color: ' . $color . ';
+                                                          color: #FFFFFF;
+                                                          padding: 14px 40px;
+                                                          font-family: Arial, Helvetica, sans-serif;
+                                                          font-size: 15px;
+                                                          font-weight: 700;
+                                                          text-decoration: none;
+                                                          border-radius: 50px;
+                                                          text-align: center;
+                                                          letter-spacing: 0.5px;
+                                                          border: none;
+                                                          mso-padding-alt: 14px 40px;
+                                                          mso-line-height-alt: 22px;
+                                                          box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                                    Ver en el Sistema
+                                                </a>
+                                                <!--[if (gte mso 9)|(IE)]>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                <![endif]-->
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <!-- FOOTER -->
+                            <tr>
+                                <td style="padding: 20px 30px; text-align: center; background-color: #F8F9FA; border-radius: 0 0 12px 12px; border-top: 1px solid #E9ECEF;">
+                                    
+                                    <div style="font-size: 11px; line-height: 1.6; color: #888888;">
+                                        <p style="margin: 0 0 8px;">
+                                            Este es un mensaje automático del Sistema de Vacaciones de ALPASA.
+                                        </p>
+                                        <p style="margin: 0 0 8px;">
+                                            Por favor no responda a este correo. Si tiene dudas, contacte a RRHH.
+                                        </p>
+                                        <p style="margin: 0 0 8px; font-size: 10px; color: #AAAAAA;">
+                                            En cumplimiento a lo previsto en la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, 
+                                            consulte nuestro aviso de privacidad en 
+                                            <a href="https://www.alpasa.mx/politica-de-privacidad" 
+                                               style="color: ' . $color . '; text-decoration: underline;">alpasa.mx/politica-de-privacidad</a>.
+                                        </p>
+                                        <p style="margin: 0 0 8px; font-size: 10px; color: #AAAAAA;">
+                                            La información contenida en este correo electrónico es privilegiada y confidencial y para uso exclusivo de los destinatarios.
+                                        </p>
+                                        <p style="margin: 10px 0 0; font-size: 11px; color: #999999; font-weight: 600;">
+                                            &copy; ' . date('Y') . ' ALPASA - Todos los derechos reservados
+                                        </p>
+                                    </div>
+                                    
+                                </td>
+                            </tr>
+                            
+                        </table>
+                        
+                    </td>
+                </tr>
+            </table>
+            
+            <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                </tr>
+            </table>
+            <![endif]-->
+            
         </body>
-        </html>";
+        </html>';
         
         return $html;
     }
      
-    private function adjustBrightness($hex, $percent) {
-        $hex = ltrim($hex, '#');
-        $r = hexdec(substr($hex, 0, 2));
-        $g = hexdec(substr($hex, 2, 2));
-        $b = hexdec(substr($hex, 4, 2));
-        
-        $r = max(0, min(255, $r + $percent));
-        $g = max(0, min(255, $g + $percent));
-        $b = max(0, min(255, $b + $percent));
-        
-        return sprintf("#%02x%02x%02x", $r, $g, $b);
-    }
-     
     private function buildAdvanceNoticeTemplate($vacacion, $jefe, $diasAntes) {
         $nombreJefe = $jefe['NombreCompleto'] ?? 'Jefe';
-        
-        // URL de imágenes (ajusta estas rutas según tu estructura)
-        $logoUrl = $this->config['url_base'] . '/assets/images/logo.png';
-        $headerImageUrl = $this->config['url_base'] . '/assets/images/email-header-blue.jpg';
         $color = '#2196F3';
+        $colorHover = '#1976D2';
+        $logoUrl = $this->config['url_base_img'] . 'IMG/LogoAlpasa.png';
         
-        return "
+        $html = '
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset='UTF-8'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <style>
-                body { 
-                    font-family: 'Segoe UI', Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #333; 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: #eef2f7; 
-                }
-                
-                .container { 
-                    max-width: 650px; 
-                    margin: 0 auto; 
-                }
-                
-                .card { 
-                    background: #ffffff; 
-                    border-radius: 16px; 
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-                    overflow: hidden;
-                }
-                
-                .card-header { 
-                    background: linear-gradient(135deg, {$color}, #0D47A1);
-                    padding: 0;
-                    position: relative;
-                    min-height: 120px;
-                }
-                
-                .header-image {
-                    width: 100%;
-                    height: 120px;
-                    object-fit: cover;
-                    opacity: 0.15;
-                    display: block;
-                }
-                
-                .header-content {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    color: white;
-                    padding: 20px;
-                    text-align: center;
-                }
-                
-                .header-content h2 { 
-                    margin: 0; 
-                    font-size: 24px; 
-                    font-weight: 700;
-                    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                }
-                
-                .header-content p { 
-                    margin: 5px 0 0; 
-                    opacity: 0.95; 
-                    font-size: 14px;
-                    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-                }
-                
-                .logo-container {
-                    display: flex;
-                    justify-content: center;
-                    margin-top: -40px;
-                    margin-bottom: 10px;
-                    position: relative;
-                    z-index: 2;
-                }
-                
-                .logo-circle {
-                    background: white;
-                    border-radius: 50%;
-                    width: 80px;
-                    height: 80px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                    padding: 5px;
-                }
-                
-                .logo-circle img {
-                    max-width: 70px;
-                    max-height: 70px;
-                    border-radius: 50%;
-                }
-                
-                .card-body { 
-                    padding: 25px 30px; 
-                }
-                
-                .greeting {
-                    font-size: 16px;
-                    margin-bottom: 15px;
-                }
-                
-                .greeting strong {
-                    color: {$color};
-                }
-                
-                .highlight { 
-                    background: #E3F2FD; 
-                    padding: 15px 20px; 
-                    border-left: 4px solid {$color}; 
-                    border-radius: 8px; 
-                    margin: 15px 0; 
-                }
-                
-                .highlight p {
-                    margin: 5px 0;
-                }
-                
-                .highlight strong {
-                    color: #0D47A1;
-                }
-                
-                .info-grid { 
-                    display: grid; 
-                    grid-template-columns: 1fr 1fr; 
-                    gap: 12px; 
-                    margin: 15px 0; 
-                }
-                
-                .info-item { 
-                    background: #f8f9fa; 
-                    padding: 12px 15px; 
-                    border-radius: 8px; 
-                    border-left: 4px solid {$color}; 
-                }
-                
-                .info-item .label { 
-                    font-size: 11px; 
-                    text-transform: uppercase; 
-                    color: #888; 
-                    font-weight: 600; 
-                    display: block; 
-                    letter-spacing: 0.5px;
-                }
-                
-                .info-item .value { 
-                    font-size: 15px; 
-                    font-weight: 500; 
-                    margin-top: 2px;
-                }
-                
-                .info-item-full { 
-                    grid-column: span 2; 
-                }
-                
-                .action-box { 
-                    background: #FFF8E1; 
-                    padding: 15px 18px; 
-                    border-left: 4px solid #FF9800; 
-                    margin: 20px 0; 
-                    border-radius: 8px; 
-                }
-                
-                .action-box strong { 
-                    color: #E65100; 
-                }
-                
-                .action-box ul { 
-                    margin: 10px 0 0; 
-                    padding-left: 20px; 
-                }
-                
-                .action-box ul li {
-                    margin: 5px 0;
-                }
-                
-                .btn-container {
-                    text-align: center; 
-                    margin: 25px 0 10px;
-                }
-                
-                .btn { 
-                    display: inline-block; 
-                    background: {$color}; 
-                    color: white; 
-                    padding: 12px 35px; 
-                    text-decoration: none; 
-                    border-radius: 50px; 
-                    font-weight: 600; 
-                    font-size: 14px;
-                    transition: all 0.3s;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                }
-                
-                .btn:hover { 
-                    opacity: 0.9; 
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-                }
-                
-                .footer { 
-                    text-align: center; 
-                    margin-top: 25px; 
-                    padding-top: 20px; 
-                    border-top: 1px solid #e0e0e0; 
-                    font-size: 12px; 
-                    color: #999; 
-                }
-                
-                .footer p {
-                    margin: 5px 0;
-                }
-                
-                .company-name {
-                    font-weight: bold;
-                }
-                
-                @media (max-width: 480px) {
-                    .card-body { padding: 20px; }
-                    .info-grid { grid-template-columns: 1fr; }
-                    .info-item-full { grid-column: span 1; }
-                    .header-content h2 { font-size: 20px; }
-                    .logo-circle { width: 60px; height: 60px; }
-                    .logo-circle img { max-width: 50px; max-height: 50px; }
-                }
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <title>Recordatorio de Vacaciones</title>
+            <!--[if (gte mso 9)|(IE)]>
+            <style type="text/css">
+                table {border-collapse: collapse;}
+                .btn {border-radius: 50px !important;}
             </style>
+            <![endif]-->
         </head>
-        <body>
-            <div class='container'>
-                <div class='card'>
-                    <!-- HEADER CON IMAGEN -->
-                    <div class='card-header'>
-                        <img src='{$headerImageUrl}' alt='' class='header-image'>
-                        <div class='header-content'>
-                            <h2>📅 Recordatorio de Vacaciones</h2>
-                            <p>Sistema de Vacaciones - <span class='company-name'>{$this->config['empresa']}</span></p>
-                        </div>
-                    </div>
-                    
-                    <!-- LOGO -->
-                    <div class='logo-container'>
-                        <div class='logo-circle'>
-                            <img src='{$logoUrl}' alt='Logo {$this->config['empresa']}'>
-                        </div>
-                    </div>
-                    
-                    <!-- CUERPO -->
-                    <div class='card-body'>
-                        <p class='greeting'>Estimado(a) <strong>{$nombreJefe}</strong>,</p>
-                        <p>Le recordamos que el siguiente empleado a su cargo iniciará su período de vacaciones en <strong>{$diasAntes} días</strong>:</p>
+        <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #E8ECF1; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+            
+            <!--[if (gte mso 9)|(IE)]>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #E8ECF1;">
+                <tr>
+                    <td align="center">
+            <![endif]-->
+            
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #E8ECF1; min-height: 100vh;">
+                <tr>
+                    <td align="center" style="padding: 30px 15px;">
                         
-                        <div class='highlight'>
-                            <p style='margin: 0; font-size: 16px;'>
-                                <strong>📆 Fecha de inicio:</strong> " . date('d/m/Y', strtotime($vacacion['FechaInicio'])) . "<br>
-                                <strong>↩️ Fecha de retorno:</strong> " . date('d/m/Y', strtotime($vacacion['FechaRetornoLabores'])) . "
-                            </p>
-                        </div>
+                        <!-- CARD PRINCIPAL -->
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #FFFFFF; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                            
+                            <!-- HEADER -->
+                            <tr>
+                                <td style="padding: 30px 30px 20px; text-align: center; background-color: ' . $color . '; border-radius: 12px 12px 0 0; background: linear-gradient(135deg, ' . $color . ', ' . $colorHover . '); mso-background-color: ' . $color . ';">
+                                    
+                                    <!-- Logo -->
+                                    <img src="' . $logoUrl . '" width="200" alt="ALPASA" style="display: block; margin: 0 auto 10px; max-width: 200px; height: auto; border: 0; outline: none; text-decoration: none;">
+                                    
+                                    <!-- Título -->
+                                    <div style="font-size: 20px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; margin: 10px 0 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+                                        Recordatorio de Vacaciones
+                                    </div>
+                                    
+                                    <!-- Subtítulo -->
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 400; letter-spacing: 0.3px;">
+                                        Sistema de Gestión de Vacaciones
+                                    </div>
+                                    
+                                    <!-- Línea decorativa -->
+                                    <div style="width: 50px; height: 3px; background-color: rgba(255,255,255,0.3); margin: 12px auto 0; border-radius: 2px;"></div>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <!-- CUERPO -->
+                            <tr>
+                                <td style="padding: 30px 30px 25px; background-color: #FFFFFF;">
+                                    
+                                    <!-- Saludo -->
+                                    <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: #333333;">
+                                        Estimado(a) <strong style="color: ' . $color . ';">' . $nombreJefe . '</strong>,
+                                    </p>
+                                    <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #555555;">
+                                        Le recordamos que el siguiente empleado a su cargo iniciará su período de vacaciones en <strong style="color: ' . $color . ';">' . $diasAntes . ' días</strong>:
+                                    </p>
+                                    
+                                    <!-- FECHAS DESTACADAS -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #E3F2FD; border-radius: 8px; border-left: 4px solid ' . $color . '; margin-bottom: 20px;">
+                                        <tr>
+                                            <td style="padding: 15px 18px;">
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                    <tr>
+                                                        <td width="50%" style="padding: 0 10px 0 0; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #1565C0; font-weight: 700; letter-spacing: 0.5px;">Fecha de Inicio</div>
+                                                            <div style="font-size: 16px; font-weight: 600; color: #0D47A1;">' . date('d/m/Y', strtotime($vacacion['FechaInicio'])) . '</div>
+                                                        </td>
+                                                        <td width="50%" style="padding: 0 0 0 10px; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #1565C0; font-weight: 700; letter-spacing: 0.5px;">Fecha de Retorno</div>
+                                                            <div style="font-size: 16px; font-weight: 600; color: #0D47A1;">' . date('d/m/Y', strtotime($vacacion['FechaRetornoLabores'])) . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- TABLA DE INFORMACIÓN -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8F9FA; border-radius: 8px; border: 1px solid #E9ECEF; margin-bottom: 20px;">
+                                        <tr>
+                                            <td style="padding: 15px 18px;">
+                                                
+                                                <!-- Empleado -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0 0 5px 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Empleado</div>
+                                                            <div style="font-size: 16px; font-weight: 600; color: #222;">' . $vacacion['NombreCompleto'] . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- No. Empleado y Departamento -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="50%" style="padding: 0 10px 0 0; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">No. Empleado</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['NoEmpleado'] . '</div>
+                                                        </td>
+                                                        <td width="50%" style="padding: 0 0 0 10px; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Departamento</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['Departamento'] . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Cargo y Días -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                    <tr>
+                                                        <td width="50%" style="padding: 0 10px 0 0; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Cargo</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['Cargo'] . '</div>
+                                                        </td>
+                                                        <td width="50%" style="padding: 0 0 0 10px; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Días a Tomar</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['DiasTomar'] . ' días</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- ACCIONES RECOMENDADAS -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFF8E1; border-radius: 8px; border-left: 4px solid #FF9800; margin-bottom: 20px;">
+                                        <tr>
+                                            <td style="padding: 15px 18px;">
+                                                <div style="font-size: 13px; font-weight: 700; color: #E65100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Acciones Recomendadas</div>
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                    <tr>
+                                                        <td style="padding: 3px 0; font-size: 14px; color: #333; line-height: 1.5;">
+                                                            <span style="color: #FF9800; font-weight: bold; margin-right: 6px;">•</span> Asegurar la entrega de responsabilidades del empleado
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 3px 0; font-size: 14px; color: #333; line-height: 1.5;">
+                                                            <span style="color: #FF9800; font-weight: bold; margin-right: 6px;">•</span> Actualizar el calendario de ausencias del departamento
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 3px 0; font-size: 14px; color: #333; line-height: 1.5;">
+                                                            <span style="color: #FF9800; font-weight: bold; margin-right: 6px;">•</span> Verificar la cobertura de sus funciones durante su ausencia
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- DESPEDIDA -->
+                                    <p style="margin: 0 0 5px; font-size: 15px; color: #333333;">
+                                        Atentamente,
+                                    </p>
+                                    <p style="margin: 0 0 20px; font-size: 15px; color: #333333; font-weight: 600;">
+                                        El equipo de ALPASA
+                                    </p>
+                                    
+                                    <!-- BOTÓN -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td align="center" style="padding: 5px 0 10px;">
+                                                <!--[if (gte mso 9)|(IE)]>
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                                                    <tr>
+                                                        <td align="center" bgcolor="' . $color . '" style="border-radius: 50px; padding: 0;">
+                                                <![endif]-->
+                                                <a href="' . $this->config['url_base'] . '/vacaciones" 
+                                                   target="_blank"
+                                                   style="display: inline-block;
+                                                          background-color: ' . $color . ';
+                                                          color: #FFFFFF;
+                                                          padding: 14px 40px;
+                                                          font-family: Arial, Helvetica, sans-serif;
+                                                          font-size: 15px;
+                                                          font-weight: 700;
+                                                          text-decoration: none;
+                                                          border-radius: 50px;
+                                                          text-align: center;
+                                                          letter-spacing: 0.5px;
+                                                          border: none;
+                                                          mso-padding-alt: 14px 40px;
+                                                          mso-line-height-alt: 22px;
+                                                          box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                                    Ver en el Sistema
+                                                </a>
+                                                <!--[if (gte mso 9)|(IE)]>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                <![endif]-->
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <!-- FOOTER -->
+                            <tr>
+                                <td style="padding: 20px 30px; text-align: center; background-color: #F8F9FA; border-radius: 0 0 12px 12px; border-top: 1px solid #E9ECEF;">
+                                    
+                                    <div style="font-size: 11px; line-height: 1.6; color: #888888;">
+                                        <p style="margin: 0 0 8px;">
+                                            Este es un mensaje automático del Sistema de Vacaciones de ALPASA.
+                                        </p>
+                                        <p style="margin: 0 0 8px;">
+                                            Por favor no responda a este correo. Si tiene dudas, contacte a RRHH.
+                                        </p>
+                                        <p style="margin: 0 0 8px; font-size: 10px; color: #AAAAAA;">
+                                            En cumplimiento a lo previsto en la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, 
+                                            consulte nuestro aviso de privacidad en 
+                                            <a href="https://www.alpasa.mx/politica-de-privacidad" 
+                                               style="color: ' . $color . '; text-decoration: underline;">alpasa.mx/politica-de-privacidad</a>.
+                                        </p>
+                                        <p style="margin: 0 0 8px; font-size: 10px; color: #AAAAAA;">
+                                            La información contenida en este correo electrónico es privilegiada y confidencial y para uso exclusivo de los destinatarios.
+                                        </p>
+                                        <p style="margin: 10px 0 0; font-size: 11px; color: #999999; font-weight: 600;">
+                                            &copy; ' . date('Y') . ' ALPASA - Todos los derechos reservados
+                                        </p>
+                                    </div>
+                                    
+                                </td>
+                            </tr>
+                            
+                        </table>
                         
-                        <div class='info-grid'>
-                            <div class='info-item info-item-full'>
-                                <span class='label'>👤 Empleado</span>
-                                <span class='value'>{$vacacion['NombreCompleto']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>🆔 No. Empleado</span>
-                                <span class='value'>{$vacacion['NoEmpleado']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>🏢 Departamento</span>
-                                <span class='value'>{$vacacion['Departamento']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>💼 Cargo</span>
-                                <span class='value'>{$vacacion['Cargo']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>📊 Días</span>
-                                <span class='value'>{$vacacion['DiasTomar']} días</span>
-                            </div>
-                        </div>
-                        
-                        <div class='action-box'>
-                            <strong>⚠️ Acciones recomendadas:</strong>
-                            <ul>
-                                <li>Asegurar la entrega de responsabilidades del empleado</li>
-                                <li>Actualizar el calendario de ausencias del departamento</li>
-                                <li>Verificar la cobertura de sus funciones durante su ausencia</li>
-                            </ul>
-                        </div>
-                        
-                        <div class='btn-container'>
-                            <a href='{$this->config['url_base']}/vacaciones' class='btn'>
-                                🔍 Ver en el Sistema
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- FOOTER -->
-                    <div class='footer'>
-                        <p>Este es un mensaje automático del Sistema de Vacaciones de {$this->config['empresa']}.</p>
-                        <p>© " . date('Y') . " - {$this->config['empresa']} | Todos los derechos reservados</p>
-                    </div>
-                </div>
-            </div>
+                    </td>
+                </tr>
+            </table>
+            
+            <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                </tr>
+            </table>
+            <![endif]-->
+            
         </body>
-        </html>";
+        </html>';
+        
+        return $html;
     }
      
     private function buildUnvalidatedNoticeTemplate($vacacion, $jefe, $diasPasados) {
@@ -1012,459 +884,396 @@ class VacacionesService {
         $diasRestantes = $fechaActualObj->diff($fechaInicioObj);
         $diasRestantes = $diasRestantes->days;
         
-        $mensajeUrgencia = '';
-        if ($diasRestantes <= 3) {
-            $mensajeUrgencia = "
-            <div style='background: #FFF3E0; padding: 12px 18px; border-left: 4px solid #FF9800; margin: 15px 0; border-radius: 8px;'>
-                <strong style='color: #E65100;'>⏰ ¡URGENTE! Faltan solo {$diasRestantes} días para el inicio de las vacaciones.</strong>
-            </div>";
-        }
-         
-        $logoUrl = $this->config['url_base'] . '/assets/images/logo.png';
-        $headerImageUrl = $this->config['url_base'] . '/assets/images/email-header-red.jpg';
         $color = '#F44336';
+        $colorHover = '#C62828';
+        $logoUrl = $this->config['url_base_img'] . 'IMG/LogoAlpasaBlanco.png';
         
-        return "
+        $html = '
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset='UTF-8'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <style>
-                body { 
-                    font-family: 'Segoe UI', Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #333; 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: #eef2f7; 
-                }
-                
-                .container { 
-                    max-width: 650px; 
-                    margin: 0 auto; 
-                }
-                
-                .card { 
-                    background: #ffffff; 
-                    border-radius: 16px; 
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-                    overflow: hidden;
-                }
-                
-                .card-header { 
-                    background: linear-gradient(135deg, {$color}, #B71C1C);
-                    padding: 0;
-                    position: relative;
-                    min-height: 120px;
-                }
-                
-                .header-image {
-                    width: 100%;
-                    height: 120px;
-                    object-fit: cover;
-                    opacity: 0.15;
-                    display: block;
-                }
-                
-                .header-content {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    color: white;
-                    padding: 20px;
-                    text-align: center;
-                }
-                
-                .header-content h2 { 
-                    margin: 0; 
-                    font-size: 22px; 
-                    font-weight: 700;
-                    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                }
-                
-                .header-content p { 
-                    margin: 5px 0 0; 
-                    opacity: 0.95; 
-                    font-size: 14px;
-                    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-                }
-                
-                .logo-container {
-                    display: flex;
-                    justify-content: center;
-                    margin-top: -40px;
-                    margin-bottom: 10px;
-                    position: relative;
-                    z-index: 2;
-                }
-                
-                .logo-circle {
-                    background: white;
-                    border-radius: 50%;
-                    width: 80px;
-                    height: 80px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                    padding: 5px;
-                }
-                
-                .logo-circle img {
-                    max-width: 70px;
-                    max-height: 70px;
-                    border-radius: 50%;
-                }
-                
-                .card-body { 
-                    padding: 25px 30px; 
-                }
-                
-                .greeting {
-                    font-size: 16px;
-                    margin-bottom: 15px;
-                }
-                
-                .greeting strong {
-                    color: {$color};
-                }
-                
-                .urgent-box { 
-                    background: #FFEBEE; 
-                    padding: 18px 20px; 
-                    border-left: 5px solid #F44336; 
-                    border-radius: 8px; 
-                    margin: 15px 0; 
-                }
-                
-                .urgent-box h3 { 
-                    margin: 0 0 10px 0; 
-                    color: #C62828; 
-                }
-                
-                .urgent-box .highlight { 
-                    font-size: 18px; 
-                    font-weight: bold; 
-                    color: #C62828; 
-                }
-                
-                .dias-pasados { 
-                    background: #F44336; 
-                    color: white; 
-                    padding: 4px 14px; 
-                    border-radius: 20px; 
-                    font-weight: bold; 
-                    font-size: 14px;
-                    display: inline-block;
-                }
-                
-                .info-grid { 
-                    display: grid; 
-                    grid-template-columns: 1fr 1fr; 
-                    gap: 12px; 
-                    margin: 15px 0; 
-                }
-                
-                .info-item { 
-                    background: #f8f9fa; 
-                    padding: 12px 15px; 
-                    border-radius: 8px; 
-                    border-left: 4px solid {$color}; 
-                }
-                
-                .info-item .label { 
-                    font-size: 11px; 
-                    text-transform: uppercase; 
-                    color: #888; 
-                    font-weight: 600; 
-                    display: block; 
-                    letter-spacing: 0.5px;
-                }
-                
-                .info-item .value { 
-                    font-size: 15px; 
-                    font-weight: 500; 
-                    margin-top: 2px;
-                }
-                
-                .info-item-full { 
-                    grid-column: span 2; 
-                }
-                
-                .status-badge { 
-                    display: inline-block; 
-                    padding: 4px 14px; 
-                    background: #4CAF50; 
-                    color: white; 
-                    border-radius: 20px; 
-                    font-size: 13px; 
-                    font-weight: bold; 
-                }
-                
-                .info-autorizacion { 
-                    background: #E8F5E9; 
-                    padding: 12px 18px; 
-                    border-left: 4px solid #4CAF50; 
-                    border-radius: 8px; 
-                    margin: 15px 0; 
-                }
-                
-                .info-autorizacion strong {
-                    color: #1B5E20;
-                }
-                
-                .warning-box { 
-                    background: #FFF8E1; 
-                    padding: 12px 18px; 
-                    border-left: 4px solid #FFC107; 
-                    border-radius: 8px; 
-                    margin: 15px 0; 
-                }
-                
-                .warning-box strong {
-                    color: #795548;
-                }
-                
-                .action-box { 
-                    background: #FFF3E0; 
-                    padding: 15px 18px; 
-                    border-left: 4px solid #FF9800; 
-                    margin: 20px 0; 
-                    border-radius: 8px; 
-                }
-                
-                .action-box strong { 
-                    color: #E65100; 
-                }
-                
-                .action-box ul { 
-                    margin: 10px 0 0; 
-                    padding-left: 20px; 
-                }
-                
-                .action-box ul li {
-                    margin: 5px 0;
-                }
-                
-                .btn-container {
-                    text-align: center; 
-                    margin: 25px 0 10px;
-                }
-                
-                .btn { 
-                    display: inline-block; 
-                    background: {$color}; 
-                    color: white; 
-                    padding: 12px 35px; 
-                    text-decoration: none; 
-                    border-radius: 50px; 
-                    font-weight: 600; 
-                    font-size: 14px;
-                    transition: all 0.3s;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                    margin: 0 5px;
-                }
-                
-                .btn:hover { 
-                    opacity: 0.9; 
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-                }
-                
-                .btn-secondary { 
-                    display: inline-block; 
-                    background: #9E9E9E; 
-                    color: white; 
-                    padding: 12px 25px; 
-                    text-decoration: none; 
-                    border-radius: 50px; 
-                    font-weight: 500; 
-                    font-size: 14px;
-                    transition: all 0.3s;
-                    margin: 0 5px;
-                }
-                
-                .btn-secondary:hover { 
-                    opacity: 0.9; 
-                    transform: translateY(-2px);
-                }
-                
-                .note-box { 
-                    background: #FFF8E1; 
-                    padding: 12px 18px; 
-                    border-radius: 8px; 
-                    margin-top: 15px; 
-                    font-size: 13px; 
-                    color: #795548;
-                    border: 1px solid #FFE0B2;
-                }
-                
-                .footer { 
-                    text-align: center; 
-                    margin-top: 25px; 
-                    padding-top: 20px; 
-                    border-top: 1px solid #e0e0e0; 
-                    font-size: 12px; 
-                    color: #999; 
-                }
-                
-                .footer p {
-                    margin: 5px 0;
-                }
-                
-                .company-name {
-                    font-weight: bold;
-                }
-                
-                @media (max-width: 480px) {
-                    .card-body { padding: 20px; }
-                    .info-grid { grid-template-columns: 1fr; }
-                    .info-item-full { grid-column: span 1; }
-                    .header-content h2 { font-size: 18px; }
-                    .logo-circle { width: 60px; height: 60px; }
-                    .logo-circle img { max-width: 50px; max-height: 50px; }
-                    .btn, .btn-secondary { 
-                        display: block; 
-                        margin: 10px auto; 
-                        width: 80%; 
-                    }
-                }
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <title>ALERTA: Vacación Autorizada pero NO Validada</title>
+            <!--[if (gte mso 9)|(IE)]>
+            <style type="text/css">
+                table {border-collapse: collapse;}
+                .btn {border-radius: 50px !important;}
             </style>
+            <![endif]-->
         </head>
-        <body>
-            <div class='container'>
-                <div class='card'>
-                    <!-- HEADER CON IMAGEN -->
-                    <div class='card-header'>
-                        <img src='{$headerImageUrl}' alt='' class='header-image'>
-                        <div class='header-content'>
-                            <h2>🚨 ALERTA: Vacación Autorizada pero NO Validada</h2>
-                            <p>Sistema de Vacaciones - <span class='company-name'>{$this->config['empresa']}</span></p>
-                        </div>
-                    </div>
-                    
-                    <!-- LOGO -->
-                    <div class='logo-container'>
-                        <div class='logo-circle'>
-                            <img src='{$logoUrl}' alt='Logo {$this->config['empresa']}'>
-                        </div>
-                    </div>
-                    
-                    <!-- CUERPO -->
-                    <div class='card-body'>
-                        <p class='greeting'>Estimado(a) <strong>{$nombreJefe}</strong>,</p>
+        <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #E8ECF1; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+            
+            <!--[if (gte mso 9)|(IE)]>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #E8ECF1;">
+                <tr>
+                    <td align="center">
+            <![endif]-->
+            
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #E8ECF1; min-height: 100vh;">
+                <tr>
+                    <td align="center" style="padding: 30px 15px;">
                         
-                        <div class='urgent-box'>
-                            <h3>⚠️ ¡ATENCIÓN! ACCIÓN REQUERIDA</h3>
-                            <p style='margin: 0;'>
-                                La solicitud de vacaciones de <strong>{$nombreEmpleado}</strong> fue <strong>AUTORIZADA</strong> hace {$diasPasados} día(s) 
-                                pero aún <strong style='color: #C62828;'>NO HA SIDO VALIDADA</strong> por RRHH.
-                            </p>
-                            <p style='margin: 10px 0 0; font-size: 14px;'>
-                                <span class='dias-pasados'>{$diasPasados} días desde la solicitud</span>
-                                <span style='margin-left: 15px;'>📅 Inicia: <strong>{$fechaInicio}</strong></span>
-                            </p>
-                        </div>
+                        <!-- CARD PRINCIPAL -->
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #FFFFFF; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                            
+                            <!-- HEADER -->
+                            <tr>
+                                <td style="padding: 30px 30px 20px; text-align: center; background-color: ' . $color . '; border-radius: 12px 12px 0 0; background: linear-gradient(135deg, ' . $color . ', ' . $colorHover . '); mso-background-color: ' . $color . ';">
+                                    
+                                    <!-- Logo -->
+                                    <img src="' . $logoUrl . '" width="200" alt="ALPASA" style="display: block; margin: 0 auto 10px; max-width: 200px; height: auto; border: 0; outline: none; text-decoration: none;">
+                                    
+                                    <!-- Título -->
+                                    <div style="font-size: 18px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; margin: 10px 0 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+                                        ALERTA: Vacación Autorizada pero NO Validada
+                                    </div>
+                                    
+                                    <!-- Subtítulo -->
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 400; letter-spacing: 0.3px;">
+                                        Sistema de Gestión de Vacaciones
+                                    </div>
+                                    
+                                    <!-- Línea decorativa -->
+                                    <div style="width: 50px; height: 3px; background-color: rgba(255,255,255,0.3); margin: 12px auto 0; border-radius: 2px;"></div>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <!-- CUERPO -->
+                            <tr>
+                                <td style="padding: 30px 30px 25px; background-color: #FFFFFF;">
+                                    
+                                    <!-- Saludo -->
+                                    <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: #333333;">
+                                        Estimado(a) <strong style="color: ' . $color . ';">' . $nombreJefe . '</strong>,
+                                    </p>
+                                    
+                                    <!-- ALERTA URGENTE -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFEBEE; border-radius: 8px; border-left: 5px solid #F44336; margin-bottom: 15px;">
+                                        <tr>
+                                            <td style="padding: 18px 20px;">
+                                                <div style="font-size: 16px; font-weight: 700; color: #C62828; margin-bottom: 8px;">ATENCION - ACCION REQUERIDA</div>
+                                                <p style="margin: 0; font-size: 14px; color: #333; line-height: 1.6;">
+                                                    La solicitud de vacaciones de <strong style="color: #C62828;">' . $nombreEmpleado . '</strong> fue <strong>AUTORIZADA</strong> hace <strong style="color: #C62828;">' . $diasPasados . ' día(s)</strong> 
+                                                    pero aun <strong style="color: #C62828;">NO HA SIDO VALIDADA</strong> por RRHH.
+                                                </p>
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 10px;">
+                                                    <tr>
+                                                        <td width="50%" style="padding: 0 10px 0 0;">
+                                                            <span style="display: inline-block; background-color: #F44336; color: #FFFFFF; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: 700;">' . $diasPasados . ' días desde la solicitud</span>
+                                                        </td>
+                                                        <td width="50%" style="padding: 0 0 0 10px;">
+                                                            <span style="font-size: 14px; color: #333;">Inicia: <strong>' . $fechaInicio . '</strong></span>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>';
+        
+        if ($diasRestantes <= 3) {
+            $html .= '
+                                    <!-- MENSAJE DE URGENCIA -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFF3E0; border-radius: 8px; border-left: 4px solid #FF9800; margin-bottom: 15px;">
+                                        <tr>
+                                            <td style="padding: 12px 18px;">
+                                                <div style="font-size: 14px; font-weight: 700; color: #E65100;">URGENTE - Faltan solo ' . $diasRestantes . ' dias para el inicio de las vacaciones</div>
+                                            </td>
+                                        </tr>
+                                    </table>';
+        }
+        
+        $html .= '
+                                    <!-- INFORMACIÓN DE AUTORIZACIÓN -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #E8F5E9; border-radius: 8px; border-left: 4px solid #4CAF50; margin-bottom: 15px;">
+                                        <tr>
+                                            <td style="padding: 12px 18px;">
+                                                <div style="font-size: 13px; font-weight: 700; color: #1B5E20; margin-bottom: 4px;">Informacion de Autorizacion</div>
+                                                <div style="font-size: 14px; color: #333; line-height: 1.5;">
+                                                    Autorizado por: <strong>' . $usuarioAutoriza . '</strong><br>
+                                                    Fecha de autorizacion: <strong>' . $fechaAutoriza . '</strong>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- AVISO IMPORTANTE -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFF8E1; border-radius: 8px; border-left: 4px solid #FFC107; margin-bottom: 20px;">
+                                        <tr>
+                                            <td style="padding: 12px 18px;">
+                                                <div style="font-size: 14px; color: #795548;">
+                                                    <strong>IMPORTANTE:</strong> La validacion debe realizarse ANTES de la fecha de inicio de las vacaciones.
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- TABLA DE INFORMACIÓN -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8F9FA; border-radius: 8px; border: 1px solid #E9ECEF; margin-bottom: 20px;">
+                                        <tr>
+                                            <td style="padding: 15px 18px;">
+                                                
+                                                <!-- Empleado -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0 0 5px 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Empleado</div>
+                                                            <div style="font-size: 16px; font-weight: 600; color: #222;">' . $nombreEmpleado . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- No. Empleado y Departamento -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="50%" style="padding: 0 10px 0 0; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">No. Empleado</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['NoEmpleado'] . '</div>
+                                                        </td>
+                                                        <td width="50%" style="padding: 0 0 0 10px; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Departamento</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['Departamento'] . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Cargo -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Cargo</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['Cargo'] . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Separador -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                    <tr>
+                                                        <td style="padding: 8px 0; border-bottom: 1px dashed #E0E0E0;"></td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Período de Vacaciones -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 10px; margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Periodo de Vacaciones</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . date('d/m/Y', strtotime($vacacion['FechaInicio'])) . ' al ' . date('d/m/Y', strtotime($vacacion['FechaFin'])) . '</div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Días a Tomar y Estatus -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 10px;">
+                                                    <tr>
+                                                        <td width="50%" style="padding: 0 10px 0 0; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Dias a Tomar</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;">' . $vacacion['DiasTomar'] . ' dias</div>
+                                                        </td>
+                                                        <td width="50%" style="padding: 0 0 0 10px; vertical-align: top;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Fecha de Solicitud</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333;"><strong>' . $fechaSolicitud . '</strong></div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Estatus Actual -->
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                    <tr>
+                                                        <td width="100%" style="padding: 0;">
+                                                            <div style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 0.5px;">Estatus Actual</div>
+                                                            <div style="font-size: 15px; font-weight: 500; color: #333; margin-top: 2px;">
+                                                                <span style="display: inline-block; padding: 4px 16px; background-color: ' . $color . '; color: #FFFFFF; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">' . $estadoTexto . '</span>
+                                                                <span style="margin-left: 10px; font-size: 13px; color: #888;">(Autorizada - Pendiente de Validacion)</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- ACCIONES REQUERIDAS -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFF3E0; border-radius: 8px; border-left: 4px solid #FF9800; margin-bottom: 20px;">
+                                        <tr>
+                                            <td style="padding: 15px 18px;">
+                                                <div style="font-size: 13px; font-weight: 700; color: #E65100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Acciones Requeridas - RRHH</div>
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                    <tr>
+                                                        <td style="padding: 3px 0; font-size: 14px; color: #333; line-height: 1.5;">
+                                                            <span style="color: #FF9800; font-weight: bold; margin-right: 6px;">•</span> <strong>Validar</strong> la solicitud de vacaciones en el sistema
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 3px 0; font-size: 14px; color: #333; line-height: 1.5;">
+                                                            <span style="color: #FF9800; font-weight: bold; margin-right: 6px;">•</span> Verificar que el empleado cumpla con los requisitos
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 3px 0; font-size: 14px; color: #333; line-height: 1.5;">
+                                                            <span style="color: #FF9800; font-weight: bold; margin-right: 6px;">•</span> Confirmar la disponibilidad de dias
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 3px 0; font-size: 14px; color: #333; line-height: 1.5;">
+                                                            <span style="color: #FF9800; font-weight: bold; margin-right: 6px;">•</span> Revisar que no afecte las operaciones del departamento
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- DESPEDIDA -->
+                                    <p style="margin: 0 0 5px; font-size: 15px; color: #333333;">
+                                        Atentamente,
+                                    </p>
+                                    <p style="margin: 0 0 20px; font-size: 15px; color: #333333; font-weight: 600;">
+                                        El equipo de ALPASA
+                                    </p>
+                                    
+                                    <!-- BOTONES -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td align="center" style="padding: 5px 0 10px;">
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                                                    <tr>
+                                                        <td style="padding: 0 5px 5px;">
+                                                            <!--[if (gte mso 9)|(IE)]>
+                                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                                                                <tr>
+                                                                    <td align="center" bgcolor="' . $color . '" style="border-radius: 50px; padding: 0;">
+                                                            <![endif]-->
+                                                            <a href="' . $this->config['url_base'] . '/vacaciones" 
+                                                               target="_blank"
+                                                               style="display: inline-block;
+                                                                      background-color: ' . $color . ';
+                                                                      color: #FFFFFF;
+                                                                      padding: 14px 35px;
+                                                                      font-family: Arial, Helvetica, sans-serif;
+                                                                      font-size: 14px;
+                                                                      font-weight: 700;
+                                                                      text-decoration: none;
+                                                                      border-radius: 50px;
+                                                                      text-align: center;
+                                                                      letter-spacing: 0.5px;
+                                                                      border: none;
+                                                                      mso-padding-alt: 14px 35px;
+                                                                      mso-line-height-alt: 22px;
+                                                                      box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                                                Ir a Validar Solicitud
+                                                            </a>
+                                                            <!--[if (gte mso 9)|(IE)]>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                            <![endif]-->
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 5px 5px 0;">
+                                                            <!--[if (gte mso 9)|(IE)]>
+                                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                                                                <tr>
+                                                                    <td align="center" bgcolor="#9E9E9E" style="border-radius: 50px; padding: 0;">
+                                                            <![endif]-->
+                                                            <a href="' . $this->config['url_base'] . '/vacaciones" 
+                                                               target="_blank"
+                                                               style="display: inline-block;
+                                                                      background-color: #9E9E9E;
+                                                                      color: #FFFFFF;
+                                                                      padding: 10px 25px;
+                                                                      font-family: Arial, Helvetica, sans-serif;
+                                                                      font-size: 13px;
+                                                                      font-weight: 600;
+                                                                      text-decoration: none;
+                                                                      border-radius: 50px;
+                                                                      text-align: center;
+                                                                      letter-spacing: 0.5px;
+                                                                      border: none;
+                                                                      mso-padding-alt: 10px 25px;
+                                                                      mso-line-height-alt: 20px;">
+                                                                Ver todas
+                                                            </a>
+                                                            <!--[if (gte mso 9)|(IE)]>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                            <![endif]-->
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- NOTA -->
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFF8E1; border-radius: 8px; border: 1px solid #FFE0B2; margin-top: 15px;">
+                                        <tr>
+                                            <td style="padding: 12px 18px;">
+                                                <div style="font-size: 12px; color: #795548; line-height: 1.5;">
+                                                    <strong>Nota:</strong> Esta alerta se genera automaticamente cuando una solicitud de vacaciones 
+                                                    ha sido <strong>AUTORIZADA</strong> hace mas de 1 dia pero <strong>NO VALIDADA</strong>, 
+                                                    y la fecha de inicio es FUTURA.
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                </td>
+                            </tr>
+                            
+                            <!-- FOOTER -->
+                            <tr>
+                                <td style="padding: 20px 30px; text-align: center; background-color: #F8F9FA; border-radius: 0 0 12px 12px; border-top: 1px solid #E9ECEF;">
+                                    
+                                    <div style="font-size: 11px; line-height: 1.6; color: #888888;">
+                                        <p style="margin: 0 0 8px;">
+                                            Este es un mensaje automatico del Sistema de Vacaciones de ALPASA.
+                                        </p>
+                                        <p style="margin: 0 0 8px; font-weight: 600; color: #F44336;">
+                                            Si ya valido esta solicitud, ignore este mensaje.
+                                        </p>
+                                        <p style="margin: 0 0 8px;">
+                                            Por favor no responda a este correo. Si tiene dudas, contacte a RRHH.
+                                        </p>
+                                        <p style="margin: 0 0 8px; font-size: 10px; color: #AAAAAA;">
+                                            En cumplimiento a lo previsto en la Ley Federal de Proteccion de Datos Personales en Posesion de los Particulares, 
+                                            consulte nuestro aviso de privacidad en 
+                                            <a href="https://www.alpasa.mx/politica-de-privacidad" 
+                                               style="color: ' . $color . '; text-decoration: underline;">alpasa.mx/politica-de-privacidad</a>.
+                                        </p>
+                                        <p style="margin: 0 0 8px; font-size: 10px; color: #AAAAAA;">
+                                            La informacion contenida en este correo electronico es privilegiada y confidencial y para uso exclusivo de los destinatarios.
+                                        </p>
+                                        <p style="margin: 10px 0 0; font-size: 11px; color: #999999; font-weight: 600;">
+                                            &copy; ' . date('Y') . ' ALPASA - Todos los derechos reservados
+                                        </p>
+                                    </div>
+                                    
+                                </td>
+                            </tr>
+                            
+                        </table>
                         
-                        {$mensajeUrgencia}
-                        
-                        <div class='info-autorizacion'>
-                            <strong>✅ Información de Autorización:</strong><br>
-                            <span>Autorizado por: <strong>{$usuarioAutoriza}</strong></span><br>
-                            <span>Fecha de autorización: <strong>{$fechaAutoriza}</strong></span>
-                        </div>
-                        
-                        <div class='warning-box'>
-                            <strong>ℹ️ IMPORTANTE:</strong>
-                            <span>La validación debe realizarse ANTES de la fecha de inicio de las vacaciones.</span>
-                        </div>
-                        
-                        <div class='info-grid'>
-                            <div class='info-item info-item-full'>
-                                <span class='label'>👤 Empleado</span>
-                                <span class='value'>{$nombreEmpleado}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>🆔 No. Empleado</span>
-                                <span class='value'>{$vacacion['NoEmpleado']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>🏢 Departamento</span>
-                                <span class='value'>{$vacacion['Departamento']}</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>💼 Cargo</span>
-                                <span class='value'>{$vacacion['Cargo']}</span>
-                            </div>
-                            <div class='info-item info-item-full'>
-                                <span class='label'>📅 Período de Vacaciones</span>
-                                <span class='value'>" . date('d/m/Y', strtotime($vacacion['FechaInicio'])) . " al " . 
-                                date('d/m/Y', strtotime($vacacion['FechaFin'])) . "</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>📆 Días a Tomar</span>
-                                <span class='value'>{$vacacion['DiasTomar']} días</span>
-                            </div>
-                            <div class='info-item'>
-                                <span class='label'>📝 Fecha de Solicitud</span>
-                                <span class='value'><strong>{$fechaSolicitud}</strong></span>
-                            </div>
-                            <div class='info-item info-item-full'>
-                                <span class='label'>📊 Estatus Actual</span>
-                                <span class='value'>
-                                    <span class='status-badge'>
-                                        {$estadoTexto}
-                                    </span>
-                                    <span style='margin-left: 10px; font-size: 13px; color: #888;'>
-                                        (Autorizada - Pendiente de Validación)
-                                    </span>
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class='action-box'>
-                            <strong>📋 Acciones Requeridas - RRHH:</strong>
-                            <ul>
-                                <li><strong>Validar</strong> la solicitud de vacaciones en el sistema</li>
-                                <li>Verificar que el empleado cumpla con los requisitos</li>
-                                <li>Confirmar la disponibilidad de días</li>
-                                <li>Revisar que no afecte las operaciones del departamento</li>
-                            </ul>
-                        </div>
-                        
-                        <div class='btn-container'>
-                            <a href='{$this->config['url_base']}/vacaciones' class='btn'>
-                                🔍 Ir a Validar Solicitud
-                            </a>
-                            <a href='{$this->config['url_base']}/vacaciones' class='btn-secondary'>
-                                📋 Ver todas
-                            </a>
-                        </div>
-                        
-                        <div class='note-box'>
-                            <strong>💡 Nota:</strong> Esta alerta se genera automáticamente cuando una solicitud de vacaciones 
-                            ha sido <strong>AUTORIZADA</strong> hace más de 1 día pero <strong>NO VALIDADA</strong>, 
-                            y la fecha de inicio es FUTURA.
-                        </div>
-                    </div>
-                    
-                    <!-- FOOTER -->
-                    <div class='footer'>
-                        <p>Este es un mensaje automático del Sistema de Vacaciones de {$this->config['empresa']}.</p>
-                        <p>Si ya validó esta solicitud, ignore este mensaje.</p>
-                        <p>© " . date('Y') . " - {$this->config['empresa']} | Todos los derechos reservados</p>
-                    </div>
-                </div>
-            </div>
+                    </td>
+                </tr>
+            </table>
+            
+            <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                </tr>
+            </table>
+            <![endif]-->
+            
         </body>
-        </html>";
+        </html>';
+        
+        return $html;
     }
      
     private function getStatusText($estatus) {

@@ -13,6 +13,8 @@ return [
          'rh_alterno' => 'auxiliarsistemas3@alpasa.com.mx',
     ],
     'url_base' => 'https://intranet.alpasamx.com/SistemaVacaciones/dist',
+    
+    'url_base_img' => 'https://intranet.alpasamx.com/SistemaVacaciones/backend/api/Includes/',
     'empresa' => 'Alpasa',
     'max_intentos' => 3,
     'limite_por_ciclo' => 50,
