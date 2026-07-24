@@ -1,9 +1,8 @@
 <?php 
 
 include_once '../../db/Connection.php';
-require_once '../includes/Mailer.php';
-
-// Configurar zona horaria
+require_once '../Includes/Mailer.php';
+ 
 date_default_timezone_set('America/Mexico_City');
  
 $logFile = __DIR__ . '/../logs/procesar_cola_email.log';
@@ -13,11 +12,10 @@ if (!is_dir($logDir)) {
 }
 
 try {
-    $db = Connection::getInstance()->getConnection();
-    $mailer = new Mailer($db);
+    $mailer = new Mailer($Conexion);
      
     $result = $mailer->processQueue(50);
-     
+      
     $stats = $mailer->getQueueStats();
     
     $mensaje = date('Y-m-d H:i:s') . 

@@ -7,7 +7,7 @@ $contraseña = getenv('DB_PASS');
 $ZonaHoraria = getenv('ZonaHoraria');
 $VERSION = getenv('VERSION');
 
-date_default_timezone_set($ZonaHoraria);
+//date_default_timezone_set($ZonaHoraria);
 
 try {
     $Conexion = new PDO(

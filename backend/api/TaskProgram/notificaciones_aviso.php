@@ -1,6 +1,6 @@
 <?php  
 include_once '../../db/Connection.php';
-require_once '../includes/VacacionesService.php';
+require_once '../Includes/VacacionesService.php';
  
 date_default_timezone_set('America/Mexico_City');
  
@@ -10,9 +10,8 @@ if (!is_dir($logDir)) {
     mkdir($logDir, 0777, true);
 }
 
-try {
-    $db = Connection::getInstance()->getConnection();
-    $service = new VacacionesService($db);
+try { 
+    $service = new VacacionesService($Conexion);
      
     $totalAvisos = $service->sendAdvanceNotices(); 
     $totalAlertas = $service->checkUnvalidatedVacations();

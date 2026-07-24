@@ -1,6 +1,4 @@
 <?php
-// includes/Mailer.php
-
 require_once '../../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -14,7 +12,7 @@ class Mailer {
     
     public function __construct($db) {
         $this->db = $db;
-        $this->config = include(__DIR__ . '/../Configuracion/mail.php');
+        $this->config = include('../Configuracion/mail.php');
         $this->smtpConfig = $this->config['smtp'];
     }
     
@@ -24,9 +22,9 @@ class Mailer {
     private function sendEmail($to, $subject, $htmlBody, $textBody = null, $cc = null) {
         try {
             $mail = new PHPMailer(true);
-            
-            // Configuración SMTP
+             
             $mail->isSMTP();
+            $mail->SMTPDebug = 0;   
             $mail->Host       = $this->smtpConfig['host'];
             $mail->SMTPAuth   = true;
             $mail->Username   = $this->smtpConfig['username'];
@@ -34,8 +32,7 @@ class Mailer {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = $this->smtpConfig['port'];
             $mail->CharSet    = 'UTF-8';
-            
-            // Destinatarios
+             
             $mail->setFrom($this->smtpConfig['from_email'], $this->smtpConfig['from_name']);
             $mail->addAddress($to);
             
@@ -47,8 +44,7 @@ class Mailer {
                     }
                 }
             }
-            
-            // Contenido
+             
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body    = $htmlBody;
@@ -103,16 +99,16 @@ class Mailer {
             $limit = $this->config['limite_por_ciclo'] ?? 50;
         }
         
-        $stmt = $this->db->prepare("
-            SELECT TOP :limit 
-                   IdEmailQueue, IdVacaciones, Destinatario, DestinatarioCC,
-                   Asunto, CuerpoHTML, TipoNotificacion, Intentos, MaxIntentos
+            $stmt = $this->db->prepare("
+            SELECT TOP (?) 
+                IdEmailQueue, IdVacaciones, Destinatario, DestinatarioCC,
+                Asunto, CuerpoHTML, TipoNotificacion, Intentos, MaxIntentos
             FROM email_queue 
             WHERE Estado = 'pending' 
-              AND (FechaProgramada IS NULL OR FechaProgramada <= GETDATE())
+            AND (FechaProgramada IS NULL OR FechaProgramada <= GETDATE())
             ORDER BY FechaCreacion ASC
         ");
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -130,8 +126,7 @@ class Mailer {
                 $cc
             );
             
-            if ($emailSent['success']) {
-                // Actualizar estado a sent
+            if ($emailSent['success']) { 
                 $updateStmt = $this->db->prepare("
                     UPDATE email_queue 
                     SET Estado = 'sent', FechaEnvio = GETDATE() 
@@ -139,8 +134,7 @@ class Mailer {
                 ");
                 $updateStmt->execute([':idEmailQueue' => $row['IdEmailQueue']]);
                 $sentCount++;
-                
-                // Guardar log
+                  
                 $this->saveLog($row['IdVacaciones'], $row['IdEmailQueue'], 
                               $row['TipoNotificacion'], $row['Destinatario'], 
                               $row['Asunto'], 'sent');
@@ -161,8 +155,7 @@ class Mailer {
                     ':idEmailQueue' => $row['IdEmailQueue']
                 ]);
                 $failedCount++;
-                
-                // Guardar log de error
+                 
                 $this->saveLog($row['IdVacaciones'], $row['IdEmailQueue'], 
                               $row['TipoNotificacion'], $row['Destinatario'], 
                               $row['Asunto'], 'failed', $emailSent['error']);
@@ -171,10 +164,7 @@ class Mailer {
         
         return ['sent' => $sentCount, 'failed' => $failedCount];
     }
-    
-    /**
-     * Guarda log de envío
-     */
+     
     private function saveLog($idVacaciones, $idEmailQueue, $tipo, $destinatario, $asunto, $estado, $error = null) {
         $stmt = $this->db->prepare("
             INSERT INTO email_logs 
@@ -191,10 +181,7 @@ class Mailer {
             ':error' => $error
         ]);
     }
-    
-    /**
-     * Obtiene estadísticas de la cola
-     */
+     
     public function getQueueStats() {
         $stats = [];
         
@@ -209,10 +196,7 @@ class Mailer {
         
         return $stats;
     }
-    
-    /**
-     * Limpia logs antiguos (más de 30 días)
-     */
+     
     public function cleanOldLogs($days = 30) {
         $fechaLimite = date('Y-m-d', strtotime("-$days days"));
         

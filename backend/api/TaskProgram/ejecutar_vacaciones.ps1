@@ -1,0 +1,22 @@
+
+$phpPath = "C:\xampp\php\php.exe"
+$scriptPath = "C:\xampp\htdocs\SistemaVacaciones\backend\api\TaskProgram\notificaciones_Aviso.php"
+$logPath = "C:\xampp\htdocs\SistemaVacaciones\backend\api\TaskProgram\ejecucion_$(Get-Date -Format 'yyyyMMdd_HHmm').log"
+
+$logDir = Split-Path $logPath -Parent
+if (!(Test-Path $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force
+}
+
+$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+Add-Content -Path $logPath -Value "[$timestamp] INICIO - Vacaciones"
+
+try {
+    $output = & $phpPath -f $scriptPath 2>&1
+    Add-Content -Path $logPath -Value $output
+} catch {
+    Add-Content -Path $logPath -Value "ERROR: $($_.Exception.Message)"
+}
+
+$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+Add-Content -Path $logPath -Value "[$timestamp] FIN - Vacaciones"
