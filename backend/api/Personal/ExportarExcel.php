@@ -24,7 +24,7 @@ $sql = "SELECT
             t3.NomDepto as Departamento,
             t4.NomEmpresa as Empresa,
             t5.NomLargo as Ubicacion,
-            CONCAT(t6.Nombre, ' ', t6.ApPaterno, ' ', t6.ApMaterno) as Supervisor,
+            CONCAT(t6.Nombre, ' ', t6.ApPaterno, ' ', t6.ApMaterno) as JefeInmediato,
             t1.Status,
             t1.EsJefeInmediato,
             t1.RutaFoto,
@@ -149,9 +149,9 @@ $headers = [
     'H1' => 'Departamento',
     'I1' => 'Empresa',
     'J1' => 'Ubicación',
-    'K1' => 'Supervisor',
+    'K1' => 'JefeInmediato',
     'L1' => 'Estatus',
-    'M1' => 'Es Supervisor',
+    'M1' => 'Es JefeInmediato',
     'N1' => 'Ruta Foto',
     'O1' => 'Email',
     'P1' => 'Contacto',
@@ -185,7 +185,7 @@ foreach ($result as $empleado) {
     $sheet->setCellValue('H' . $row, $empleado['Departamento'] ?? 'N/A');
     $sheet->setCellValue('I' . $row, $empleado['Empresa'] ?? 'N/A');
     $sheet->setCellValue('J' . $row, $empleado['Ubicacion'] ?? 'N/A');
-    $sheet->setCellValue('K' . $row, $empleado['Supervisor'] ?? 'N/A');
+    $sheet->setCellValue('K' . $row, $empleado['JefeInmediato'] ?? 'N/A');
     $sheet->setCellValue('L' . $row, $empleado['Status'] == '1' ? 'Activo' : 'Inactivo');
     $sheet->setCellValue('M' . $row, $empleado['EsJefeInmediato'] == '1' ? 'Sí' : 'No');
     $sheet->setCellValue('N' . $row, $empleado['RutaFoto'] ?? '');

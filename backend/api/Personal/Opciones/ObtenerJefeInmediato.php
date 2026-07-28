@@ -25,7 +25,7 @@ try {
     echo json_encode([
         'status' => true,
         'data' => $supervisores,
-        'message' => 'Supervisores obtenidos correctamente'
+        'message' => 'JefeInmediatoes obtenidos correctamente'
     ]);
     
 } catch (Exception $e) {

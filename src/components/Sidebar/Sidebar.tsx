@@ -14,7 +14,9 @@ import {
     FaCogs,
     FaWeightHanging,
     FaBuilding,
-    FaShieldAlt
+    FaShieldAlt,
+    FaTable,
+    FaBriefcase
 } from "react-icons/fa";
 import { PiTruckTrailerDuotone } from "react-icons/pi";
 import Seguridad from '../../assets/LogoCredencial.png';
@@ -33,10 +35,8 @@ interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
 }
-
-// Mapeo de nombres de íconos a componentes
-const iconMap: { [key: string]: React.ElementType } = {
-    // Lucide React icons
+ 
+const iconMap: { [key: string]: React.ElementType } = { 
     Truck: Icons.Truck,
     LibraryBig: Icons.LibraryBig,
     Settings: Icons.Settings,
@@ -48,9 +48,12 @@ const iconMap: { [key: string]: React.ElementType } = {
     ChevronDown: Icons.ChevronDown,
     ChevronRight: Icons.ChevronRight,
     HelpCircle: Icons.HelpCircle,
-    // React Icons
+    Process: Icons.Folder,
+    Calendar: Icons.Calendar, 
     FaMapMarkerAlt: FaMapMarkerAlt,
     FaBoxes: FaBoxes,
+    FaTable: FaTable,
+    FaBriefcase: FaBriefcase,
     FaBox: FaBox,
     FaTrailer: FaTrailer,
     FaWarehouse: FaWarehouse,
@@ -64,8 +67,7 @@ const iconMap: { [key: string]: React.ElementType } = {
     FaBuilding: FaBuilding,
     FaShieldAlt: FaShieldAlt
 };
-
-// Componente para renderizar íconos dinámicamente
+ 
 const DynamicIcon = ({ iconName, size = 18 }: { iconName: string; size?: number }) => {
     const IconComponent = iconMap[iconName];
     if (!IconComponent) {
@@ -80,8 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const sidebarRef = useRef<HTMLDivElement>(null);
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [expandedSections, setExpandedSections] = useState<string[]>([]);
-    
-    // Filtrar el menú basado en el rol del usuario
+     
     const menuSections = useMemo(() => {
         if (!usuarioSesion) {
             console.log('No hay usuario en sesión');
@@ -89,14 +90,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         }
         
         const rolIdNormalizado = normalizarRolId(usuarioSesion.rol);
-        
-        // Si es administrador (ID 1), mostrar todo el menú
+         
         if (rolIdNormalizado === 1) {
             console.log('Usuario ADMINISTRADOR - Mostrando menú completo');
             return MENU_CONFIG;
         }
-        
-        // Para otros roles, filtrar según permisos
+         
         const seccionesFiltradas = filtrarMenuPorRol(usuarioSesion);
         console.log(`Menú filtrado: ${seccionesFiltradas.length} secciones`);
         return seccionesFiltradas;
@@ -112,8 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             
             if (activeSection) {
                 setExpandedSections([activeSection.id]);
-            } else {
-                // Expandir la primera sección por defecto
+            } else { 
                 setExpandedSections([menuSections[0].id]);
             }
         }
@@ -137,8 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             onClose();
         }
     }, [onClose]);
-
-    // Cerrar sidebar al hacer clic fuera
+ 
     useEffect(() => {
         if (window.innerWidth > 768 || !isOpen) return;
 
@@ -156,8 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             document.removeEventListener('touchstart', handleClickOutside);
         };
     }, [isOpen, onClose]);
-
-    // Cerrar con tecla Escape
+ 
     useEffect(() => {
         const handleEscapeKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && isOpen) {
@@ -173,8 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             document.removeEventListener('keydown', handleEscapeKey);
         };
     }, [isOpen, onClose]);
-
-    // Cargar usuario al montar
+ 
     useEffect(() => {
         const usuario = obtenerUsuarioSesion();
         console.log('Usuario cargado desde sesión:', usuario);
@@ -193,8 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         
         setUsuarioSesion(usuario);
     }, []);
-
-    // Actualizar sección activa cuando cambia la ruta
+ 
     useEffect(() => {
         const currentPath = location.pathname;
         const activeSection = menuSections.find(section => 
@@ -281,9 +275,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const getAvatarColor = () => {
         const rolId = normalizarRolId(usuarioSesion?.rol);
         switch (rolId) {
-            case 1: return '#ff6b6b'; // Administrador - Rojo
-            case 2: return '#4ecdc4'; // Recursos Humanos - Turquesa
-            case 4: return '#96ceb4'; // Supervisores - Verde
+            case 1: return '#ff6b6b';  
+            case 2: return '#4ecdc4';  
+            case 4: return '#96ceb4';   
             default: return '#a8e6cf';
         }
     };
@@ -299,7 +293,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         return {
             nombre: (rolNombre == 1 ? 'ADMINISTRADOR' :
                      rolNombre == 2 ? 'RECURSOS HUMANOS' :
-                     rolNombre == 4 ? 'SUPERVISOR' :
+                     rolNombre == 4 ? 'JEFE_INMEDIATO' :
                      rolNombre == 5 ? 'OPERADOR' :
                      'Sin rol'),
             id: usuarioSesion.rol,

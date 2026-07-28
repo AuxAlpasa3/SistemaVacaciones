@@ -1,4 +1,3 @@
-// src/App.tsx
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -23,8 +22,7 @@ import { Footer } from './components/Footer/Footer';
 
 
 import './App.css';
-
-// Crear el cliente de React Query
+ 
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {

@@ -6,6 +6,8 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 
 include_once '../../db/Connection.php';
 
+date_default_timezone_set('America/Mexico_City');
+
 try {
     $estatus = isset($_GET['estatus']) ? $_GET['estatus'] : '';
     $noEmpleado = isset($_GET['noEmpleado']) ? $_GET['noEmpleado'] : '';
@@ -16,11 +18,12 @@ try {
     $fechaSolicitud = isset($_GET['fechaSolicitud']) ? $_GET['fechaSolicitud'] : '';
     $anio = isset($_GET['anio']) ? $_GET['anio'] : '';
     $fechaIngreso = isset($_GET['fechaIngreso']) ? $_GET['fechaIngreso'] : '';
+    $noContarDomingos = isset($_GET['noContarDomingos']) ? $_GET['noContarDomingos'] : '';
     
     $query = "SELECT 
                 t1.IdVacaciones,
                 t1.Anio,
-                t1.FechaSolicitud,
+                CONVERT(varchar(10), t1.FechaSolicitud, 23) as FechaSolicitud,
                 t3.IdPersonal as UsuarioSolicitaId,
                 CONCAT(ISNULL(t3.Nombre, ''), ' ', ISNULL(t3.ApPaterno, ''), ' ', ISNULL(t3.ApMaterno, '')) as UsuarioSolicita,
                 t2.NoEmpleado,
@@ -29,11 +32,11 @@ try {
                 ISNULL(t7.NomDepto, '') as Departamento,
                 t2.departamento,
                 ISNULL(t6.NomCargo, '') as Cargo,
-                t2.FechaIngreso,
-                t1.FechaInicio,
-                t1.FechaFin,
+                CONVERT(varchar(10), t2.FechaIngreso, 23) as FechaIngreso,
+                CONVERT(varchar(10), t1.FechaInicio, 23) as FechaInicio,
+                CONVERT(varchar(10), t1.FechaFin, 23) as FechaFin,
                 t1.DiasTomar,
-                t1.FechaRetornoLabores,
+                CONVERT(varchar(10), t1.FechaRetornoLabores, 23) as FechaRetornoLabores,
                 t1.Estatus,
                 t4.IdUsuario as UsuarioAutorizaId,
                 CASE 
@@ -41,18 +44,23 @@ try {
                     WHEN t4.EmpleadoID IS NULL THEN 'Administrador'
                     ELSE CONCAT(ISNULL(t4_personal.Nombre, ''), ' ', ISNULL(t4_personal.ApPaterno, ''), ' ', ISNULL(t4_personal.ApMaterno, ''))
                 END as UsuarioAutoriza,
-                t1.FechaAutoriza,
+                CONVERT(varchar(10), t1.FechaAutoriza, 23) as FechaAutoriza,
                 t5.IdUsuario as UsuarioValidaId,
                 CASE 
                     WHEN t5.IdUsuario IS NULL THEN 'Pendiente'
                     WHEN t5.EmpleadoID IS NULL THEN 'Administrador'
                     ELSE CONCAT(ISNULL(t5_personal.Nombre, ''), ' ', ISNULL(t5_personal.ApPaterno, ''), ' ', ISNULL(t5_personal.ApMaterno, ''))
                 END as UsuarioValida,
-                t1.FechaValidado,
+                CONVERT(varchar(10), t1.FechaValidado, 23) as FechaValidado,
                 t1.Comentarios,
                 t1.SaldoDias,
                 t1.DiasCorresponden,
-                t1.Antiguedad
+                t1.Antiguedad,
+                t1.NoContarDomingos,
+                CASE 
+                    WHEN t1.NoContarDomingos = 1 THEN 'Sí'
+                    ELSE 'No'
+                END as NoContarDomingosTexto
             FROM t_Vacaciones as t1
             LEFT JOIN t_personal as t2 ON t1.IdPersonal = t2.IdPersonal
             LEFT JOIN t_personal as t3 ON t3.IdPersonal = t1.UsuarioSolicita
@@ -123,6 +131,11 @@ try {
         $params[] = $fechaIngreso;
     }
     
+    if (!empty($noContarDomingos) && $noContarDomingos !== '') {
+        $query .= " AND t1.NoContarDomingos = ?";
+        $params[] = (int)$noContarDomingos;
+    }
+    
     $query .= " ORDER BY t1.FechaSolicitud DESC, t1.IdVacaciones DESC";
     
     $stmt = $Conexion->prepare($query);
@@ -164,7 +177,9 @@ try {
             'Comentarios' => $row['Comentarios'] ?? null,
             'SaldoDias' => isset($row['SaldoDias']) ? (int)$row['SaldoDias'] : 0,
             'DiasCorresponden' => isset($row['DiasCorresponden']) ? (int)$row['DiasCorresponden'] : 0,
-            'Antiguedad' => isset($row['Antiguedad']) ? (int)$row['Antiguedad'] : 0
+            'Antiguedad' => isset($row['Antiguedad']) ? (int)$row['Antiguedad'] : 0,
+            'NoContarDomingos' => isset($row['NoContarDomingos']) ? (int)$row['NoContarDomingos'] : 0,
+            'NoContarDomingosTexto' => $row['NoContarDomingosTexto'] ?? 'No'
         );
     }
     

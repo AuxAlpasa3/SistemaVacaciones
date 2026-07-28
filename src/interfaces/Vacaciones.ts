@@ -1,4 +1,3 @@
-// interfaces/Vacaciones.ts
 export interface InterfaceVacaciones {
     IdVacaciones: number;
     IdPersonal: number;
@@ -22,7 +21,8 @@ export interface InterfaceVacaciones {
     Comentarios: string | null;
     SaldoDias?: number;  
     DiasCorresponden?: number;  
-    Antiguedad?: number;  
+    Antiguedad?: number;
+    NoContarDomingos?: boolean | number; 
 }
 
 export interface PeriodoVacaciones {
@@ -42,14 +42,21 @@ export interface FiltrosVacaciones {
     Departamento: string;
     FechaInicioVacaciones: string;
     FechaFinVacaciones: string;
-    Supervisor: string;
+    JefeInmediato: string;
     FechaIngreso: string;
     FechaSolicitud: string;
     Estatus: number;
     Anio?: number;
+    NoContarDomingos?: boolean | number; 
 }
 
 export interface OpcionSelect {
     id: string;
     valor: string;
+}
+
+export interface ConfiguracionVacaciones {
+    NoContarDomingos: boolean;
+    DiasHabiles: number;
+    DiasTotales: number;
 }

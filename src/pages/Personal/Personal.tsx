@@ -644,7 +644,7 @@ export const Personal: React.FC = () => {
     const [departamentos, setDepartamentos] = useState<OpcionSelect[]>([]);
     const [empresas, setEmpresas] = useState<OpcionSelect[]>([]);
     const [ubicaciones, setUbicaciones] = useState<OpcionSelect[]>([]);
-    const [jefes, setSupervisores] = useState<OpcionSelect[]>([]);
+    const [jefes, setJefeInmediatoes] = useState<OpcionSelect[]>([]);
     const [turnos, setTurnos] = useState<OpcionSelect[]>([]);
     const [loadingOptions, setLoadingOptions] = useState(false);
 
@@ -679,7 +679,7 @@ export const Personal: React.FC = () => {
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerDepartamentos.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerEmpresas.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerUbicaciones.php'),
-                apiService.get<RespuestaAPI>('/personal/opciones/ObtenerSupervisores.php'),
+                apiService.get<RespuestaAPI>('/personal/opciones/ObtenerJefeInmediato.php'),
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerTurnos.php')
             ]);
 
@@ -717,7 +717,7 @@ export const Personal: React.FC = () => {
 
             if (supervisoresResponse.status && supervisoresResponse.data) {
                 const supervisoresData = Array.isArray(supervisoresResponse.data) ? supervisoresResponse.data : [];
-                setSupervisores(supervisoresData.map((s: any) => ({ 
+                setJefeInmediatoes(supervisoresData.map((s: any) => ({ 
                     id: s.id || s.IdPersonal || '', 
                     valor: s.NombreCompleto || s.valor || s.descripcion || '' 
                 })));

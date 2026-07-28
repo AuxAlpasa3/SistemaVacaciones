@@ -6,6 +6,8 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 require_once '../../db/Connection.php';
 
+date_default_timezone_set('America/Mexico_City');
+
 $method = $_SERVER['REQUEST_METHOD'];
 $idUsuario = isset($_GET['IdUsuario']) ? intval($_GET['IdUsuario']) : 0;
 
@@ -56,6 +58,13 @@ try {
             $saldoDias = isset($data['SaldoDias']) ? intval($data['SaldoDias']) : 0;
             $diasCorresponden = isset($data['DiasCorresponden']) ? intval($data['DiasCorresponden']) : 0;
             $antiguedad = isset($data['Antiguedad']) ? intval($data['Antiguedad']) : 0;
+            $noContarDomingos = isset($data['NoContarDomingos']) ? intval($data['NoContarDomingos']) : 0;
+            
+            // Asegurar formato de fecha correcto
+            $fechaSolicitud = !empty($data['FechaSolicitud']) ? $data['FechaSolicitud'] : date('Y-m-d');
+            $fechaInicio = !empty($data['FechaInicio']) ? $data['FechaInicio'] : null;
+            $fechaFin = !empty($data['FechaFin']) ? $data['FechaFin'] : null;
+            $fechaRetorno = !empty($data['FechaRetornoLabores']) ? $data['FechaRetornoLabores'] : null;
             
             $query = "INSERT INTO t_vacaciones (
                         IdPersonal, 
@@ -72,7 +81,8 @@ try {
                         Comentarios,
                         SaldoDias,
                         DiasCorresponden,
-                        Antiguedad
+                        Antiguedad,
+                        NoContarDomingos
                       ) VALUES (
                         :IdPersonal, 
                         :FechaSolicitud, 
@@ -88,25 +98,27 @@ try {
                         :Comentarios,
                         :SaldoDias,
                         :DiasCorresponden,
-                        :Antiguedad
+                        :Antiguedad,
+                        :NoContarDomingos
                       )";
             
             $stmt = $Conexion->prepare($query);
             $stmt->bindParam(':IdPersonal', $data['IdPersonal'], PDO::PARAM_INT);
-            $stmt->bindParam(':FechaSolicitud',  $data['FechaSolicitud']);
+            $stmt->bindParam(':FechaSolicitud', $fechaSolicitud);
             $stmt->bindParam(':UsuarioSolicita', $usuarioSolicita);
             $stmt->bindParam(':UsuarioAutoriza', $usuarioAutoriza);
             $stmt->bindParam(':FechaAutoriza', $fechaAutoriza);
-            $stmt->bindParam(':FechaInicio', $data['FechaInicio']);
-            $stmt->bindParam(':FechaFin', $data['FechaFin']);
+            $stmt->bindParam(':FechaInicio', $fechaInicio);
+            $stmt->bindParam(':FechaFin', $fechaFin);
             $stmt->bindParam(':DiasTomar', $data['DiasTomar'], PDO::PARAM_INT);
-            $stmt->bindParam(':FechaRetornoLabores', $data['FechaRetornoLabores']);
+            $stmt->bindParam(':FechaRetornoLabores', $fechaRetorno);
             $stmt->bindParam(':Estatus', $estatus, PDO::PARAM_INT);
             $stmt->bindParam(':Anio', $data['Anio'], PDO::PARAM_INT);
             $stmt->bindParam(':Comentarios', $data['Comentarios']);
             $stmt->bindParam(':SaldoDias', $saldoDias, PDO::PARAM_INT);
             $stmt->bindParam(':DiasCorresponden', $diasCorresponden, PDO::PARAM_INT);
             $stmt->bindParam(':Antiguedad', $antiguedad, PDO::PARAM_INT);
+            $stmt->bindParam(':NoContarDomingos', $noContarDomingos, PDO::PARAM_INT);
 
             if ($stmt->execute()) {
                 echo json_encode([
@@ -165,6 +177,11 @@ try {
             $saldoDias = isset($data['SaldoDias']) ? intval($data['SaldoDias']) : 0;
             $diasCorresponden = isset($data['DiasCorresponden']) ? intval($data['DiasCorresponden']) : 0;
             $antiguedad = isset($data['Antiguedad']) ? intval($data['Antiguedad']) : 0;
+            $noContarDomingos = isset($data['NoContarDomingos']) ? intval($data['NoContarDomingos']) : 0;
+            
+            $fechaInicio = !empty($data['FechaInicio']) ? $data['FechaInicio'] : null;
+            $fechaFin = !empty($data['FechaFin']) ? $data['FechaFin'] : null;
+            $fechaRetorno = !empty($data['FechaRetornoLabores']) ? $data['FechaRetornoLabores'] : null;
             
             $query = "UPDATE t_vacaciones SET 
                         FechaInicio = :FechaInicio,
@@ -178,14 +195,15 @@ try {
                         Estatus = :Estatus,
                         SaldoDias = :SaldoDias,
                         DiasCorresponden = :DiasCorresponden,
-                        Antiguedad = :Antiguedad
+                        Antiguedad = :Antiguedad,
+                        NoContarDomingos = :NoContarDomingos
                       WHERE IdVacaciones = :IdVacaciones";
             
             $stmt = $Conexion->prepare($query);
-            $stmt->bindParam(':FechaInicio', $data['FechaInicio']);
-            $stmt->bindParam(':FechaFin', $data['FechaFin']);
+            $stmt->bindParam(':FechaInicio', $fechaInicio);
+            $stmt->bindParam(':FechaFin', $fechaFin);
             $stmt->bindParam(':DiasTomar', $data['DiasTomar'], PDO::PARAM_INT);
-            $stmt->bindParam(':FechaRetornoLabores', $data['FechaRetornoLabores']);
+            $stmt->bindParam(':FechaRetornoLabores', $fechaRetorno);
             $stmt->bindParam(':Anio', $data['Anio'], PDO::PARAM_INT);
             $stmt->bindParam(':Comentarios', $data['Comentarios']);
             $stmt->bindParam(':UsuarioAutoriza', $usuarioAutoriza);
@@ -194,6 +212,7 @@ try {
             $stmt->bindParam(':SaldoDias', $saldoDias, PDO::PARAM_INT);
             $stmt->bindParam(':DiasCorresponden', $diasCorresponden, PDO::PARAM_INT);
             $stmt->bindParam(':Antiguedad', $antiguedad, PDO::PARAM_INT);
+            $stmt->bindParam(':NoContarDomingos', $noContarDomingos, PDO::PARAM_INT);
             $stmt->bindParam(':IdVacaciones', $idVacaciones, PDO::PARAM_INT);
 
             if ($stmt->execute()) {

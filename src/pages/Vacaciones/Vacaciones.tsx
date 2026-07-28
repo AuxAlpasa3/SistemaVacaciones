@@ -227,7 +227,7 @@ const MemoizedActionButtons = React.memo(({
     canEditDelete: boolean;
     activeTab: TabType;
 }) => {
-    const showAuthorizeButton = idRolUsuario === 3 && row.Estatus === 0 && activeTab === 'solicitadas';
+    const showAuthorizeButton = (idRolUsuario === 2 || idRolUsuario === 3) && row.Estatus === 0 && activeTab === 'solicitadas';
     const showValidateButtons = idRolUsuario === 2 && row.Estatus === 1 && activeTab === 'autorizadas';
     const showReauthorizeButton = (idRolUsuario === 2 || idRolUsuario === 3) && row.Estatus === 4 && activeTab === 'autorizadas';
     const showEditButtons = canEditDelete && (row.Estatus === 0 || row.Estatus === 1 || row.Estatus === 4) && activeTab !== 'validadas';
@@ -491,6 +491,8 @@ export const Vacaciones: React.FC = () => {
     const [fechaIngresoInput, setFechaIngresoInput] = useState('');
     const [fechaSolicitudInput, setFechaSolicitudInput] = useState('');
     const [fechaRetornoInput, setFechaRetornoInput] = useState('');
+    const [noContarDomingos, setNoContarDomingos] = useState(false);
+    const [diasSinDomingos, setDiasSinDomingos] = useState(0);
     
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [vacaciones, setVacaciones] = useState<InterfaceVacaciones[]>([]);
@@ -526,7 +528,7 @@ export const Vacaciones: React.FC = () => {
         Departamento: '',
         FechaInicioVacaciones: '',
         FechaFinVacaciones: '',
-        Supervisor: '',
+        JefeInmediato: '',
         FechaIngreso: '',
         FechaSolicitud: '',
         Estatus: 0,
@@ -545,14 +547,22 @@ export const Vacaciones: React.FC = () => {
     const [advertenciaAnticipacion, setAdvertenciaAnticipacion] = useState<string>('');
     const [advertenciaViernes, setAdvertenciaViernes] = useState<string>('');
     const [advertenciaRetornoDomingo, setAdvertenciaRetornoDomingo] = useState<string>('');
+    const [advertenciaInicioDomingo, setAdvertenciaInicioDomingo] = useState<string>('');
+    const [advertenciaFinDomingo, setAdvertenciaFinDomingo] = useState<string>('');
 
     const filtroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const idRolUsuario = Number(usuarioSesion?.rol) || 0;
     const isHRorAdmin = idRolUsuario === 1 || idRolUsuario === 2 || idRolUsuario === 3;
     const canEditDelete = isHRorAdmin;
-    const isAuthorizer = idRolUsuario === 3;
+    const isAuthorizer = idRolUsuario === 3 || idRolUsuario === 2;
     const isValidator = idRolUsuario === 2;
+
+    const esDomingo = useCallback((fecha: string) => {
+        if (!fecha) return false;
+        const date = new Date(fecha + 'T00:00:00');
+        return date.getDay() === 0;
+    }, []);
 
     const verificarRetornoDomingo = useCallback(() => {
         const fechaRetorno = vacacionesForm.FechaRetornoLabores;
@@ -570,72 +580,163 @@ export const Vacaciones: React.FC = () => {
             return;
         }
         
-        const retorno = new Date(fechaRetorno);
-        const esDomingo = retorno.getDay() === 0;
+        const retorno = new Date(fechaRetorno + 'T00:00:00');
+        const esDomingoDay = retorno.getDay() === 0;
         
-        if (esDomingo) {
+        if (esDomingoDay) {
             setAdvertenciaRetornoDomingo("ADVERTENCIA: Para el departamento de Administración, la fecha de retorno no puede ser domingo. Debe ajustar la fecha.");
         } else {
             setAdvertenciaRetornoDomingo('');
         }
     }, [vacacionesForm.FechaRetornoLabores, vacacionesForm.Departamento]);
 
-    const verificarAnticipacionSolicitud = useCallback(() => {
-        const fechaSolicitud = vacacionesForm.FechaSolicitud;
-        const fechaInicio = vacacionesForm.FechaInicio;
-        const diasTomar = vacacionesForm.DiasTomar || 0;
-        
-        if (!fechaSolicitud || !fechaInicio || diasTomar === 0) {
-            setAdvertenciaAnticipacion('');
-            return;
-        }
-        
-        const solicitud = new Date(fechaSolicitud);
-        const inicio = new Date(fechaInicio);
-        
-        const diffTime = inicio.getTime() - solicitud.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diasTomar >= 1 && diasTomar <= 3) {
-            if (diffDays < 3) {
-                setAdvertenciaAnticipacion("ADVERTENCIA: Para solicitudes de 1 a 3 días, se requiere mínimo 3 días de anticipación. Su solicitud podría ser rechazada o cancelada.");
-            } else {
-                setAdvertenciaAnticipacion('');
-            }
-        } else if (diasTomar >= 4) {
-            if (diffDays < 14) {
-                setAdvertenciaAnticipacion("ADVERTENCIA: Para solicitudes de 4 o más días, se requiere mínimo 2 semanas de anticipación. Su solicitud podría ser rechazada o cancelada.");
-            } else {
-                setAdvertenciaAnticipacion('');
-            }
-        } else {
-            setAdvertenciaAnticipacion('');
-        }
-    }, [vacacionesForm.FechaSolicitud, vacacionesForm.FechaInicio, vacacionesForm.DiasTomar]);
+    const esSabado = useCallback((fecha: string) => {
+        if (!fecha) return false;
+        const date = new Date(fecha + 'T00:00:00');
+        return date.getDay() === 6;
+    }, []);
 
-    const verificarViernes = useCallback(() => {
-        const fechaInicio = vacacionesForm.FechaInicio;
-        if (!fechaInicio) {
-            setAdvertenciaViernes('');
+    const contarDiasHabiles = useCallback((fechaInicio: string, fechaFin: string, excluirDomingos: boolean) => {
+        if (!fechaInicio || !fechaFin) return 0;
+        
+        const inicio = new Date(fechaInicio + 'T00:00:00');
+        const fin = new Date(fechaFin + 'T00:00:00');
+        
+        if (fin < inicio) return 0;
+        
+        let contador = 0;
+        const fechaActual = new Date(inicio);
+        
+        while (fechaActual <= fin) {
+            const diaSemana = fechaActual.getDay();
+            if (!excluirDomingos || diaSemana !== 0) {
+                contador++;
+            }
+            fechaActual.setDate(fechaActual.getDate() + 1);
+        }
+        
+        return contador;
+    }, []);
+
+    const calcularFechaFin = useCallback((
+        fechaInicio: string,
+        dias: number,
+        excluirDomingos: boolean
+    ) => {
+        if (!fechaInicio || dias <= 0) return '';
+
+        const fecha = new Date(fechaInicio + 'T00:00:00');
+        let diasContados = 0;
+
+        if (excluirDomingos && fecha.getDay() === 0) {
+            fecha.setDate(fecha.getDate() + 1);
+        }
+
+        while (diasContados < dias) {
+            if (!excluirDomingos || fecha.getDay() !== 0) {
+                diasContados++;
+            }
+            if (diasContados < dias) {
+                fecha.setDate(fecha.getDate() + 1);
+            }
+        }
+
+        if (excluirDomingos && fecha.getDay() === 0) {
+            fecha.setDate(fecha.getDate() + 1);
+        }
+
+        return fecha.toISOString().split('T')[0];
+    }, []);
+
+    const calcularFechaRetorno = useCallback((
+        fechaFin: string,
+        excluirDomingos: boolean
+    ) => {
+        if (!fechaFin) return '';
+
+        const retorno = new Date(fechaFin + 'T00:00:00');
+        retorno.setDate(retorno.getDate() + 1);
+
+        if (excluirDomingos) {
+            while (retorno.getDay() === 0) {
+                retorno.setDate(retorno.getDate() + 1);
+            }
+        }
+
+        return retorno.toISOString().split('T')[0];
+    }, []);
+
+    const recalcularTodo = useCallback((fechaInicio: string, dias: number, excluirDomingos: boolean) => {
+        if (!fechaInicio || !dias || dias <= 0) {
+            setFechaFinInput('');
+            setFechaRetornoInput('');
+            setDiasSinDomingos(0);
+            setVacacionesForm(prev => ({ 
+                ...prev, 
+                FechaFin: '', 
+                FechaRetornoLabores: '',
+                DiasTomar: 0
+            }));
             return;
         }
         
-        const inicio = new Date(fechaInicio);
-        const esViernes = inicio.getDay() === 5;
-        
-        if (esViernes) {
-            setAdvertenciaViernes("ADVERTENCIA: La solicitud comienza en viernes. Si el sábado estaba planeado como home office, deberá asistir a la oficina o solicitar ese día también. Esto podría ser motivo de rechazo o cancelación.");
+        if (excluirDomingos && esDomingo(fechaInicio)) {
+            setAdvertenciaInicioDomingo("ADVERTENCIA: La fecha de inicio no puede ser domingo cuando no se cuentan domingos.");
+            const fecha = new Date(fechaInicio + 'T00:00:00');
+            fecha.setDate(fecha.getDate() + 1);
+            const nuevaFechaInicio = fecha.toISOString().split('T')[0];
+            setFechaInicioInput(nuevaFechaInicio);
+            setVacacionesForm(prev => ({ ...prev, FechaInicio: nuevaFechaInicio }));
+            setTimeout(() => {
+                recalcularTodo(nuevaFechaInicio, dias, excluirDomingos);
+            }, 50);
+            return;
         } else {
-            setAdvertenciaViernes('');
+            setAdvertenciaInicioDomingo('');
         }
-    }, [vacacionesForm.FechaInicio]);
+        
+        const fechaFin = calcularFechaFin(fechaInicio, dias, excluirDomingos);
+        setFechaFinInput(fechaFin);
+        setVacacionesForm(prev => ({ ...prev, FechaFin: fechaFin }));
+        
+        const diasContados = contarDiasHabiles(fechaInicio, fechaFin, excluirDomingos);
+        setDiasSinDomingos(diasContados);
+        setVacacionesForm(prev => ({ ...prev, DiasTomar: diasContados }));
+        
+        const nuevoSaldo = diasDisponiblesPeriodo - diasContados;
+        setSaldoRestante(nuevoSaldo >= 0 ? nuevoSaldo : 0);
+        
+        const fechaRetorno = calcularFechaRetorno(fechaFin, excluirDomingos);
+        setFechaRetornoInput(fechaRetorno);
+        setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: fechaRetorno }));
+        
+        if (excluirDomingos && esDomingo(fechaFin)) {
+            setAdvertenciaFinDomingo(`La fecha de fin no puede ser domingo. Se ajustó automáticamente a ${fechaFin}`);
+        } else {
+            setAdvertenciaFinDomingo('');
+        }
+        
+        setTimeout(() => {
+            verificarRetornoDomingo();
+        }, 50);
+    }, [diasDisponiblesPeriodo, esDomingo, calcularFechaFin, calcularFechaRetorno, contarDiasHabiles, verificarRetornoDomingo]);
 
     const cargarOpcionesCatalogos = useCallback(async () => {
         try {
             setLoadingOptions(true);
+             
+            const usuario = usuarioSesion;
+            const departamentoUsuario = usuario?.Departamento?.toString() || '';
+            const esAdministracion = departamentoUsuario === '1' || departamentoUsuario === 'Administración';
+             
+            let url = `/vacaciones/opciones/ObtenerEmpleados.php?idusuario=${usuarioSesion?.IdUsuario}`;
+             
+            if (esAdministracion) {
+                url += `&departamento=1&soloAsignados=true`;
+            }
             
             const [empleadosResponse, departamentosResponse] = await Promise.all([
-                apiService.get<RespuestaAPI>(`/vacaciones/opciones/ObtenerEmpleados.php?idusuario=${usuarioSesion?.IdUsuario}`),
+                apiService.get<RespuestaAPI>(url),
                 apiService.get<RespuestaAPI>('/vacaciones/opciones/ObtenerDepartamentos.php')
             ]);
 
@@ -664,7 +765,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setLoadingOptions(false);
         }
-    }, [usuarioSesion?.IdUsuario]);
+    }, [usuarioSesion]);
 
     const cargarPeriodosVacaciones = useCallback(async (idPersonal: number, anioSeleccionado?: number) => {
         if (!idPersonal || idPersonal === 0) {
@@ -706,7 +807,8 @@ export const Vacaciones: React.FC = () => {
                             ...prev,
                             DiasCorresponden: periodo.DiasGenera,
                             Antiguedad: periodo.AñosAntiguedad,
-                            SaldoDias: periodo.DiasDisponibles
+                            SaldoDias: periodo.DiasDisponibles,
+                            Anio: periodo.Año
                         }));
                     }
                 }
@@ -722,7 +824,8 @@ export const Vacaciones: React.FC = () => {
                     ...prev,
                     DiasCorresponden: 0,
                     Antiguedad: 0,
-                    SaldoDias: 0
+                    SaldoDias: 0,
+                    Anio: 0
                 }));
                 
                 if (!anioSeleccionado) {
@@ -756,7 +859,8 @@ export const Vacaciones: React.FC = () => {
             IdPersonal: 0,
             DiasCorresponden: 0,
             Antiguedad: 0,
-            SaldoDias: 0
+            SaldoDias: 0,
+            Anio: 0
         }));
         setSelectedEmpleadoId('');
         setFechaIngresoInput('');
@@ -874,6 +978,10 @@ export const Vacaciones: React.FC = () => {
         setAdvertenciaAnticipacion('');
         setAdvertenciaViernes('');
         setAdvertenciaRetornoDomingo('');
+        setAdvertenciaInicioDomingo('');
+        setAdvertenciaFinDomingo('');
+        setNoContarDomingos(false);
+        setDiasSinDomingos(0);
     }, []);
 
     const handleEmpleadoChange = useCallback((selectedId: string) => {
@@ -910,16 +1018,9 @@ export const Vacaciones: React.FC = () => {
                     ...prev,
                     DiasCorresponden: periodo.DiasGenera,
                     Antiguedad: periodo.AñosAntiguedad,
-                    SaldoDias: periodo.DiasDisponibles
+                    SaldoDias: periodo.DiasDisponibles,
+                    Anio: periodo.Año
                 }));
-                
-                if (diasActuales > periodo.DiasDisponibles) {
-                    showToast({
-                        text: `Los días solicitados exceden los disponibles (${periodo.DiasDisponibles} días)`,
-                        type: 'warning',
-                        autoClose: 3000
-                    });
-                }
             }
         } else {
             setPeriodoSeleccionado(null);
@@ -929,62 +1030,100 @@ export const Vacaciones: React.FC = () => {
                 ...prev,
                 DiasCorresponden: 0,
                 Antiguedad: 0,
-                SaldoDias: 0
+                SaldoDias: 0,
+                Anio: 0
             }));
         }
     }, [periodosVacaciones, vacacionesForm.DiasTomar]);
 
-    const calcularFechaRetorno = useCallback((fechaFin: string, dias: number) => {
-        if (!fechaFin) return;
-        
-        const fin = new Date(fechaFin);
-        const retorno = new Date(fin);
-        retorno.setDate(fin.getDate() + 1);
-        
-        const fechaRetornoStr = retorno.toISOString().split('T')[0];
-        setFechaRetornoInput(fechaRetornoStr);
-        setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: fechaRetornoStr }));
-        
-        setTimeout(() => {
-            verificarRetornoDomingo();
-        }, 50);
-    }, [verificarRetornoDomingo]);
 
-    const calcularDiasDesdeFechas = useCallback((fechaInicio: string, fechaFin: string) => {
-        if (!fechaInicio || !fechaFin) return;
+    const verificarAnticipacionSolicitud = useCallback(() => {
+        const fechaSolicitud = vacacionesForm.FechaSolicitud;
+        const fechaInicio = vacacionesForm.FechaInicio;
+        const diasTomar = vacacionesForm.DiasTomar || 0;
         
-        const inicio = new Date(fechaInicio);
-        const fin = new Date(fechaFin);
+        if (!fechaSolicitud || !fechaInicio || diasTomar === 0) {
+            setAdvertenciaAnticipacion('');
+            return;
+        }
         
-        if (fin < inicio) return;
+        const solicitud = new Date(fechaSolicitud + 'T00:00:00');
+        const inicio = new Date(fechaInicio + 'T00:00:00');
         
-        const diffTime = Math.abs(fin.getTime() - inicio.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        const diffTime = inicio.getTime() - solicitud.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        setVacacionesForm(prev => ({ ...prev, DiasTomar: diffDays }));
-        
-        const nuevoSaldo = diasDisponiblesPeriodo - diffDays;
-        setSaldoRestante(nuevoSaldo >= 0 ? nuevoSaldo : 0);
-        
-        calcularFechaRetorno(fechaFin, diffDays);
-    }, [diasDisponiblesPeriodo, calcularFechaRetorno]);
+        if (diasTomar >= 1 && diasTomar <= 3) {
+            if (diffDays < 3) {
+                setAdvertenciaAnticipacion("ADVERTENCIA: Para solicitudes de 1 a 3 días, se requiere mínimo 3 días de anticipación.");
+            } else {
+                setAdvertenciaAnticipacion('');
+            }
+        } else if (diasTomar >= 4) {
+            if (diffDays < 14) {
+                setAdvertenciaAnticipacion("ADVERTENCIA: Para solicitudes de 4 o más días, se requiere mínimo 2 semanas de anticipación.");
+            } else {
+                setAdvertenciaAnticipacion('');
+            }
+        } else {
+            setAdvertenciaAnticipacion('');
+        }
+    }, [vacacionesForm.FechaSolicitud, vacacionesForm.FechaInicio, vacacionesForm.DiasTomar]);
 
-    const calcularFechaFinDesdeDias = useCallback((fechaInicio: string, dias: number) => {
-        if (!fechaInicio || !dias || dias <= 0) return;
+    const verificarViernes = useCallback(() => {
+        const fechaInicio = vacacionesForm.FechaInicio;
+        if (!fechaInicio) {
+            setAdvertenciaViernes('');
+            return;
+        }
         
-        const inicio = new Date(fechaInicio);
-        const fin = new Date(inicio);
-        fin.setDate(inicio.getDate() + (dias - 1));
+        const inicio = new Date(fechaInicio + 'T00:00:00');
+        const esViernes = inicio.getDay() === 5;
         
-        const fechaFinStr = fin.toISOString().split('T')[0];
-        setFechaFinInput(fechaFinStr);
-        setVacacionesForm(prev => ({ ...prev, FechaFin: fechaFinStr }));
+        if (esViernes) {
+            setAdvertenciaViernes("ADVERTENCIA: La solicitud comienza en viernes. Si el sábado estaba planeado como home office, deberá asistir a la oficina o solicitar ese día también.");
+        } else {
+            setAdvertenciaViernes('');
+        }
+    }, [vacacionesForm.FechaInicio]);
+
+    const handleNoContarDomingosChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const checked = e.target.checked;
+        setNoContarDomingos(checked);
         
-        const nuevoSaldo = diasDisponiblesPeriodo - dias;
-        setSaldoRestante(nuevoSaldo >= 0 ? nuevoSaldo : 0);
+        const fechaInicio = vacacionesForm.FechaInicio;
+        const diasTomar = vacacionesForm.DiasTomar;
         
-        calcularFechaRetorno(fechaFinStr, dias);
-    }, [diasDisponiblesPeriodo, calcularFechaRetorno]);
+        if (fechaInicio && diasTomar && diasTomar > 0) {
+            recalcularTodo(fechaInicio, diasTomar, checked);
+        } else if (fechaInicio && vacacionesForm.FechaFin) {
+            const diasHabiles = contarDiasHabiles(fechaInicio, vacacionesForm.FechaFin, checked);
+            setDiasSinDomingos(diasHabiles);
+            setVacacionesForm(prev => ({ ...prev, DiasTomar: diasHabiles }));
+            
+            const nuevoSaldo = diasDisponiblesPeriodo - diasHabiles;
+            setSaldoRestante(nuevoSaldo >= 0 ? nuevoSaldo : 0);
+            
+            const fechaRetorno = calcularFechaRetorno(vacacionesForm.FechaFin, checked);
+            setFechaRetornoInput(fechaRetorno);
+            setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: fechaRetorno }));
+            
+            if (checked && esDomingo(fechaInicio)) {
+                setAdvertenciaInicioDomingo("ADVERTENCIA: La fecha de inicio no puede ser domingo cuando no se cuentan domingos.");
+            } else {
+                setAdvertenciaInicioDomingo('');
+            }
+            
+            if (checked && esDomingo(vacacionesForm.FechaFin)) {
+                const nuevaFechaFin = calcularFechaFin(fechaInicio, diasHabiles, checked);
+                setFechaFinInput(nuevaFechaFin);
+                setVacacionesForm(prev => ({ ...prev, FechaFin: nuevaFechaFin }));
+                setAdvertenciaFinDomingo(`La fecha de fin no puede ser domingo. Se ajustó automáticamente a ${nuevaFechaFin}`);
+            } else {
+                setAdvertenciaFinDomingo('');
+            }
+        }
+    }, [vacacionesForm.FechaInicio, vacacionesForm.FechaFin, vacacionesForm.DiasTomar, diasDisponiblesPeriodo, esDomingo, contarDiasHabiles, calcularFechaRetorno, calcularFechaFin, recalcularTodo]);
 
     const handleFechaInicioChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -992,37 +1131,97 @@ export const Vacaciones: React.FC = () => {
         const isoDate = value || '';
         setVacacionesForm(prev => ({ ...prev, FechaInicio: isoDate }));
         
+        if (noContarDomingos && esDomingo(isoDate)) {
+            setAdvertenciaInicioDomingo("ADVERTENCIA: La fecha de inicio no puede ser domingo cuando no se cuentan domingos.");
+            return;
+        } else {
+            setAdvertenciaInicioDomingo('');
+        }
+        
         const diasTomar = vacacionesForm.DiasTomar;
-        const fechaFin = vacacionesForm.FechaFin;
         
         if (diasTomar && diasTomar > 0) {
-            calcularFechaFinDesdeDias(isoDate, diasTomar);
-        } else if (fechaFin) {
-            calcularDiasDesdeFechas(isoDate, fechaFin);
+            recalcularTodo(isoDate, diasTomar, noContarDomingos);
         }
         
         verificarViernes();
         verificarAnticipacionSolicitud();
-    }, [vacacionesForm.DiasTomar, vacacionesForm.FechaFin, calcularFechaFinDesdeDias, calcularDiasDesdeFechas, verificarViernes, verificarAnticipacionSolicitud]);
+    }, [vacacionesForm.DiasTomar, noContarDomingos, esDomingo, recalcularTodo, verificarViernes, verificarAnticipacionSolicitud]);
 
-    const handleFechaFinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setFechaFinInput(value);
-        const isoDate = value || '';
-        setVacacionesForm(prev => ({ ...prev, FechaFin: isoDate }));
-        
-        if (vacacionesForm.FechaInicio) {
-            calcularDiasDesdeFechas(vacacionesForm.FechaInicio, isoDate);
-        } else {
-            calcularFechaRetorno(isoDate, vacacionesForm.DiasTomar || 0);
-        }
-        
-        verificarAnticipacionSolicitud();
-    }, [vacacionesForm.FechaInicio, vacacionesForm.DiasTomar, calcularDiasDesdeFechas, calcularFechaRetorno, verificarAnticipacionSolicitud]);
+    const handleFechaFinChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const value = e.target.value;
+            const isoDate = value || '';
+
+            if (noContarDomingos && esDomingo(isoDate)) {
+                showToast({
+                    text: 'La fecha fin no puede ser domingo.',
+                    type: 'warning',
+                    autoClose: 2000
+                });
+                return;
+            }
+
+            setAdvertenciaFinDomingo('');
+            setFechaFinInput(value);
+
+            setVacacionesForm(prev => ({
+                ...prev,
+                FechaFin: isoDate
+            }));
+
+            if (vacacionesForm.FechaInicio) {
+                const dias = contarDiasHabiles(
+                    vacacionesForm.FechaInicio,
+                    isoDate,
+                    noContarDomingos
+                );
+
+                setDiasSinDomingos(dias);
+
+                setVacacionesForm(prev => ({
+                    ...prev,
+                    DiasTomar: dias
+                }));
+
+                setSaldoRestante(
+                    Math.max(diasDisponiblesPeriodo - dias, 0)
+                );
+            }
+
+            const retorno = calcularFechaRetorno(
+                isoDate,
+                noContarDomingos
+            );
+
+            setFechaRetornoInput(retorno);
+
+            setVacacionesForm(prev => ({
+                ...prev,
+                FechaRetornoLabores: retorno
+            }));
+        },
+        [
+            vacacionesForm.FechaInicio,
+            noContarDomingos,
+            diasDisponiblesPeriodo,
+            contarDiasHabiles,
+            calcularFechaRetorno,
+            esDomingo
+        ]);
 
     const handleDiasTomarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         const dias = value ? Number(value) : 0;
+        
+        if (dias < 0) {
+            showToast({
+                text: 'Los días no pueden ser negativos',
+                type: 'error',
+                autoClose: 2000
+            });
+            return;
+        }
         
         if (dias > diasDisponiblesPeriodo && diasDisponiblesPeriodo > 0) {
             showToast({
@@ -1034,20 +1233,22 @@ export const Vacaciones: React.FC = () => {
         }
         
         setVacacionesForm(prev => ({ ...prev, DiasTomar: dias }));
+        setDiasSinDomingos(dias);
         
         const nuevoSaldo = diasDisponiblesPeriodo - dias;
         setSaldoRestante(nuevoSaldo >= 0 ? nuevoSaldo : 0);
         
         if (vacacionesForm.FechaInicio && dias > 0) {
-            calcularFechaFinDesdeDias(vacacionesForm.FechaInicio, dias);
+            recalcularTodo(vacacionesForm.FechaInicio, dias, noContarDomingos);
         } else if (dias === 0) {
             setFechaFinInput('');
             setFechaRetornoInput('');
             setVacacionesForm(prev => ({ ...prev, FechaFin: '', FechaRetornoLabores: '' }));
+            setDiasSinDomingos(0);
         }
         
         verificarAnticipacionSolicitud();
-    }, [vacacionesForm.FechaInicio, diasDisponiblesPeriodo, calcularFechaFinDesdeDias, verificarAnticipacionSolicitud]);
+    }, [vacacionesForm.FechaInicio, diasDisponiblesPeriodo, noContarDomingos, recalcularTodo, verificarAnticipacionSolicitud]);
 
     const handleFechaSolicitudChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -1057,16 +1258,89 @@ export const Vacaciones: React.FC = () => {
         verificarAnticipacionSolicitud();
     }, [verificarAnticipacionSolicitud]);
 
-    const handleFechaRetornoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setFechaRetornoInput(value);
-        const isoDate = value || '';
-        setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: isoDate }));
+    const handleFechaRetornoChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const value = e.target.value;
+            const isoDate = value || '';
+
+            if (noContarDomingos && esDomingo(isoDate)) {
+                showToast({
+                    text: 'La fecha de reintegración no puede ser domingo.',
+                    type: 'warning',
+                    autoClose: 2000
+                });
+                return;
+            }
+
+            setFechaRetornoInput(value);
+
+            setVacacionesForm(prev => ({
+                ...prev,
+                FechaRetornoLabores: isoDate
+            }));
+        },
+        [
+            noContarDomingos,
+            esDomingo
+        ]);
+
+    const validateForm = useCallback((): boolean => {
+        if (!vacacionesForm.NoEmpleado?.trim()) {
+            showToast({ text: 'El número de empleado es requerido', type: 'error' });
+            return false;
+        }
+        if (!vacacionesForm.NombreCompleto?.trim()) {
+            showToast({ text: 'El nombre completo es requerido', type: 'error' });
+            return false;
+        }
+        if (!vacacionesForm.FechaInicio) {
+            showToast({ text: 'La fecha de inicio es requerida', type: 'error' });
+            return false;
+        }
+        if (!vacacionesForm.FechaFin) {
+            showToast({ text: 'La fecha de fin es requerida', type: 'error' });
+            return false;
+        }
+        if (!vacacionesForm.DiasTomar || vacacionesForm.DiasTomar <= 0) {
+            showToast({ text: 'Los días a solicitar son requeridos y deben ser mayores a 0', type: 'error' });
+            return false;
+        }
+        if (!selectedAnio && !vacacionesForm.Anio) {
+            showToast({ text: 'Debe seleccionar el año del período de vacaciones', type: 'error' });
+            return false;
+        }
+        if (!vacacionesForm.FechaSolicitud) {
+            showToast({ text: 'La fecha de solicitud es requerida', type: 'error' });
+            return false;
+        }
         
-        setTimeout(() => {
-            verificarRetornoDomingo();
-        }, 50);
-    }, [verificarRetornoDomingo]);
+        const fechaInicio = new Date(vacacionesForm.FechaInicio + 'T00:00:00');
+        const fechaFin = new Date(vacacionesForm.FechaFin + 'T00:00:00');
+        
+        if (fechaFin < fechaInicio) {
+            showToast({ text: 'La fecha de fin debe ser mayor o igual a la fecha de inicio', type: 'error' });
+            return false;
+        }
+
+        if (noContarDomingos) {
+            if (esDomingo(vacacionesForm.FechaInicio)) {
+                showToast({ text: 'La fecha de inicio no puede ser domingo cuando no se cuentan domingos', type: 'error' });
+                return false;
+            }
+            if (esDomingo(vacacionesForm.FechaFin)) {
+                showToast({ text: 'La fecha de fin no puede ser domingo cuando no se cuentan domingos', type: 'error' });
+                return false;
+            }
+        }
+
+        const diasTomar = noContarDomingos ? diasSinDomingos : vacacionesForm.DiasTomar;
+        if (diasTomar > diasDisponiblesPeriodo && diasDisponiblesPeriodo > 0) {
+            showToast({ text: `No hay suficientes días disponibles. Máximo: ${diasDisponiblesPeriodo} días`, type: 'error' });
+            return false;
+        }
+        
+        return true;
+    }, [vacacionesForm, selectedAnio, diasDisponiblesPeriodo, noContarDomingos, diasSinDomingos, esDomingo]);
 
     const fetchVacaciones = useCallback(async () => {
         try {
@@ -1121,13 +1395,14 @@ export const Vacaciones: React.FC = () => {
                     SaldoDias: Number(item.SaldoDias) || 0,
                     DiasCorresponden: Number(item.DiasCorresponden) || 0,
                     Antiguedad: Number(item.Antiguedad) || 0,
-                    FechaInicio: item.FechaInicio ? item.FechaInicio.split(' ')[0] : '',
-                    FechaFin: item.FechaFin ? item.FechaFin.split(' ')[0] : '',
-                    FechaSolicitud: item.FechaSolicitud ? item.FechaSolicitud.split(' ')[0] : '',
-                    FechaRetornoLabores: item.FechaRetornoLabores ? item.FechaRetornoLabores.split(' ')[0] : '',
-                    FechaAutoriza: item.FechaAutoriza ? item.FechaAutoriza.split(' ')[0] : '',
-                    FechaValidado: item.FechaValidado ? item.FechaValidado.split(' ')[0] : '',
-                    FechaIngreso: item.FechaIngreso ? item.FechaIngreso.split(' ')[0] : '',
+                    NoContarDomingos: Number(item.NoContarDomingos) || 0,
+                    FechaInicio: item.FechaInicio || '',
+                    FechaFin: item.FechaFin || '',
+                    FechaSolicitud: item.FechaSolicitud || '',
+                    FechaRetornoLabores: item.FechaRetornoLabores || '',
+                    FechaAutoriza: item.FechaAutoriza || '',
+                    FechaValidado: item.FechaValidado || '',
+                    FechaIngreso: item.FechaIngreso || '',
                     NoEmpleado: item.NoEmpleado?.toString() || '',
                     NombreCompleto: item.NombreCompleto || '',
                     Departamento: item.Departamento || '',
@@ -1212,7 +1487,7 @@ export const Vacaciones: React.FC = () => {
             Departamento: '',
             FechaInicioVacaciones: '',
             FechaFinVacaciones: '',
-            Supervisor: '',
+            JefeInmediato: '',
             FechaIngreso: '',
             FechaSolicitud: '',
             Estatus: 0,
@@ -1234,68 +1509,16 @@ export const Vacaciones: React.FC = () => {
         });
     };
 
-    const validateForm = useCallback((): boolean => {
-        if (!vacacionesForm.NoEmpleado?.trim()) {
-            showToast({ text: 'El número de empleado es requerido', type: 'error' });
-            return false;
-        }
-        if (!vacacionesForm.NombreCompleto?.trim()) {
-            showToast({ text: 'El nombre completo es requerido', type: 'error' });
-            return false;
-        }
-        if (!vacacionesForm.FechaInicio) {
-            showToast({ text: 'La fecha de inicio es requerida', type: 'error' });
-            return false;
-        }
-        if (!vacacionesForm.FechaFin) {
-            showToast({ text: 'La fecha de fin es requerida', type: 'error' });
-            return false;
-        }
-        if (!vacacionesForm.DiasTomar || vacacionesForm.DiasTomar <= 0) {
-            showToast({ text: 'Los días a solicitar son requeridos y deben ser mayores a 0', type: 'error' });
-            return false;
-        }
-        if (!selectedAnio && !vacacionesForm.Anio) {
-            showToast({ text: 'Debe seleccionar el año del período de vacaciones', type: 'error' });
-            return false;
-        }
-        if (vacacionesForm.DiasTomar > diasDisponiblesPeriodo && diasDisponiblesPeriodo > 0) {
-            showToast({ text: `No hay suficientes días disponibles. Máximo: ${diasDisponiblesPeriodo} días`, type: 'error' });
-            return false;
-        }
-        if (!vacacionesForm.FechaSolicitud) {
-            showToast({ text: 'La fecha de solicitud es requerida', type: 'error' });
-            return false;
-        }
-        
-        const fechaSolicitud = new Date(vacacionesForm.FechaSolicitud);
-        const fechaActual = new Date();
-        fechaActual.setHours(0, 0, 0, 0);
-        
-        const fechaInicio = new Date(vacacionesForm.FechaInicio);
-        const fechaFin = new Date(vacacionesForm.FechaFin);
-        
-        if (fechaFin < fechaInicio) {
-            showToast({ text: 'La fecha de fin debe ser mayor o igual a la fecha de inicio', type: 'error' });
-            return false;
-        }
-
-        const departamento = vacacionesForm.Departamento || '';
-        const esAdministracion = departamento === 'Administración' || departamento === '1';
-        
-        if (esAdministracion && vacacionesForm.FechaRetornoLabores) {
-            const retorno = new Date(vacacionesForm.FechaRetornoLabores);
-            if (retorno.getDay() === 0) {
-                showToast({ text: 'Para el departamento de Administración, la fecha de retorno no puede ser domingo', type: 'error' });
-                return false;
-            }
-        }
-        
-        return true;
-    }, [vacacionesForm, selectedAnio, diasDisponiblesPeriodo]);
-
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        const diasTomarFinal = noContarDomingos ? diasSinDomingos : vacacionesForm.DiasTomar;
+        const formData = {
+            ...vacacionesForm,
+            DiasTomar: diasTomarFinal
+        };
+        
+        setVacacionesForm(formData);
         
         if (!validateForm()) {
             return;
@@ -1322,11 +1545,12 @@ export const Vacaciones: React.FC = () => {
                 ...vacacionesForm,
                 IdPersonal: vacacionesForm.IdPersonal,
                 Anio: anioParaEnviar,
-                DiasTomar: vacacionesForm.DiasTomar,
+                DiasTomar: diasTomarFinal,
                 FechaRetornoLabores: vacacionesForm.FechaRetornoLabores,
                 SaldoDias: vacacionesForm.SaldoDias || diasDisponiblesPeriodo,
                 DiasCorresponden: vacacionesForm.DiasCorresponden || 0,
-                Antiguedad: vacacionesForm.Antiguedad || 0
+                Antiguedad: vacacionesForm.Antiguedad || 0,
+                NoContarDomingos: noContarDomingos ? 1 : 0
             };
             
             const usuarioSolicitaId = vacacionesForm.IdPersonal?.toString() || '';
@@ -1404,7 +1628,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [vacacionesForm, usuarioSesion, validateForm, selectedAnio, isAuthorizer, isValidator, fetchVacaciones, resetForm, diasDisponiblesPeriodo]);
+    }, [vacacionesForm, usuarioSesion, validateForm, selectedAnio, isAuthorizer, isValidator, fetchVacaciones, resetForm, diasDisponiblesPeriodo, noContarDomingos, diasSinDomingos]);
 
     const handleAuthorize = useCallback((vacacion: InterfaceVacaciones) => {
         setVacacionAccion(vacacion);
@@ -1456,10 +1680,27 @@ export const Vacaciones: React.FC = () => {
             switch (actionType) {
                 case 'authorize':
                     newStatus = 1;
+                    let usuarioAutoriza = usuarioSesion?.IdUsuario?.toString() || '';
+                    
+                    if (idRolUsuario === 1) {
+                        try {
+                            const response = await apiService.get<RespuestaAPI>(
+                                `/vacaciones/ObtenerJefeInmediato.php?IdPersonal=${vacacionAccion.IdPersonal}`
+                            );
+                            
+                            if (response.status && response.data) {
+                                usuarioAutoriza = usuarioSesion?.IdUsuario?.toString() || '';
+                            }
+                        } catch (error) {
+                            console.error('Error al obtener jefe inmediato:', error);
+                            usuarioAutoriza = usuarioSesion?.IdUsuario?.toString() || '';
+                        }
+                    }
+                    
                     datosActualizacion = {
                         ...datosActualizacion,
                         Estatus: newStatus,
-                        UsuarioAutoriza: usuarioSesion?.IdUsuario?.toString() || '',
+                        UsuarioAutoriza: usuarioAutoriza,
                         FechaAutoriza: new Date().toISOString().split('T')[0]
                     };
                     break;
@@ -1560,7 +1801,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setAccionEnProceso(false);
         }
-    }, [vacacionAccion, actionType, usuarioSesion, fetchVacaciones]);
+    }, [vacacionAccion, actionType, usuarioSesion, idRolUsuario, fetchVacaciones]);
 
     const handleEdit = useCallback(async (vacacion: InterfaceVacaciones) => {
         setTipoFormulario('Modificar');
@@ -1571,6 +1812,12 @@ export const Vacaciones: React.FC = () => {
         setFechaIngresoInput(formatDateForInput(vacacion.FechaIngreso || ''));
         setFechaSolicitudInput(formatDateForInput(vacacion.FechaSolicitud || ''));
         setFechaRetornoInput(formatDateForInput(vacacion.FechaRetornoLabores || ''));
+        
+        setNoContarDomingos(vacacion.NoContarDomingos === 1);
+        if (vacacion.NoContarDomingos === 1 && vacacion.FechaInicio && vacacion.FechaFin) {
+            const diasHabiles = contarDiasHabiles(vacacion.FechaInicio, vacacion.FechaFin, true);
+            setDiasSinDomingos(diasHabiles);
+        }
         
         const idPersonal = vacacion.IdPersonal || 0;
         const anioVacacion = vacacion.Anio || 0;
@@ -1604,6 +1851,10 @@ export const Vacaciones: React.FC = () => {
                             setPeriodoSeleccionado(periodo);
                             setDiasDisponiblesPeriodo(periodo.DiasDisponibles);
                             setSaldoRestante(periodo.DiasDisponibles - (vacacion.DiasTomar || 0));
+                            setVacacionesForm(prev => ({
+                                ...prev,
+                                Anio: periodo.Año
+                            }));
                         }
                     }
                 } else {
@@ -1634,7 +1885,7 @@ export const Vacaciones: React.FC = () => {
             verificarViernes();
             verificarRetornoDomingo();
         }, 100);
-    }, [verificarAnticipacionSolicitud, verificarViernes, verificarRetornoDomingo, buscarEmpleado]);
+    }, [verificarAnticipacionSolicitud, verificarViernes, verificarRetornoDomingo, buscarEmpleado, contarDiasHabiles]);
 
     const handleView = useCallback((vacacion: InterfaceVacaciones) => {
         setTipoFormulario('Ver');
@@ -1645,6 +1896,8 @@ export const Vacaciones: React.FC = () => {
         setFechaIngresoInput(formatDateForInput(vacacion.FechaIngreso || ''));
         setFechaSolicitudInput(formatDateForInput(vacacion.FechaSolicitud || ''));
         setFechaRetornoInput(formatDateForInput(vacacion.FechaRetornoLabores || ''));
+        
+        setNoContarDomingos(vacacion.NoContarDomingos === 1);
         
         const idPersonal = vacacion.IdPersonal || 0;
         const anioVacacion = vacacion.Anio || 0;
@@ -1715,11 +1968,11 @@ export const Vacaciones: React.FC = () => {
         { key: 'NoEmpleado', title: 'No. Empleado', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center' },
         { key: 'NombreCompleto', title: 'Empleado', sortable: true, searchable: false, width: '250px', align: 'left', headerAlign: 'center' },
         { key: 'Departamento', title: 'Departamento', sortable: true, searchable: false, width: '150px', align: 'left', headerAlign: 'center' },
-        { key: 'FechaInicio', title: 'Fecha Inicio', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
-        { key: 'FechaFin', title: 'Fecha Fin', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
+        { key: 'FechaInicio', title: 'Fecha Inicio', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
+        { key: 'FechaFin', title: 'Fecha Fin', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
         { key: 'DiasTomar', title: 'Días', sortable: true, searchable: false, width: '80px', align: 'center', headerAlign: 'center' },
         { key: 'Anio', title: 'Año', sortable: true, searchable: false, width: '80px', align: 'center', headerAlign: 'center' },
-        { key: 'FechaSolicitud', title: 'Fecha Solicitud', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
+        { key: 'FechaSolicitud', title: 'Fecha Solicitud', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
         { key: 'UsuarioSolicita', title: 'Usuario Solicita', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center' },
         { key: 'Estatus', title: 'Estatus', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center', render: (value: number) => <StatusBadge estatus={value} /> },
         { key: 'actions', title: 'Acciones', sortable: false, searchable: false, width: '160px', align: 'center', headerAlign: 'center', render: (_, row) => (
@@ -1732,14 +1985,14 @@ export const Vacaciones: React.FC = () => {
         { key: 'NoEmpleado', title: 'No. Empleado', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center' },
         { key: 'NombreCompleto', title: 'Empleado', sortable: true, searchable: false, width: '250px', align: 'left', headerAlign: 'center' },
         { key: 'Departamento', title: 'Departamento', sortable: true, searchable: false, width: '150px', align: 'left', headerAlign: 'center' },
-        { key: 'FechaInicio', title: 'Fecha Inicio', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
-        { key: 'FechaFin', title: 'Fecha Fin', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
+        { key: 'FechaInicio', title: 'Fecha Inicio', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
+        { key: 'FechaFin', title: 'Fecha Fin', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
         { key: 'DiasTomar', title: 'Días', sortable: true, searchable: false, width: '80px', align: 'center', headerAlign: 'center' },
         { key: 'Anio', title: 'Año', sortable: true, searchable: false, width: '80px', align: 'center', headerAlign: 'center' },
-        { key: 'FechaSolicitud', title: 'Fecha Solicitud', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
+        { key: 'FechaSolicitud', title: 'Fecha Solicitud', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
         { key: 'UsuarioSolicita', title: 'Usuario Solicita', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center' },
         { key: 'UsuarioAutoriza', title: 'Usuario Autoriza', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center' },
-        { key: 'FechaAutoriza', title: 'Fecha Autorización', sortable: true, searchable: false, width: '130px', align: 'center', headerAlign: 'center', render: (value: string) => value ? formatDateForServer(value) : '-' },
+        { key: 'FechaAutoriza', title: 'Fecha Autorización', sortable: true, searchable: false, width: '130px', align: 'center', headerAlign: 'center', render: (value: string) => value ? value : '-' },
         { key: 'Estatus', title: 'Estatus', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center', render: (value: number) => <StatusBadge estatus={value} /> },
         { key: 'Comentarios', title: 'Comentarios', sortable: false, searchable: false, width: '200px', align: 'left', headerAlign: 'center', render: (value: string) => value ? (value.length > 30 ? value.substring(0, 30) + '...' : value) : '-' },
         { key: 'actions', title: 'Acciones', sortable: false, searchable: false, width: '160px', align: 'center', headerAlign: 'center', render: (_, row) => (
@@ -1752,16 +2005,16 @@ export const Vacaciones: React.FC = () => {
         { key: 'NoEmpleado', title: 'No. Empleado', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center' },
         { key: 'NombreCompleto', title: 'Empleado', sortable: true, searchable: false, width: '250px', align: 'left', headerAlign: 'center' },
         { key: 'Departamento', title: 'Departamento', sortable: true, searchable: false, width: '150px', align: 'left', headerAlign: 'center' },
-        { key: 'FechaInicio', title: 'Fecha Inicio', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
-        { key: 'FechaFin', title: 'Fecha Fin', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
+        { key: 'FechaInicio', title: 'Fecha Inicio', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
+        { key: 'FechaFin', title: 'Fecha Fin', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
         { key: 'DiasTomar', title: 'Días', sortable: true, searchable: false, width: '80px', align: 'center', headerAlign: 'center' },
         { key: 'Anio', title: 'Año', sortable: true, searchable: false, width: '80px', align: 'center', headerAlign: 'center' },
-        { key: 'FechaSolicitud', title: 'Fecha Solicitud', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => formatDateForServer(value) },
+        { key: 'FechaSolicitud', title: 'Fecha Solicitud', sortable: true, searchable: false, width: '120px', align: 'center', headerAlign: 'center', render: (value: string) => value || '-' },
         { key: 'UsuarioSolicita', title: 'Usuario Solicita', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center' },
         { key: 'UsuarioAutoriza', title: 'Usuario Autoriza', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center' },
-        { key: 'FechaAutoriza', title: 'Fecha Autorización', sortable: true, searchable: false, width: '130px', align: 'center', headerAlign: 'center', render: (value: string) => value ? formatDateForServer(value) : '-' },
+        { key: 'FechaAutoriza', title: 'Fecha Autorización', sortable: true, searchable: false, width: '130px', align: 'center', headerAlign: 'center', render: (value: string) => value ? value : '-' },
         { key: 'UsuarioValida', title: 'Usuario Valida', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center' },
-        { key: 'FechaValidado', title: 'Fecha Validación', sortable: true, searchable: false, width: '130px', align: 'center', headerAlign: 'center', render: (value: string) => value ? formatDateForServer(value) : '-' },
+        { key: 'FechaValidado', title: 'Fecha Validación', sortable: true, searchable: false, width: '130px', align: 'center', headerAlign: 'center', render: (value: string) => value ? value : '-' },
         { key: 'Estatus', title: 'Estatus', sortable: true, searchable: false, width: '150px', align: 'center', headerAlign: 'center', render: (value: number) => <StatusBadge estatus={value} /> },
         { key: 'Comentarios', title: 'Comentarios', sortable: false, searchable: false, width: '200px', align: 'left', headerAlign: 'center', render: (value: string) => value ? (value.length > 30 ? value.substring(0, 30) + '...' : value) : '-' },
         { key: 'actions', title: 'Acciones', sortable: false, searchable: false, width: '220px', align: 'center', headerAlign: 'center', render: (_, row) => (
@@ -1834,7 +2087,7 @@ export const Vacaciones: React.FC = () => {
         } else if (activeTab === 'autorizadas') {
             return vacaciones.filter(v => v.Estatus === 1 || v.Estatus === 4);
         } else {
-            return vacaciones.filter(v => v.Estatus === 3 ||  v.Estatus === 2);
+            return vacaciones.filter(v => v.Estatus === 3 || v.Estatus === 2);
         }
     }, [vacaciones, activeTab]);
 
@@ -1861,7 +2114,7 @@ export const Vacaciones: React.FC = () => {
                 </button>
                 <button className={`tab-button ${activeTab === 'validadas' ? 'active' : ''}`} onClick={() => handleTabChange('validadas')}>
                     <CheckCircle size={16} /> Validadas / Canceladas 
-                    <span className="tab-count">{vacaciones.filter(v => v.Estatus > 1).length}</span>
+                    <span className="tab-count">{vacaciones.filter(v => v.Estatus === 3 || v.Estatus === 2).length}</span>
                 </button>
             </div>
 
@@ -1904,7 +2157,7 @@ export const Vacaciones: React.FC = () => {
                     </div>
                     <div className="filtro-group">
                         <label className="filtro-label">No. Empleado:</label>
-                        <input type="text" className="filtro-input" placeholder="Buscar por número..." value={filtros.NoEmpleado} onChange={(e) => handleFiltroChange('NoEmpleado', e.target.value)} />
+                        <input type="text" className="filtro-input" placeholder="Buscar por número..." value={filtros.NoEmpleado || ''} onChange={(e) => handleFiltroChange('NoEmpleado', e.target.value)} />
                     </div>
                     <div className="filtro-group">
                         <label className="filtro-label">Nombre Completo:</label>
@@ -1970,13 +2223,15 @@ export const Vacaciones: React.FC = () => {
                             <button className="close-button" onClick={() => { setShowForm(false); resetForm(); setTipoFormulario('Agregar'); }}><X size={20} /></button>
                         </div>
                         <div className="form-vacaciones-modal-body">
-                            {(advertenciaAnticipacion || advertenciaViernes || advertenciaRetornoDomingo) && (
+                            {(advertenciaAnticipacion || advertenciaViernes || advertenciaRetornoDomingo || advertenciaInicioDomingo || advertenciaFinDomingo) && (
                                 <div className="advertencias-container" style={{ backgroundColor: '#FFF3CD', borderLeft: '4px solid #FFC107', padding: '12px 16px', marginBottom: '20px', borderRadius: '4px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><AlertCircle size={18} color="#856404" /><strong style={{ color: '#856404' }}>Advertencias:</strong></div>
                                     <ul style={{ margin: 0, paddingLeft: '20px', color: '#856404' }}>
                                         {advertenciaAnticipacion && <li>{advertenciaAnticipacion}</li>}
                                         {advertenciaViernes && <li>{advertenciaViernes}</li>}
                                         {advertenciaRetornoDomingo && <li>{advertenciaRetornoDomingo}</li>}
+                                        {advertenciaInicioDomingo && <li>{advertenciaInicioDomingo}</li>}
+                                        {advertenciaFinDomingo && <li>{advertenciaFinDomingo}</li>}
                                     </ul>
                                 </div>
                             )}
@@ -2080,11 +2335,104 @@ export const Vacaciones: React.FC = () => {
                                         <div className="form-vacaciones-group"><label className="form-vacaciones-label required">Días a Solicitar</label><input type="number" name="DiasTomar" value={vacacionesForm.DiasTomar || ''} onChange={handleDiasTomarChange} className="form-vacaciones-input" placeholder="Días a solicitar" disabled={isViewMode || !isHRorAdmin || !selectedAnio} required min="1" max={diasDisponiblesPeriodo || undefined} /></div>
                                         <div className="form-vacaciones-group"><label className="form-vacaciones-label">Saldo Restante</label><input type="text" value={`${saldoRestante} días`} className="form-vacaciones-input" disabled={true} readOnly style={{ backgroundColor: '#f5f5f5' }} /></div>
                                     </div>
-                                    <div className="form-vacaciones-row three-columns">
-                                        <div className="form-vacaciones-group"><label className="form-vacaciones-label required">Fecha de Inicio</label><input type="date" value={fechaInicioInput} onChange={handleFechaInicioChange} className="form-vacaciones-input" disabled={isViewMode || !isHRorAdmin || !selectedAnio} required /></div>
-                                        <div className="form-vacaciones-group"><label className="form-vacaciones-label required">Fecha de Fin</label><input type="date" value={fechaFinInput} onChange={handleFechaFinChange} className="form-vacaciones-input" disabled={isViewMode || !isHRorAdmin || !selectedAnio} required /></div>
-                                        <div className="form-vacaciones-group"><label className="form-vacaciones-label">Fecha de Reintegración a Labores<span style={{ marginLeft: '8px', cursor: 'help' }} title="Puede modificar esta fecha si es necesario (ej. si cae en fin de semana)"><Info size={14} style={{ display: 'inline', verticalAlign: 'middle', color: '#6c757d' }} /></span></label><input type="date" value={fechaRetornoInput} onChange={handleFechaRetornoChange} className="form-vacaciones-input" disabled={isViewMode || !isHRorAdmin || !selectedAnio} /></div>
+                                    <div className="form-vacaciones-row">
+                                        <div className="form-vacaciones-group">
+                                            <label className="form-vacaciones-label checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={noContarDomingos} 
+                                                    onChange={handleNoContarDomingosChange}
+                                                    disabled={isViewMode || !isHRorAdmin || !selectedAnio}
+                                                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                                                />
+                                                No contar domingos en los días de vacaciones
+                                            </label>
+                                            {noContarDomingos && (
+                                                <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                                                    Los domingos no se contarán como días de vacaciones. Días hábiles: {diasSinDomingos}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
+                                    <div className="form-vacaciones-row three-columns">
+                                        <div className="form-vacaciones-group">
+                                            <label className="form-vacaciones-label required">Fecha de Inicio</label>
+                                            <input 
+                                                type="date" 
+                                                value={fechaInicioInput} 
+                                                onChange={handleFechaInicioChange} 
+                                                className="form-vacaciones-input" 
+                                                disabled={isViewMode || !isHRorAdmin || !selectedAnio} 
+                                                required 
+                                            />
+                                            {fechaInicioInput && (
+                                                <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                                                    {new Date(fechaInicioInput + 'T00:00:00').toLocaleDateString('es-MX', { 
+                                                        weekday: 'long', 
+                                                        year: 'numeric', 
+                                                        month: 'long', 
+                                                        day: 'numeric' 
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="form-vacaciones-group">
+                                            <label className="form-vacaciones-label required">Fecha de Fin</label>
+                                            <input 
+                                                type="date" 
+                                                value={fechaFinInput} 
+                                                onChange={handleFechaFinChange} 
+                                                className="form-vacaciones-input" 
+                                                disabled={isViewMode || !isHRorAdmin || !selectedAnio} 
+                                                required 
+                                            />
+                                            {fechaFinInput && (
+                                                <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                                                    {new Date(fechaFinInput + 'T00:00:00').toLocaleDateString('es-MX', { 
+                                                        weekday: 'long', 
+                                                        year: 'numeric', 
+                                                        month: 'long', 
+                                                        day: 'numeric' 
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="form-vacaciones-group">
+                                            <label className="form-vacaciones-label">Fecha de Reintegración a Labores</label>
+                                            <input 
+                                                type="date" 
+                                                value={fechaRetornoInput} 
+                                                onChange={handleFechaRetornoChange} 
+                                                className="form-vacaciones-input" 
+                                                disabled={isViewMode || !isHRorAdmin || !selectedAnio} 
+                                            />
+                                            {fechaRetornoInput && (
+                                                <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                                                    {new Date(fechaRetornoInput + 'T00:00:00').toLocaleDateString('es-MX', { 
+                                                        weekday: 'long', 
+                                                        year: 'numeric', 
+                                                        month: 'long', 
+                                                        day: 'numeric' 
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {fechaInicioInput && fechaFinInput && (
+                                        <div className="date-range-indicator" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#FFF8E1', borderRadius: '8px', border: '1px solid #FFE0B2', marginTop: '8px' }}>
+                                            <div className="date-pill" style={{ background: 'white', padding: '4px 12px', borderRadius: '16px', border: '1px solid #FFE0B2', fontSize: '13px', fontWeight: '500' }}>
+                                                <strong>Inicio:</strong> {new Date(fechaInicioInput + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </div>
+                                            <span className="range-arrow" style={{ color: '#F57C00', fontWeight: 'bold', fontSize: '18px' }}>→</span>
+                                            <div className="date-pill" style={{ background: 'white', padding: '4px 12px', borderRadius: '16px', border: '1px solid #FFE0B2', fontSize: '13px', fontWeight: '500' }}>
+                                                <strong>Fin:</strong> {new Date(fechaFinInput + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </div>
+                                            <div className="date-pill" style={{ background: '#F57C00', color: 'white', padding: '4px 12px', borderRadius: '16px', border: '1px solid #F57C00', fontSize: '13px', fontWeight: '500' }}>
+                                                <strong>Total:</strong> {noContarDomingos ? diasSinDomingos : vacacionesForm.DiasTomar} días
+                                                {noContarDomingos && <span style={{ marginLeft: '4px' }}>(sin domingos)</span>}
+                                            </div>
+                                        </div>
+                                    )}
                                     {isViewMode && vacacionesForm.UsuarioAutoriza && (
                                         <div className="form-vacaciones-row two-columns">
                                             <div className="form-vacaciones-group"><label className="form-vacaciones-label">Usuario que Autorizó</label><input type="text" value={vacacionesForm.UsuarioAutoriza} className="form-vacaciones-input" disabled /></div>

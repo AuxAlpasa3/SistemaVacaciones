@@ -84,7 +84,7 @@ export function Login() {
                                 <img src={logoAlpasa} alt='Logo' width={400} />
                             </div>
                             <div className="header-divide" />
-                            <h2 className="welcome-title">MODULO VACACIONES</h2>
+                            <h2 className="welcome-title">SISTEMA RH</h2>
                             <p className="welcome-subtitle">Ingresa tus credenciales</p>
                         </div>
                         <div className="login-card">

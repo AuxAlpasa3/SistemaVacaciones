@@ -374,8 +374,7 @@ export const Tabla: React.FC<DataTableProps> = ({
     };
 
     return (
-        <div className={`data-table-wrapper ${className} ${bordered ? 'bordered' : ''}`}>
-            {/* Table Header with Title and Actions */}
+        <div className={`data-table-wrapper ${className} ${bordered ? 'bordered' : ''}`}> 
             {(title || actions) && (
                 <div className="table-header-section">
                     <div className="table-title-group">

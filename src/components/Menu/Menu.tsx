@@ -13,9 +13,10 @@ import {
     ChevronDown,
     X
 } from 'lucide-react';
-import './Menu.css';
-import { formatDateForDisplay,formatDateForServer } from '../../helpers/date';
+import './Menu.css'; 
 import { apiService } from '../../api/apiService';
+import { SelectConBusqueda } from '../Select/SelectConBusqueda'; 
+import type { OpcionSelectBusqueda } from '../../interfaces/Opciones';
 
 interface Vacacion {
     IdVacaciones: number;
@@ -30,7 +31,7 @@ interface Vacacion {
     UsuarioSolicita: number;
     UsuarioAutoriza?: number;
     FechaAutoriza?: string;
-    Estatus: number;
+    Estatus: string | number;
     Departamento?: string;
     Empresa?: string;
     JefeInmediato?: string;
@@ -49,23 +50,24 @@ interface PersonaVacaciones {
 interface VacacionesResponse {
     status: boolean;
     data?: {
-        pendientes: Vacacion[];
+        solicitadas: Vacacion[];
+        autorizadas: Vacacion[];
         validadas: Vacacion[];
+        canceladas: Vacacion[];
+        enRevision: Vacacion[];
         todasVacaciones: Vacacion[];
         personalVacacionesHoy: PersonaVacaciones[];
         resumen: {
-            totalPendientes: number;
+            totalSolicitadas: number;
+            totalAutorizadas: number;
             totalValidadas: number;
+            totalCanceladas: number;
+            totalEnRevision: number;
             personalVacacionesHoy: number;
         };
     };
     message?: string;
     error?: string;
-}
-
-interface OpcionSelect {
-    id: string;
-    valor: string;
 }
 
 const obtenerFechaActual = (): string => {
@@ -76,10 +78,28 @@ const obtenerFechaActual = (): string => {
     return `${year}-${month}-${day}`;
 };
 
+const formatDateFromServer = (fechaStr: string): string => {
+    if (!fechaStr) return '';
+    return fechaStr.split(' ')[0];
+};
+
+const formatDateForDisplayLocal = (fechaStr: string): string => {
+    if (!fechaStr) return '';
+    const fecha = fechaStr.split(' ')[0];
+    const partes = fecha.split('-');
+    if (partes.length === 3) {
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+    return fecha;
+};
+
 export const Menu = (): ReactElement => {
     const [todasVacaciones, setTodasVacaciones] = useState<Vacacion[]>([]);
-    const [vacacionesPendientes, setVacacionesPendientes] = useState<Vacacion[]>([]);
+    const [vacacionesSolicitadas, setVacacionesSolicitadas] = useState<Vacacion[]>([]);
+    const [vacacionesAutorizadas, setVacacionesAutorizadas] = useState<Vacacion[]>([]);
     const [vacacionesValidadas, setVacacionesValidadas] = useState<Vacacion[]>([]);
+    const [vacacionesCanceladas, setVacacionesCanceladas] = useState<Vacacion[]>([]);
+    const [vacacionesEnRevision, setVacacionesEnRevision] = useState<Vacacion[]>([]);
     const [personalVacacionesHoy, setPersonalVacacionesHoy] = useState<PersonaVacaciones[]>([]);
     
     const [loading, setLoading] = useState<boolean>(true);
@@ -97,9 +117,18 @@ export const Menu = (): ReactElement => {
     const [filtroJefeInmediato, setFiltroJefeInmediato] = useState<string>('');
     const [filtroEstatus, setFiltroEstatus] = useState<string>('todos');
     
-    const [departamentos, setDepartamentos] = useState<OpcionSelect[]>([]);
-    const [empresas, setEmpresas] = useState<OpcionSelect[]>([]);
-    const [jefes, setJefes] = useState<OpcionSelect[]>([]);
+    const [departamentos, setDepartamentos] = useState<OpcionSelectBusqueda[]>([]);
+    const [empresas, setEmpresas] = useState<OpcionSelectBusqueda[]>([]);
+    const [jefes, setJefes] = useState<OpcionSelectBusqueda[]>([]);
+    
+    const opcionesEstatus: OpcionSelectBusqueda[] = [
+        { id: 'todos', valor: 'Todos los estatus' },
+        { id: 'solicitada', valor: 'Solicitada' },
+        { id: 'autorizada', valor: 'Autorizada' },
+        { id: 'validada', valor: 'Validada' },
+        { id: 'cancelada', valor: 'Cancelada' },
+        { id: 'enrevision', valor: 'En Revisión' }
+    ];
 
     const fetchVacaciones = useCallback(async (isRefresh: boolean = false): Promise<void> => {
         try {
@@ -114,11 +143,11 @@ export const Menu = (): ReactElement => {
             params.append('fechaInicio', fechaInicio);
             params.append('fechaFin', fechaFin);
             
-            if (filtroNoEmpleado) {
-                params.append('noEmpleado', filtroNoEmpleado);
+            if (filtroNoEmpleado.trim()) {
+                params.append('noEmpleado', filtroNoEmpleado.trim());
             }
-            if (filtroNombreCompleto) {
-                params.append('nombreCompleto', filtroNombreCompleto);
+            if (filtroNombreCompleto.trim()) {
+                params.append('nombreCompleto', filtroNombreCompleto.trim());
             }
             if (filtroDepartamento && filtroDepartamento !== '') {
                 params.append('departamento', filtroDepartamento);
@@ -136,10 +165,31 @@ export const Menu = (): ReactElement => {
             const response = await apiService.get<VacacionesResponse>(`Menu.php?${params.toString()}`);
             
             if (response.status && response.data) {
-                setTodasVacaciones(response.data.todasVacaciones || []);
-                setVacacionesPendientes(response.data.pendientes || []);
-                setVacacionesValidadas(response.data.validadas || []);
-                setPersonalVacacionesHoy(response.data.personalVacacionesHoy || []);
+                const procesarVacaciones = (vacaciones: Vacacion[]): Vacacion[] => {
+                    return vacaciones.map(v => ({
+                        ...v,
+                        FechaSolicitud: formatDateFromServer(v.FechaSolicitud),
+                        FechaInicio: formatDateFromServer(v.FechaInicio),
+                        FechaFin: formatDateFromServer(v.FechaFin),
+                        FechaRetornoLabores: formatDateFromServer(v.FechaRetornoLabores)
+                    }));
+                };
+
+                const procesarPersonaVacaciones = (personas: PersonaVacaciones[]): PersonaVacaciones[] => {
+                    return personas.map(p => ({
+                        ...p,
+                        FechaInicio: formatDateFromServer(p.FechaInicio),
+                        FechaFin: formatDateFromServer(p.FechaFin)
+                    }));
+                };
+
+                setTodasVacaciones(procesarVacaciones(response.data.todasVacaciones || []));
+                setVacacionesSolicitadas(procesarVacaciones(response.data.solicitadas || []));
+                setVacacionesAutorizadas(procesarVacaciones(response.data.autorizadas || []));
+                setVacacionesValidadas(procesarVacaciones(response.data.validadas || []));
+                setVacacionesCanceladas(procesarVacaciones(response.data.canceladas || []));
+                setVacacionesEnRevision(procesarVacaciones(response.data.enRevision || []));
+                setPersonalVacacionesHoy(procesarPersonaVacaciones(response.data.personalVacacionesHoy || []));
             } else {
                 throw new Error(response.message || 'Error al cargar las vacaciones');
             }
@@ -152,54 +202,68 @@ export const Menu = (): ReactElement => {
         }
     }, [fechaInicio, fechaFin, filtroNoEmpleado, filtroNombreCompleto, filtroDepartamento, filtroEmpresa, filtroJefeInmediato, filtroEstatus]);
 
-    const personalVacacionesFiltrado = personalVacacionesHoy.filter(persona => {
-        const vacacionCompleta = todasVacaciones.find(v => v.IdVacaciones === persona.IdVacaciones);
-        
-        if (!vacacionCompleta) return true;
-        
-        if (filtroNoEmpleado && !vacacionCompleta.IdPersonal.toLowerCase().includes(filtroNoEmpleado.toLowerCase()) && !vacacionCompleta.NoEmpleado?.toLowerCase().includes(filtroNoEmpleado.toLowerCase())) {
-            return false;
-        }
-        
-        if (filtroNombreCompleto && !vacacionCompleta.NombreCompleto?.toLowerCase().includes(filtroNombreCompleto.toLowerCase())) {
-            return false;
-        }
-        
-        if (filtroDepartamento && filtroDepartamento !== '' && vacacionCompleta.Departamento !== filtroDepartamento) {
-            return false;
-        }
-        
-        if (filtroEmpresa && filtroEmpresa !== '' && vacacionCompleta.Empresa !== filtroEmpresa) {
-            return false;
-        }
-        
-        if (filtroJefeInmediato && filtroJefeInmediato !== '' && vacacionCompleta.JefeInmediato !== filtroJefeInmediato) {
-            return false;
-        }
-        
-        if (filtroEstatus !== 'todos') {
-            const estatusMap: { [key: string]: number } = {
-                'pendiente': 0,
-                'validada': 1,
-                'rechazada': 2
-            };
-            const estatusNumerico = estatusMap[filtroEstatus];
-            if (vacacionCompleta.Estatus !== estatusNumerico) {
-                return false;
-            }
-        }
-        
-        const fechaInicioPersona = new Date(persona.FechaInicio);
-        const fechaFinPersona = new Date(persona.FechaFin);
+    const calcularPersonalVacacionesFiltrado = useCallback(() => {
         const rangoInicio = new Date(fechaInicio);
         const rangoFin = new Date(fechaFin);
         
-        return fechaInicioPersona <= rangoFin && fechaFinPersona >= rangoInicio;
-    });
+        return personalVacacionesHoy.filter(persona => {
+            const fechaInicioPersona = new Date(persona.FechaInicio);
+            const fechaFinPersona = new Date(persona.FechaFin);
+            
+            const estaEnRango = fechaInicioPersona <= rangoFin && fechaFinPersona >= rangoInicio;
+            
+            if (!estaEnRango) return false;
+            
+            const vacacionCompleta = todasVacaciones.find(v => v.IdVacaciones === persona.IdVacaciones);
+            
+            if (!vacacionCompleta) return true;
+            
+            if (filtroNoEmpleado && !vacacionCompleta.IdPersonal.toLowerCase().includes(filtroNoEmpleado.toLowerCase()) && !vacacionCompleta.NoEmpleado?.toLowerCase().includes(filtroNoEmpleado.toLowerCase())) {
+                return false;
+            }
+            
+            if (filtroNombreCompleto && !vacacionCompleta.NombreCompleto?.toLowerCase().includes(filtroNombreCompleto.toLowerCase())) {
+                return false;
+            }
+            
+            if (filtroDepartamento && filtroDepartamento !== '' && vacacionCompleta.Departamento !== filtroDepartamento) {
+                return false;
+            }
+            
+            if (filtroEmpresa && filtroEmpresa !== '' && vacacionCompleta.Empresa !== filtroEmpresa) {
+                return false;
+            }
+            
+            if (filtroJefeInmediato && filtroJefeInmediato !== '' && vacacionCompleta.JefeInmediato !== filtroJefeInmediato) {
+                return false;
+            }
+            
+            if (filtroEstatus !== 'todos') {
+                const estatusMap: { [key: string]: number } = {
+                    'solicitada': 0,
+                    'autorizada': 1,
+                    'validada': 2,
+                    'cancelada': 3,
+                    'enrevision': 4
+                };
+                const estatusNumerico = estatusMap[filtroEstatus];
+                if (vacacionCompleta.Estatus !== estatusNumerico) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    }, [personalVacacionesHoy, todasVacaciones, filtroNoEmpleado, filtroNombreCompleto, filtroDepartamento, filtroEmpresa, filtroJefeInmediato, filtroEstatus, fechaInicio, fechaFin]);
+
+    const personalVacacionesFiltrado = calcularPersonalVacacionesFiltrado();
 
     const resumen = {
-        totalPendientes: vacacionesPendientes.length,
+        totalSolicitadas: vacacionesSolicitadas.length,
+        totalAutorizadas: vacacionesAutorizadas.length,
         totalValidadas: vacacionesValidadas.length,
+        totalCanceladas: vacacionesCanceladas.length,
+        totalEnRevision: vacacionesEnRevision.length,
         personalVacacionesHoy: personalVacacionesFiltrado.length
     };
 
@@ -208,7 +272,7 @@ export const Menu = (): ReactElement => {
             const [deptosResponse, empresasResponse, jefesResponse] = await Promise.all([
                 apiService.get<{status: boolean; data: any[]}>('/personal/opciones/ObtenerDepartamentos.php'),
                 apiService.get<{status: boolean; data: any[]}>('/personal/opciones/ObtenerEmpresas.php'),
-                apiService.get<{status: boolean; data: any[]}>('/personal/opciones/ObtenerSupervisores.php')
+                apiService.get<{status: boolean; data: any[]}>('/personal/opciones/ObtenerJefeInmediato.php')
             ]);
             
             if (deptosResponse.status && deptosResponse.data) {
@@ -260,7 +324,7 @@ export const Menu = (): ReactElement => {
         if (!loading && !refreshing) {
             const timeoutId = setTimeout(() => {
                 fetchVacaciones();
-            }, 300);
+            }, 500);
             return () => clearTimeout(timeoutId);
         }
     }, [fechaInicio, fechaFin, filtroNoEmpleado, filtroNombreCompleto, filtroDepartamento, filtroEmpresa, filtroJefeInmediato, filtroEstatus]);
@@ -287,6 +351,23 @@ export const Menu = (): ReactElement => {
             </div>
         );
     }
+ 
+    const getEstatusBadge = (estatus: string | number) => {
+        switch(estatus) {
+            case '0': 
+                return <span className="badge" style={{ backgroundColor: '#ffc107', color: '#000' }}>Solicitada</span>;
+            case '1': 
+                return <span className="badge" style={{ backgroundColor: '#17a2b8', color: '#fff' }}>Autorizada</span>;
+            case '2': 
+                return <span className="badge" style={{ backgroundColor: '#28a745', color: '#fff' }}>Validada</span>;
+            case '3': 
+                return <span className="badge" style={{ backgroundColor: '#dc3545', color: '#fff' }}>Cancelada</span>;
+            case '4':    
+                return <span className="badge" style={{ backgroundColor: '#6f42c1', color: '#fff' }}>En Revisión</span>;
+            default:
+                return <span className="badge bg-secondary">Desconocido</span>;
+        }
+    };
 
     return (
         <div className="content-wrapper">
@@ -346,57 +427,47 @@ export const Menu = (): ReactElement => {
                                             </div>
                                             <div className="filtro-avanzado-group">
                                                 <label>Departamento</label>
-                                                <select
+                                                <SelectConBusqueda
+                                                    options={departamentos}
                                                     value={filtroDepartamento}
-                                                    onChange={(e) => setFiltroDepartamento(e.target.value)}
-                                                >
-                                                    <option value="">TODOS</option>
-                                                    {departamentos.map(depto => (
-                                                        <option key={depto.id} value={depto.id}>
-                                                            {depto.valor}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                    onChange={setFiltroDepartamento}
+                                                    placeholder="Seleccionar departamento..."
+                                                    showClearButton={true}
+                                                    onClear={() => setFiltroDepartamento('')}
+                                                />
                                             </div>
                                             <div className="filtro-avanzado-group">
                                                 <label>Empresa</label>
-                                                <select
+                                                <SelectConBusqueda
+                                                    options={empresas}
                                                     value={filtroEmpresa}
-                                                    onChange={(e) => setFiltroEmpresa(e.target.value)}
-                                                >
-                                                    <option value="">TODOS</option>
-                                                    {empresas.map(emp => (
-                                                        <option key={emp.id} value={emp.id}>
-                                                            {emp.valor}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                    onChange={setFiltroEmpresa}
+                                                    placeholder="Seleccionar empresa..."
+                                                    showClearButton={true}
+                                                    onClear={() => setFiltroEmpresa('')}
+                                                />
                                             </div>
                                             <div className="filtro-avanzado-group">
                                                 <label>Jefe Inmediato</label>
-                                                <select
+                                                <SelectConBusqueda
+                                                    options={jefes}
                                                     value={filtroJefeInmediato}
-                                                    onChange={(e) => setFiltroJefeInmediato(e.target.value)}
-                                                >
-                                                    <option value="">TODOS</option>
-                                                    {jefes.map(jefe => (
-                                                        <option key={jefe.id} value={jefe.id}>
-                                                            {jefe.valor}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                    onChange={setFiltroJefeInmediato}
+                                                    placeholder="Seleccionar jefe..."
+                                                    showClearButton={true}
+                                                    onClear={() => setFiltroJefeInmediato('')}
+                                                />
                                             </div>
                                             <div className="filtro-avanzado-group">
                                                 <label>Estatus</label>
-                                                <select 
+                                                <SelectConBusqueda
+                                                    options={opcionesEstatus}
                                                     value={filtroEstatus}
-                                                    onChange={(e) => setFiltroEstatus(e.target.value)}
-                                                >
-                                                    <option value="todos">Todos los estatus</option>
-                                                    <option value="pendiente">Pendientes</option>
-                                                    <option value="validada">Validadas</option>
-                                                    <option value="rechazada">Rechazadas</option>
-                                                </select>
+                                                    onChange={setFiltroEstatus}
+                                                    placeholder="Seleccionar estatus..."
+                                                    showClearButton={true}
+                                                    onClear={() => setFiltroEstatus('todos')}
+                                                />
                                             </div>
                                         </div>
                                         
@@ -427,38 +498,75 @@ export const Menu = (): ReactElement => {
             <section className="content">
                 <div className="container-fluid">
                     <div className="dashboard-grid">
-                        <div className="dashboard-card pendientes-card">
+                        <div className="dashboard-card solicitadas-card">
                             <div className="card-header">
                                 <div className="card-icon">
                                     <Clock size={28} />
                                 </div>
                                 <div className="card-stats">
-                                    <h2>{resumen.totalPendientes}</h2>
-                                    <p>Solicitudes Pendientes</p>
+                                    <h2>{resumen.totalSolicitadas}</h2>
+                                    <p>Solicitadas</p>
                                 </div>
                             </div>
                             <div className="card-body">
                                 <div className="stat-detail">
                                     <span>Esperando autorización</span>
-                                    <span className="badge" style={{ backgroundColor: '#ffc107', color: '#000' }}>Pendiente</span>
+                                    <span className="badge" style={{ backgroundColor: '#ffc107', color: '#000' }}>Solicitada</span>
                                 </div>
-                                {vacacionesPendientes.length > 0 ? (
+                                {vacacionesSolicitadas.length > 0 ? (
                                     <div className="mini-lista">
-                                        {vacacionesPendientes.slice(0, 3).map(v => (
+                                        {vacacionesSolicitadas.slice(0, 3).map(v => (
                                             <div key={v.IdVacaciones} className="mini-item">
                                                 <span>{v.NombreCompleto || `Personal #${v.IdPersonal}`}</span>
-                                                <small>{formatDateForServer(v.FechaInicio)} - {formatDateForServer(v.FechaFin)}</small>
+                                                <small>{formatDateForDisplayLocal(v.FechaInicio)} - {formatDateForDisplayLocal(v.FechaFin)}</small>
                                             </div>
                                         ))}
-                                        {vacacionesPendientes.length > 3 && (
+                                        {vacacionesSolicitadas.length > 3 && (
                                             <div className="text-muted small mt-2">
-                                                +{vacacionesPendientes.length - 3} más...
+                                                +{vacacionesSolicitadas.length - 3} más...
                                             </div>
                                         )}
                                     </div>
                                 ) : (
                                     <div className="text-muted text-center mt-2 small">
-                                        No hay solicitudes pendientes
+                                        No hay solicitudes
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="dashboard-card autorizadas-card">
+                            <div className="card-header">
+                                <div className="card-icon">
+                                    <CheckCircle size={28} />
+                                </div>
+                                <div className="card-stats">
+                                    <h2>{resumen.totalAutorizadas}</h2>
+                                    <p>Autorizadas</p>
+                                </div>
+                            </div>
+                            <div className="card-body">
+                                <div className="stat-detail">
+                                    <span>Autorizadas por jefe</span>
+                                    <span className="badge" style={{ backgroundColor: '#17a2b8', color: '#fff' }}>Autorizada</span>
+                                </div>
+                                {vacacionesAutorizadas.length > 0 ? (
+                                    <div className="mini-lista">
+                                        {vacacionesAutorizadas.slice(0, 3).map(v => (
+                                            <div key={v.IdVacaciones} className="mini-item">
+                                                <span>{v.NombreCompleto || `Personal #${v.IdPersonal}`}</span>
+                                                <small>{v.DiasTomar} días</small>
+                                            </div>
+                                        ))}
+                                        {vacacionesAutorizadas.length > 3 && (
+                                            <div className="text-muted small mt-2">
+                                                +{vacacionesAutorizadas.length - 3} más...
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="text-muted text-center mt-2 small">
+                                        No hay solicitudes autorizadas
                                     </div>
                                 )}
                             </div>
@@ -467,16 +575,16 @@ export const Menu = (): ReactElement => {
                         <div className="dashboard-card validadas-card">
                             <div className="card-header">
                                 <div className="card-icon">
-                                    <CheckCircle size={28} />
+                                    <Users size={28} />
                                 </div>
                                 <div className="card-stats">
                                     <h2>{resumen.totalValidadas}</h2>
-                                    <p>Solicitudes Validadas</p>
+                                    <p>Validadas</p>
                                 </div>
                             </div>
                             <div className="card-body">
                                 <div className="stat-detail">
-                                    <span>Autorizadas en el período</span>
+                                    <span>Validadas por RH</span>
                                     <span className="badge" style={{ backgroundColor: '#28a745', color: '#fff' }}>Validada</span>
                                 </div>
                                 {vacacionesValidadas.length > 0 ? (
@@ -515,7 +623,7 @@ export const Menu = (): ReactElement => {
                                 <div className="stat-detail">
                                     <span>Personal disfrutando sus vacaciones</span>
                                     <span className="badge bg-info">
-                                        {fechaInicio === fechaFin ? formatDateForDisplay(fechaInicio) : `${formatDateForDisplay(fechaInicio)} al ${formatDateForDisplay(fechaFin)}`}
+                                        {fechaInicio === fechaFin ? formatDateForDisplayLocal(fechaInicio) : `${formatDateForDisplayLocal(fechaInicio)} al ${formatDateForDisplayLocal(fechaFin)}`}
                                     </span>
                                 </div>
                                 
@@ -535,13 +643,13 @@ export const Menu = (): ReactElement => {
                                                                 {persona.NombreCompleto}
                                                                 {vacacionCompleta && (
                                                                     <span className="ms-2 text-muted small">
-        {vacacionCompleta.NoEmpleado ? `#${vacacionCompleta.NoEmpleado}` : `#${vacacionCompleta.IdPersonal}`}
+                                                                        {vacacionCompleta.NoEmpleado ? `#${vacacionCompleta.NoEmpleado}` : `#${vacacionCompleta.IdPersonal}`}
                                                                     </span>
                                                                 )}
                                                             </div>
                                                             <div className="small text-muted">
                                                                 <CalendarIcon size={10} className="me-1" />
-                                                                {formatDateForServer(persona.FechaInicio)} - {formatDateForServer(persona.FechaFin)}
+                                                                {formatDateForDisplayLocal(persona.FechaInicio)} - {formatDateForDisplayLocal(persona.FechaFin)}
                                                                 <span className="ms-2 badge bg-info badge-sm">
                                                                     {persona.DiasTomar} días
                                                                 </span>
@@ -584,8 +692,8 @@ export const Menu = (): ReactElement => {
                                 {filtroDepartamento && `· Depto ${filtroDepartamento} `}
                                 {filtroEmpresa && `· Empresa ${filtroEmpresa} `}
                                 {filtroJefeInmediato && `· Jefe ${filtroJefeInmediato} `}
-                                {fechaInicio !== fechaFin && `· ${formatDateForDisplay(fechaInicio)} al ${formatDateForDisplay(fechaFin)}`}
-                                {fechaInicio === fechaFin && `· ${formatDateForDisplay(fechaInicio)}`}
+                                {fechaInicio !== fechaFin && `· ${formatDateForDisplayLocal(fechaInicio)} al ${formatDateForDisplayLocal(fechaFin)}`}
+                                {fechaInicio === fechaFin && `· ${formatDateForDisplayLocal(fechaInicio)}`}
                             </div>
                         </div>
                         <div className="card-body p-0">
@@ -614,23 +722,11 @@ export const Menu = (): ReactElement => {
                                                     <td>{vacacion.NombreCompleto || '---'}</td>
                                                     <td>{vacacion.Departamento || '---'}</td>
                                                     <td>{vacacion.Empresa || '---'}</td>
-                                                    <td>{formatDateForServer(vacacion.FechaSolicitud)}</td>
-                                                    <td>{formatDateForServer(vacacion.FechaInicio)}</td>
-                                                    <td>{formatDateForServer(vacacion.FechaFin)}</td>
+                                                    <td>{formatDateForDisplayLocal(vacacion.FechaSolicitud)}</td>
+                                                    <td>{formatDateForDisplayLocal(vacacion.FechaInicio)}</td>
+                                                    <td>{formatDateForDisplayLocal(vacacion.FechaFin)}</td>
                                                     <td className="text-center">{vacacion.DiasTomar}</td>
-                                                    <td>
-                                                        {vacacion.Estatus == 0 ? (
-                                                            <span className="badge" style={{ backgroundColor: '#ffc107', color: '#000' }}>Pendiente</span>
-                                                        ) : vacacion.Estatus == 1 ? (
-                                                            <span className="badge" style={{ backgroundColor: '#28a745', color: '#fff' }}>Validada</span>
-                                                        ) : vacacion.Estatus == 2 ? ( 
-                                                            <span className="badge" style={{ backgroundColor: '#dc3545', color: '#fff' }}>Rechazada</span>
-                                                        ) : vacacion.Estatus == 3 ? (
-                                                            <span className="badge" style={{ backgroundColor: '#6c757d', color: '#fff' }}>Cancelada</span>
-                                                        ) : (
-                                                            <span className="badge bg-secondary">Desconocido</span>
-                                                        )}
-                                                    </td>
+                                                    <td>{getEstatusBadge(vacacion.Estatus)}</td>
                                                 </tr>
                                             ))
                                         ) : (

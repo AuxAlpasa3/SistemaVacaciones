@@ -1,10 +1,9 @@
-// rolesPermissions.ts
 import type { CatalogoUsuario } from '../interfaces/Usuario';
 
 export const ROLES = {
     ADMINISTRADOR: 1,
     RECURSOS_HUMANOS: 2,
-    SUPERVISOR: 3
+    JEFE_INMEDIATO: 3
 } as const;
 
 export interface MenuItem {
@@ -96,7 +95,7 @@ export const obtenerNombreRol = (rolId: number | null): string => {
     switch (rolId) {
         case 1: return 'Administrador';
         case 2: return 'Recursos Humanos';
-        case 3: return 'Supervisor';
+        case 3: return 'Jefe Inmediato';
         default: return 'Sin rol';
     }
 };
@@ -174,8 +173,7 @@ export const filtrarMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[
     
     return seccionesFiltradas;
 };
-
-// Función para obtener el menú según el rol (con manejo especial para admin)
+ 
 export const obtenerMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[] => {
     if (!usuario) {
         console.warn('obtenerMenuPorRol: usuario nulo');
@@ -184,8 +182,7 @@ export const obtenerMenuPorRol = (usuario: CatalogoUsuario | null): MenuSection[
     
     const rolId = usuario.rol;
     const rolNormalizado = normalizarRolId(rolId);
-    
-    // Si es administrador (rol 1), mostrar todo el menú completo
+     
     if (rolNormalizado === 1) {
         return MENU_CONFIG;
     }

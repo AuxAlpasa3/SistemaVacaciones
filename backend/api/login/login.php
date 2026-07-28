@@ -31,8 +31,20 @@ try {
                 exit;
             }
 
-            $query = "select*from t_usuario
-            WHERE usuario = :username and Estatus = 1";
+            $query = "SELECT t1.IdUsuario,t1.Usuario,t1.Contrasenia,t1.EmpleadoID,t1.Descripcion,t1.TipoUsuario,t4.TipoUsuario as TipoUsuarioNombre,t1.Estatus,t1.rol	,t3.RolUsuario, t1.Ubicacion,t5.NomLargo as UbicacionNombre,t2.IdPersonal,
+                t2.NoEmpleado, concat(t2.Nombre,' ',t2.ApPaterno,' ',t2.ApMaterno) as NombreCompleto,	t6.NomCargo AS Cargo, t7.NomDepto as Departamento,	t8.NomEmpresa as Empresa,
+                t2.Status,	t2.NSS,	t2.esJefeInmediato,	t2.RutaFoto,	t2.Email,	t2.Contacto,	concat(t9.Nombre,' ',t9.ApPaterno,' ',t9.ApMaterno) as IdJefeInmediato,
+                t2.TipoSangre,	t2.FechaIngreso,	t2.Alergias,	t2.Turno,	t2.FechadeNacimiento,	t2.Direccion 
+                FROM t_usuario as t1 
+                LEFT join t_personal as t2 on t1.EmpleadoID = t2.IdPersonal
+                LEFT JOIN t_rolUsuario as t3 on t1.rol=t3.IdRolUsuario
+                LEFT JOIN t_tipoUsuario as t4 on t1.TipoUsuario=t4.IdTipoUsuario
+                LEFT JOIN t_ubicacion as t5 on t1.Ubicacion=t5.IdUbicacion
+                LEFT JOIN t_cargo as t6 on t2.Cargo=t6.IdCargo
+                LEFT JOIN t_departamento as t7 on t2.Departamento=t7.IdDepartamento
+                LEFT JOIN t_empresa as t8 on t2.Empresa=t8.IdEmpresa
+                LEFT JOIN t_personal as t9 on t2.IdJefeInmediato =t9.IdPersonal
+            WHERE t1.usuario = :username and t1.Estatus = 1";
             $stmt = $Conexion->prepare($query);
             $stmt->bindParam(':username', $Username); 
             $stmt->execute();

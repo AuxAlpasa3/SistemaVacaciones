@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Plus, X, FileText, Edit, Trash2, Eye, MoreVertical } from 'lucide-react';
+import { Plus, X, FileText, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
 import './Cargo.css';
@@ -13,8 +13,7 @@ import { showToast } from '../../helpers/toast';
 // API
 import { apiService } from '../../api/apiService';
 
-
-// Componente memoizado para los botones de acción
+ 
 const MemoizedActionButtons = React.memo(({
     row,
     openActionDropdown,
@@ -59,7 +58,7 @@ export const Cargo: React.FC = () => {
         NomCargo: ''
 
     });
-    const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
+    const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [cargo, setCargo] = useState<InterfaceCargo[]>([]);
 
     const [listadoCargo, setListadoCargo] = useState<InterfaceCargo[] | []>([]);

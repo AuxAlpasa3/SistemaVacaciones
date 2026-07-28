@@ -58,21 +58,35 @@ class VacacionesService {
      
     private function getVacacionCompleta($idVacaciones) {
         $stmt = $this->db->prepare("
-                SELECT v.*, 
-                    p.IdPersonal,
-                    p.NoEmpleado,
-                    CONCAT(p.Nombre, ' ', p.ApPaterno, ' ', p.ApMaterno) as NombreCompleto,
-                    d.NomDepto as Departamento,
-                    c.NomCargo as Cargo,
-                    p.FechaIngreso,
-                    p.Email as EmailEmpleado,
-                    p.IdJefeInmediato
-            FROM t_vacaciones v
-            INNER JOIN t_personal p ON v.IdPersonal = p.IdPersonal
-            INNER JOIN t_departamento d on d.IdDepartamento=p.Departamento
-            INNER JOIN t_cargo c on c.IdCargo=p.Cargo
-            WHERE v.IdVacaciones = :idVacaciones
-        ");
+                SELECT t1.*, 
+                t2.IdPersonal,
+                t2.NoEmpleado,
+                CONCAT(t2.Nombre, ' ', t2.ApPaterno, ' ', t2.ApMaterno) as NombreCompleto,
+                t3.NomDepto as Departamento,
+                t4.NomCargo as Cargo,
+                t2.FechaIngreso,
+                t2.Email as EmailEmpleado,
+                t2.IdJefeInmediato, 
+                
+                -- Subconsulta para UsuarioAutoriza (desde t_personal)
+                (SELECT Concat(p1.Nombre,' ',p1.ApPaterno,' ',p1.ApMaterno) 
+                FROM t_personal as p1 
+                INNER JOIN t_usuario as u1 ON p1.IdPersonal = u1.EmpleadoID
+                INNER JOIN t_Vacaciones as v1 ON u1.IdUsuario = v1.UsuarioAutoriza
+                WHERE v1.IdVacaciones = t1.IdVacaciones) as UsuarioAutoriza,
+                
+                -- Subconsulta para UsuarioValida
+                (SELECT Concat(p2.Nombre,' ',p2.ApPaterno,' ',p2.ApMaterno) 
+                FROM t_personal as p2 
+                INNER JOIN t_usuario as u2 ON p2.IdPersonal = u2.EmpleadoID
+                INNER JOIN t_Vacaciones as v2 ON u2.IdUsuario = v2.UsuarioValida
+                WHERE v2.IdVacaciones = t1.IdVacaciones) as UsuarioValida
+
+            FROM t_vacaciones as t1
+            INNER JOIN t_personal as t2 ON t1.IdPersonal = t2.IdPersonal
+            INNER JOIN t_departamento as t3 on t3.IdDepartamento = t2.Departamento
+            INNER JOIN t_cargo as t4 on t4.IdCargo = t2.Cargo 
+            WHERE t1.IdVacaciones = :idVacaciones ");
         $stmt->execute([':idVacaciones' => $idVacaciones]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
@@ -201,21 +215,37 @@ class VacacionesService {
         $campoFlag = $tipo === 'aviso_15_dias' ? 'EmailEnviado15Dias' : 'EmailEnviado7Dias';
         
         $stmt = $this->db->prepare("
-            SELECT v.*, 
-                    p.IdPersonal,
-                    p.NoEmpleado,
-                    CONCAT(p.Nombre, ' ', p.ApPaterno, ' ', p.ApMaterno) as NombreCompleto,
-                    d.NomDepto as Departamento,
-                    c.NomCargo as Cargo,
-                    p.Email as EmailEmpleado,
-                    p.IdJefeInmediato
-            FROM t_vacaciones v
-            INNER JOIN t_personal p ON v.IdPersonal = p.IdPersonal
-            INNER JOIN t_departamento d on d.IdDepartamento=p.Departamento
-            INNER JOIN t_cargo c on c.IdCargo=p.Cargo
-            WHERE v.FechaInicio = :fechaInicio
-            AND v.Estatus IN (1, 2)
-            AND v.{$campoFlag} = 0
+            SELECT t1.*, 
+                t2.IdPersonal,
+                t2.NoEmpleado,
+                CONCAT(t2.Nombre, ' ', t2.ApPaterno, ' ', t2.ApMaterno) as NombreCompleto,
+                t3.NomDepto as Departamento,
+                t4.NomCargo as Cargo,
+                t2.FechaIngreso,
+                t2.Email as EmailEmpleado,
+                t2.IdJefeInmediato, 
+                
+                -- Subconsulta para UsuarioAutoriza (desde t_personal)
+                (SELECT Concat(p1.Nombre,' ',p1.ApPaterno,' ',p1.ApMaterno) 
+                FROM t_personal as p1 
+                INNER JOIN t_usuario as u1 ON p1.IdPersonal = u1.EmpleadoID
+                INNER JOIN t_Vacaciones as v1 ON u1.IdUsuario = v1.UsuarioAutoriza
+                WHERE v1.IdVacaciones = t1.IdVacaciones) as UsuarioAutoriza,
+                
+                -- Subconsulta para UsuarioValida
+                (SELECT Concat(p2.Nombre,' ',p2.ApPaterno,' ',p2.ApMaterno) 
+                FROM t_personal as p2 
+                INNER JOIN t_usuario as u2 ON p2.IdPersonal = u2.EmpleadoID
+                INNER JOIN t_Vacaciones as v2 ON u2.IdUsuario = v2.UsuarioValida
+                WHERE v2.IdVacaciones = t1.IdVacaciones) as UsuarioValida
+
+            FROM t_vacaciones as t1
+            INNER JOIN t_personal as t2 ON t1.IdPersonal = t2.IdPersonal
+            INNER JOIN t_departamento as t3 on t3.IdDepartamento = t2.Departamento
+            INNER JOIN t_cargo as t4 on t4.IdCargo = t2.Cargo 
+            WHERE t1.FechaInicio = :fechaInicio
+            AND t1.Estatus IN (1, 2)
+            AND t1.{$campoFlag} = 0
         ");
         $stmt->execute([':fechaInicio' => $fechaInicio]);
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -886,7 +916,7 @@ class VacacionesService {
         
         $color = '#F44336';
         $colorHover = '#C62828';
-        $logoUrl = $this->config['url_base_img'] . 'IMG/LogoAlpasaBlanco.png';
+        $logoUrl = $this->config['url_base_img'] . 'IMG/LogoAlpasa.png';
         
         $html = '
         <!DOCTYPE html>

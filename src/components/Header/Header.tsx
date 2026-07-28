@@ -11,8 +11,9 @@ import {
 import './Header.css';
 import { eliminarLocalStorageKey } from '../../helpers/localStorage';
 import { useNavigate } from 'react-router-dom';
-import type { CatalogoUsuario} from '../../interfaces/Usuario';
+import type { CatalogoUsuario } from '../../interfaces/Usuario';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
+import { Perfil } from '../Perfil/Perfil';
 
 interface HeaderProps {
     onMenuToggle: () => void;
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
     const [fullScreen, setFullScreen] = useState(false);
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
+    const [showPerfil, setShowPerfil] = useState(false);
 
     const userDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +41,15 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
         navigate('/');
         closeUserDropdown();
     }, [navigate, closeUserDropdown]);
+
+    const handleOpenPerfil = useCallback(() => {
+        setShowPerfil(true);
+        closeUserDropdown();
+    }, [closeUserDropdown]);
+
+    const handleClosePerfil = useCallback(() => {
+        setShowPerfil(false);
+    }, []);
 
     const toggleFullScreen = useCallback(() => {
         const element = document.documentElement;
@@ -97,21 +108,21 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
                 </div>
                 <div className="user-dropdown-info">
                     <h4>{usuarioSesion?.Usuario || 'Usuario'}</h4>
+                    <span>{usuarioSesion?.RolUsuario || 'Usuario'}</span>
                 </div>
             </div>
 
-            {/* <div className="user-dropdown-divider"></div> */}
+            <div className="user-dropdown-divider"></div>  
 
             <div className="user-dropdown-menu">
-               {/*  <button 
+                <button 
                     className="user-dropdown-item" 
-                    onClick={() => 
+                    onClick={handleOpenPerfil}
                     aria-label="Perfil"
                 >
                     <Settings size={16} />
-                    <span>Perfil</span>
-                </button>
- */}
+                    <span>Mi Perfil</span>
+                </button> 
                 <button 
                     className="user-dropdown-item logout-item" 
                     onClick={handleLogout}
@@ -125,41 +136,52 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
     );
 
     return (
-    <header className="header header-extra-compact">
-            <div className="header-left">
-                <button 
-                    className="menu-toggle" 
-                    onClick={onMenuToggle}
-                    aria-label="Alternar menú"
-                >
-                    <Menu size={20} />
-                </button>
-            </div>
-
-             <div className="header-right">
-                {/* Fullscreen Toggle */}
-                <button 
-                    className="notification-btn" 
-                    onClick={toggleFullScreen}
-                    aria-label={fullScreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-                >
-                    {fullScreen ? <Shrink size={20} /> : <Expand size={20} />}
-                </button>
-
-                {/* User Dropdown */}
-                <div className="user-dropdown-container" ref={userDropdownRef}>
-                    <button
-                        className={`notification-btn user-btn ${userDropdownOpen ? 'active' : ''}`}
-                        onClick={toggleUserDropdown}
-                        aria-label="Menú de usuario"
-                        aria-expanded={userDropdownOpen}
+        <>
+            <header className="header header-extra-compact">
+                <div className="header-left">
+                    <button 
+                        className="menu-toggle" 
+                        onClick={onMenuToggle}
+                        aria-label="Alternar menú"
                     >
-                        <User size={20} />
+                        <Menu size={20} />
+                    </button>
+                </div>
+
+                <div className="header-right">
+                    {/* Fullscreen Toggle */}
+                    <button 
+                        className="notification-btn" 
+                        onClick={toggleFullScreen}
+                        aria-label={fullScreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+                    >
+                        {fullScreen ? <Shrink size={20} /> : <Expand size={20} />}
                     </button>
 
-                    {userDropdownOpen && <UserDropdown />}
+                    {/* User Dropdown */}
+                    <div className="user-dropdown-container" ref={userDropdownRef}>
+                        <button
+                            className={`notification-btn user-btn ${userDropdownOpen ? 'active' : ''}`}
+                            onClick={toggleUserDropdown}
+                            aria-label="Menú de usuario"
+                            aria-expanded={userDropdownOpen}
+                        >
+                            <User size={20} />
+                        </button>
+
+                        {userDropdownOpen && <UserDropdown />}
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
+
+            {/* Modal del Perfil */}
+            {showPerfil && (
+                <div className="perfil-modal-overlay" onClick={handleClosePerfil}>
+                    <div className="perfil-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <Perfil onClose={handleClosePerfil} />
+                    </div>
+                </div>
+            )}
+        </>
     );
 };

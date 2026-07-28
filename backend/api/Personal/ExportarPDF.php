@@ -19,7 +19,7 @@ $sql = "SELECT
             t3.NomDepto as Departamento,
             t4.NomEmpresa as Empresa,
             t5.NomLargo as Ubicacion,
-            CONCAT(t6.Nombre, ' ', t6.ApPaterno, ' ', t6.ApMaterno) as Supervisor,
+            CONCAT(t6.Nombre, ' ', t6.ApPaterno, ' ', t6.ApMaterno) as JefeInmediato,
             t1.Status,
             CASE WHEN t7.IdVehiculo IS NULL THEN 'NO' ELSE 'SI' END as TieneVehiculo,
             t1.Email,
@@ -186,7 +186,7 @@ $html = '
                 <th>Departamento</th>
                 <th>Empresa</th>
                 <th>Ubicación</th>
-                <th>Supervisor</th>
+                <th>JefeInmediato</th>
                 <th>Estatus</th>
                 <th>Vehículo</th>
                 <th>Email</th>
@@ -209,7 +209,7 @@ foreach ($result as $empleado) {
         <td>' . htmlspecialchars($empleado['Departamento'] ?? 'N/A') . '</td>
         <td>' . htmlspecialchars($empleado['Empresa'] ?? 'N/A') . '</td>
         <td>' . htmlspecialchars($empleado['Ubicacion'] ?? 'N/A') . '</td>
-        <td>' . htmlspecialchars($empleado['Supervisor'] ?? 'N/A') . '</td>
+        <td>' . htmlspecialchars($empleado['JefeInmediato'] ?? 'N/A') . '</td>
         <td class="' . $estatusClass . '">' . $estatusText . '</td>
         <td>' . htmlspecialchars($empleado['TieneVehiculo'] ?? 'NO') . '</td>
         <td>' . htmlspecialchars($empleado['Email'] ?? '') . '</td>

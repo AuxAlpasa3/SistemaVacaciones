@@ -14,7 +14,7 @@ $sql = "SELECT
             t3.NomDepto as Departamento,
             t4.NomEmpresa as Empresa,
             t5.NomLargo as Ubicacion,
-            CONCAT(t6.Nombre, ' ', t6.ApPaterno, ' ', t6.ApMaterno) as Supervisor,
+            CONCAT(t6.Nombre, ' ', t6.ApPaterno, ' ', t6.ApMaterno) as JefeInmediato,
             t1.Status,
             CASE WHEN t7.IdVehiculo IS NULL THEN 'NO' ELSE 'SI' END as TieneVehiculo,
             t1.Email,
@@ -235,7 +235,7 @@ $totalRegistros = count($result);
                 <th>Departamento</th>
                 <th>Empresa</th>
                 <th>Ubicación</th>
-                <th>Supervisor</th>
+                <th>JefeInmediato</th>
                 <th>Estatus</th>
                 <th>Vehículo</th>
                 <th>Email</th>
@@ -254,7 +254,7 @@ $totalRegistros = count($result);
                     <td><?php echo htmlspecialchars($empleado['Departamento'] ?? 'N/A'); ?></td>
                     <td><?php echo htmlspecialchars($empleado['Empresa'] ?? 'N/A'); ?></td>
                     <td><?php echo htmlspecialchars($empleado['Ubicacion'] ?? 'N/A'); ?></td>
-                    <td><?php echo htmlspecialchars($empleado['Supervisor'] ?? 'N/A'); ?></td>
+                    <td><?php echo htmlspecialchars($empleado['JefeInmediato'] ?? 'N/A'); ?></td>
                     <td class="<?php echo $empleado['Status'] == '1' ? 'status-active' : 'status-inactive'; ?>">
                         <?php echo $empleado['Status'] == '1' ? 'Activo' : 'Inactivo'; ?>
                     </td>

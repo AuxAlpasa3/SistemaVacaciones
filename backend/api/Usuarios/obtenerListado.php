@@ -1,12 +1,9 @@
 <?php
-
-// Definir encabezados
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: access");
 header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
 header("Content-Type: application/json; charset=UTF-8");
-
-// Conexión a base de datos
+ 
 include_once '../../db/Connection.php';
 
 $method = $_SERVER["REQUEST_METHOD"];

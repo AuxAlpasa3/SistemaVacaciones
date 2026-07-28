@@ -4,15 +4,38 @@ export interface CatalogoUsuario {
     EmpleadoID?: number;
     Descripcion?: string;
     TipoUsuario?: number;
-    Contrasenia?: string;
-    Estatus?: number;
+    TipoUsuarioNombre?: string;
+    Estatus?: string;
     rol?: number;
-    Sesion?: string;
-    UltimaSesion?: string;
-    CreateDate?: string;
+    RolUsuario?: string;
     Ubicacion?: number;
+    IdPersonal: number;
+    NoEmpleado: string;
+    NombreCompleto: string;
+    Cargo: number;
+    Departamento: number;
+    Empresa: number;
+    Status: string;
+    IdUbicacion: number;
+    NSS: string | null;
+    esJefeInmediato: number;
+    RutaFoto: string;
+    Email: string;
+    Contacto: string | null;
+    IdJefeInmediato: number | null;
+    TipoSangre: string | null;
+    FechaIngreso: string;
+    Alergias: string | null;
+    Turno: string | null;
+    FechadeNacimiento: string | null;
+    Direccion: string | null;
 }
 
+export interface UsuarioResponse {
+    success: boolean;
+    data?: CatalogoUsuario;
+    message?: string;
+}
 export interface UsuarioLogin {
     Usuario: string;
     Contrasenia?: string;

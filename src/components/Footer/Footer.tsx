@@ -5,7 +5,7 @@ import './Footer.css';
 export const Footer: React.FC = () => {
     return (
         <footer className="footer">
-            <p className='login-footer'>| Todos los derechos reservados - Módulo Vacaciones - Versión 1.0.0</p>
+            <p className='login-footer'>| Todos los derechos reservados - Sistema RH - Versión 1.0.0</p>
         </footer>
     );
 };
