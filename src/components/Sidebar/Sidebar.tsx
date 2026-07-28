@@ -27,7 +27,6 @@ import {
     filtrarMenuPorRol, 
     normalizarRolId, 
     MENU_CONFIG,
-    obtenerNombreRol,
     type MenuSection 
 } from '../../constants/rolesPermissions';
 
@@ -180,9 +179,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 nombre: usuario.Usuario,
                 idRol: usuario.rol,
                 tipoIdRol: typeof usuario.rol,
-                rolNombre: usuario.rol || obtenerNombreRol(rolIdNormalizado),
+                rolNombre: usuario.RolUsuario ,
                 idRolNormalizado: rolIdNormalizado,
-                nombreRol: obtenerNombreRol(rolIdNormalizado)
+                nombreRol: usuario.RolUsuario,
             });
         }
         
@@ -212,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         if (menuSections.length === 0) {
             const rolIdNormalizado = normalizarRolId(usuarioSesion.rol);
-            const rolNombre = usuarioSesion.rol || obtenerNombreRol(rolIdNormalizado);
+            const rolNombre = usuarioSesion.RolUsuario  ;
             
             return (
                 <div className="nav-message">
@@ -275,33 +274,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const getAvatarColor = () => {
         const rolId = normalizarRolId(usuarioSesion?.rol);
         switch (rolId) {
-            case 1: return '#ff6b6b';  
+            case 1: return '#00c3ff';  
             case 2: return '#4ecdc4';  
-            case 4: return '#96ceb4';   
+            case 3: return '#96ceb4';
             default: return '#a8e6cf';
         }
     };
 
-    const getRolInfo = () => {
-        if (!usuarioSesion?.rol) {
-            return { nombre: 'Sin rol', id: 'N/A', idNormalizado: null };
-        }
-        
-        const rolIdNormalizado = normalizarRolId(usuarioSesion.rol);
-        const rolNombre = usuarioSesion.rol || obtenerNombreRol(rolIdNormalizado);
-        
-        return {
-            nombre: (rolNombre == 1 ? 'ADMINISTRADOR' :
-                     rolNombre == 2 ? 'RECURSOS HUMANOS' :
-                     rolNombre == 4 ? 'JEFE_INMEDIATO' :
-                     rolNombre == 5 ? 'OPERADOR' :
-                     'Sin rol'),
-            id: usuarioSesion.rol,
-            idNormalizado: rolIdNormalizado
-        };
-    };
-
-    const rolInfo = getRolInfo();
+    
 
     return (
         <>
@@ -348,7 +328,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         <p>{usuarioSesion?.Descripcion || 'Cargando...'}</p>
                         <div className="user-role">
                             <span className="role-badge">
-                                {rolInfo.nombre}
+                                {usuarioSesion?.RolUsuario || 'Sin rol'}
                             </span>
                         </div>
                     </div>

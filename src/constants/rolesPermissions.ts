@@ -90,25 +90,14 @@ export const MENU_CONFIG: MenuSection[] = [
     }
 ];
 
-// Función para obtener el nombre del rol
-export const obtenerNombreRol = (rolId: number | null): string => {
-    switch (rolId) {
-        case 1: return 'Administrador';
-        case 2: return 'Recursos Humanos';
-        case 3: return 'Jefe Inmediato';
-        default: return 'Sin rol';
-    }
-};
+ 
 
 export const normalizarRolId = (rolId: number | string | undefined | null): number | null => {
     if (rolId === undefined || rolId === null) return null;
-    
-    // Si es número, devolver directamente
+     
     if (typeof rolId === 'number') return rolId;
-    
-    // Si es string, intentar convertir
-    if (typeof rolId === 'string') {
-        // Limpiar el string (remover espacios, etc.)
+     
+    if (typeof rolId === 'string') { 
         const cleaned = rolId.trim();
         const numero = parseInt(cleaned, 10);
         return isNaN(numero) ? null : numero;

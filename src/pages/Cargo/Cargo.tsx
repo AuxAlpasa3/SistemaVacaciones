@@ -2,15 +2,12 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Plus, X, FileText, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
-import './Cargo.css';
-// INTERFACES
+import './Cargo.css'; 
 import type { InterfaceCargo } from '../../interfaces/Cargo';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
-import type { CatalogoUsuario} from '../../interfaces/Usuario';
-// HELPERS
+import type { CatalogoUsuario} from '../../interfaces/Usuario'; 
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
-import { showToast } from '../../helpers/toast';
-// API
+import { showToast } from '../../helpers/toast'; 
 import { apiService } from '../../api/apiService';
 
  

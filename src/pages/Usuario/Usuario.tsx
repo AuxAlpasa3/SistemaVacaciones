@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Plus, X, FileText, Edit, Trash2, MoreVertical, Lock, Eye, EyeOff, Filter, ChevronDown, FileDown, Printer, Download, RefreshCw, Search } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { Plus, X, FileText, Edit, Trash2, MoreVertical, Lock, Eye, EyeOff, Filter, ChevronDown } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
 import { SelectConBusqueda } from '../../components/Select/SelectConBusqueda';
@@ -30,19 +30,19 @@ interface InterfacePersonal {
     IdPersonal: string;
     NoEmpleado: string;
     NombreCompleto: string;
-    Nombre?: string;
-    ApPaterno?: string;
-    ApMaterno?: string;
 }
 
-// Modal para cambio de contraseña (mantener igual)
+interface InterfaceEstatus {
+    IdEstatus: string;
+    Estatus: string;
+}
+
 const CambioContraseniaModal: React.FC<{
     usuario: CatalogoUsuario | null;
     onClose: () => void;
     onSubmit: (data: { nuevaContrasenia: string; confirmarContrasenia: string }) => void;
     loading: boolean;
 }> = ({ usuario, onClose, onSubmit, loading }) => {
-    // ... (código del modal sin cambios)
     const [formData, setFormData] = useState({
         nuevaContrasenia: '',
         confirmarContrasenia: ''
@@ -103,7 +103,7 @@ const CambioContraseniaModal: React.FC<{
                         <X size={20} />
                     </button>
                 </div>
-                
+
                 <div className="modal-body">
                     <form onSubmit={handleSubmit}>
                         <div className="form-group" style={{ marginBottom: '20px' }}>
@@ -216,7 +216,6 @@ const CambioContraseniaModal: React.FC<{
     );
 };
 
-// Componente de botones de acción memoizado
 const MemoizedActionButtons = React.memo(({
     row,
     openActionDropdown,
@@ -225,12 +224,12 @@ const MemoizedActionButtons = React.memo(({
     onDelete,
     onCambiarContrasenia
 }: {
-    row: any,
-    openActionDropdown: string | null,
-    setOpenActionDropdown: (IdUsuario: string | null) => void,
-    onEdit: (row: any) => void,
-    onDelete: (row: any) => void,
-    onCambiarContrasenia: (row: any) => void,
+    row: CatalogoUsuario;
+    openActionDropdown: number | null;
+    setOpenActionDropdown: (id: number | null) => void;
+    onEdit: (row: CatalogoUsuario) => void;
+    onDelete: (row: CatalogoUsuario) => void;
+    onCambiarContrasenia: (row: CatalogoUsuario) => void;
 }) => (
     <div className="actions-dropdown-container">
         <button
@@ -241,7 +240,7 @@ const MemoizedActionButtons = React.memo(({
             <MoreVertical size={16} color='black' />
         </button>
 
-        {openActionDropdown === row?.IdUsuario && (
+        {openActionDropdown === row.IdUsuario && (
             <div className="actions-dropdown-menu">
                 <button className="actions-dropdown-item edit-action" onClick={() => { onEdit(row); setOpenActionDropdown(null); }}>
                     <Edit size={14} />
@@ -275,9 +274,29 @@ export const Usuario: React.FC = () => {
         Sesion: '',
         UltimaSesion: '',
         CreateDate: '',
-        Ubicacion: 0
+        Ubicacion: 0,
+        IdPersonal: 0,
+        NoEmpleado: '',
+        NombreCompleto: '',
+        Cargo: 0,
+        Departamento: 0,
+        Empresa: 0,
+        Status: '',
+        IdUbicacion: 0,
+        NSS: null,
+        esJefeInmediato: 0,
+        RutaFoto: '',
+        Email: '',
+        Contacto: null,
+        IdJefeInmediato: null,
+        TipoSangre: null,
+        FechaIngreso: '',
+        Alergias: null,
+        Turno: null,
+        FechadeNacimiento: null,
+        Direccion: null
     });
-    
+
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [usuarios, setUsuarios] = useState<CatalogoUsuario[]>([]);
     const [usuariosFiltrados, setUsuariosFiltrados] = useState<CatalogoUsuario[]>([]);
@@ -288,10 +307,9 @@ export const Usuario: React.FC = () => {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [selectedUsuario, setSelectedUsuario] = useState<CatalogoUsuario | null>(null);
     const [changingPassword, setChangingPassword] = useState(false);
-    const [openActionDropdown, setOpenActionDropdown] = useState<string | null>(null);
+    const [openActionDropdown, setOpenActionDropdown] = useState<number | null>(null);
     const [showFiltrosAvanzados, setShowFiltrosAvanzados] = useState(false);
-    
-    // Estados para los catálogos
+
     const [tiposUsuario, setTiposUsuario] = useState<OpcionSelect[]>([]);
     const [roles, setRoles] = useState<OpcionSelect[]>([]);
     const [personal, setPersonal] = useState<OpcionSelect[]>([]);
@@ -323,11 +341,13 @@ export const Usuario: React.FC = () => {
     const cargarTiposUsuario = useCallback(async () => {
         try {
             const response = await apiService.get<RespuestaAPI>('Usuarios/Catalogos/ObtenerTipoUsuario.php');
+            if (response.status && response.data) {
                 const tiposData = Array.isArray(response.data) ? response.data : [];
-                setTiposUsuario(tiposData.map((t: InterfaceTipoUsuario) => ({ 
-                    id: t.IdTipoUsuario.toString(), 
-                    valor: t.TipoUsuario 
+                setTiposUsuario(tiposData.map((t: InterfaceTipoUsuario) => ({
+                    id: t.IdTipoUsuario.toString(),
+                    valor: t.TipoUsuario
                 })));
+            }
         } catch (error) {
             console.error('Error cargando tipos de usuario:', error);
         }
@@ -336,11 +356,13 @@ export const Usuario: React.FC = () => {
     const cargarRoles = useCallback(async () => {
         try {
             const response = await apiService.get<RespuestaAPI>('Usuarios/Catalogos/ObtenerRoles.php');
+            if (response.status && response.data) {
                 const rolesData = Array.isArray(response.data) ? response.data : [];
-                setRoles(rolesData.map((r: InterfaceRol) => ({ 
-                    id: r.IdRolUsuario.toString(), 
-                    valor: r.RolUsuario 
+                setRoles(rolesData.map((r: InterfaceRol) => ({
+                    id: r.IdRolUsuario.toString(),
+                    valor: r.RolUsuario
                 })));
+            }
         } catch (error) {
             console.error('Error cargando roles:', error);
         }
@@ -349,25 +371,26 @@ export const Usuario: React.FC = () => {
     const cargarUbicaciones = useCallback(async () => {
         try {
             const response = await apiService.get<RespuestaAPI>('Usuarios/Catalogos/ObtenerUbicaciones.php');
-             const ubicacionesData = Array.isArray(response.data) ? response.data : [];
-                setUbicaciones(ubicacionesData.map((u: InterfaceUbicacion) => ({ 
-                    id: u.IdUbicacion.toString(), 
-                    valor: u.NomCorto 
+            if (response.status && response.data) {
+                const ubicacionesData = Array.isArray(response.data) ? response.data : [];
+                setUbicaciones(ubicacionesData.map((u: InterfaceUbicacion) => ({
+                    id: u.IdUbicacion.toString(),
+                    valor: u.NomCorto
                 })));
+            }
         } catch (error) {
             console.error('Error cargando ubicaciones:', error);
         }
     }, []);
 
-    // Cargar catálogo de personal
     const cargarPersonal = useCallback(async () => {
         try {
             const response = await apiService.get<RespuestaAPI>('/personal/Catalogo.php');
             if (response.status && response.data) {
                 const personalData = Array.isArray(response.data) ? response.data : [];
-                setPersonal(personalData.map((p: InterfacePersonal) => ({ 
-                    id: p.IdPersonal.toString(), 
-                    valor: `${p.NoEmpleado} - ${p.NombreCompleto}` 
+                setPersonal(personalData.map((p: InterfacePersonal) => ({
+                    id: p.IdPersonal.toString(),
+                    valor: `${p.NoEmpleado} - ${p.NombreCompleto}`
                 })));
             }
         } catch (error) {
@@ -380,14 +403,13 @@ export const Usuario: React.FC = () => {
             const response = await apiService.get<RespuestaAPI>('Usuarios/Catalogos/ObtenerEstatus.php');
             if (response.status && response.data) {
                 const estatusData = Array.isArray(response.data) ? response.data : [];
-                setEstatus(estatusData.map((e: any) => ({ 
-                    id: e.IdEstatus?.toString() || e.IdEstatusUsuario?.toString(), 
-                    valor: e.Estatus || e.EstatusUsuario 
+                setEstatus(estatusData.map((e: InterfaceEstatus) => ({
+                    id: e.IdEstatus.toString(),
+                    valor: e.Estatus
                 })));
             }
         } catch (error) {
             console.error('Error cargando estatus:', error);
-            // Fallback: estatus fijos
             setEstatus([
                 { id: '1', valor: 'Activo' },
                 { id: '0', valor: 'Inactivo' }
@@ -395,7 +417,6 @@ export const Usuario: React.FC = () => {
         }
     }, []);
 
-    // Cargar todos los catálogos
     const cargarOpcionesCatalogos = useCallback(async () => {
         try {
             setLoadingOptions(true);
@@ -418,12 +439,11 @@ export const Usuario: React.FC = () => {
         }
     }, [cargarTiposUsuario, cargarRoles, cargarUbicaciones, cargarPersonal, cargarEstatus]);
 
-    // Obtener lista de usuarios
     const fetchUsuarios = useCallback(async () => {
         try {
             setLoading(true);
             const response = await apiService.get<RespuestaAPI>('/Usuarios/ObtenerListado.php');
-            
+
             if (response.status && response.data) {
                 const usuariosData = Array.isArray(response.data) ? response.data : [];
                 setUsuarios(usuariosData);
@@ -450,12 +470,11 @@ export const Usuario: React.FC = () => {
         }
     }, []);
 
-    // Aplicar filtros
     const aplicarFiltros = useCallback(() => {
         let filtrados = [...usuarios];
 
         if (filtros.Usuario) {
-            filtrados = filtrados.filter(u => 
+            filtrados = filtrados.filter(u =>
                 u.Usuario.toLowerCase().includes(filtros.Usuario.toLowerCase())
             );
         }
@@ -481,13 +500,13 @@ export const Usuario: React.FC = () => {
         }
 
         if (filtros.FechaCreacionInicio) {
-            filtrados = filtrados.filter(u => 
+            filtrados = filtrados.filter(u =>
                 u.CreateDate && u.CreateDate >= filtros.FechaCreacionInicio
             );
         }
-        
+
         if (filtros.FechaCreacionFin) {
-            filtrados = filtrados.filter(u => 
+            filtrados = filtrados.filter(u =>
                 u.CreateDate && u.CreateDate <= filtros.FechaCreacionFin
             );
         }
@@ -495,7 +514,6 @@ export const Usuario: React.FC = () => {
         setUsuariosFiltrados(filtrados);
     }, [usuarios, filtros]);
 
-    // Manejar cambios en filtros
     const handleFiltroChange = (campo: keyof FiltrosUsuario, valor: string) => {
         setFiltros(prev => ({
             ...prev,
@@ -503,7 +521,6 @@ export const Usuario: React.FC = () => {
         }));
     };
 
-    // Limpiar filtros
     const limpiarFiltros = () => {
         setFiltros({
             Usuario: '',
@@ -518,7 +535,6 @@ export const Usuario: React.FC = () => {
         setUsuariosFiltrados(usuarios);
     };
 
-    // Obtener texto por ID para catálogos
     const obtenerTextoPorId = useCallback((value: string | number | undefined, opciones: OpcionSelect[]): string => {
         if (!value || value === 0 || value === '0' || value === '') {
             return 'N/A';
@@ -527,7 +543,6 @@ export const Usuario: React.FC = () => {
         return opcion ? opcion.valor : value.toString();
     }, []);
 
-    // Obtener texto para personal
     const obtenerTextoPersonal = useCallback((value: string | number | undefined): string => {
         if (!value || value === 0 || value === '0' || value === '') {
             return 'N/A';
@@ -536,13 +551,11 @@ export const Usuario: React.FC = () => {
         return empleado ? empleado.valor : value.toString();
     }, [personal]);
 
-    // Formatear fecha
     const formatDate = useCallback((date: string) => {
         if (!date) return '';
         return formatDateForServer(date);
     }, []);
 
-    // Columnas de la tabla
     const tableColumns: Column[] = useMemo(() => [
         {
             key: 'IdUsuario',
@@ -619,14 +632,16 @@ export const Usuario: React.FC = () => {
             width: '100px',
             align: 'center',
             headerAlign: 'center',
-            render: (value: string) => {
+            render: (value) => {
                 let statusText = '';
                 let statusClass = '';
                 switch (value) {
+                    case 1:
                     case '1':
                         statusText = 'Activo';
                         statusClass = 'status-active';
                         break;
+                    case 0:
                     case '0':
                         statusText = 'Inactivo';
                         statusClass = 'status-inactive';
@@ -691,7 +706,6 @@ export const Usuario: React.FC = () => {
         }));
     }, []);
 
-    // Manejar cambios en selects
     const handleSelectChange = useCallback((name: keyof CatalogoUsuario, value: string) => {
         setUsuarioForm(prev => ({
             ...prev,
@@ -699,39 +713,38 @@ export const Usuario: React.FC = () => {
         }));
     }, []);
 
-    // Enviar formulario
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!usuarioForm.Usuario) {
             showToast({ text: 'El nombre de usuario es requerido', type: 'error' });
             return;
         }
-        
+
         try {
             setSubmitting(true);
             const isUpdate = usuarioForm.IdUsuario !== 0;
-            
+
             const dataToSend = {
                 ...usuarioForm,
                 UsuarioCreacion: usuarioSesion?.IdUsuario
             };
-            
+
             let response: RespuestaAPI;
-            
+
             if (isUpdate) {
-                response = await apiService.put<RespuestaAPI>(`/Usuarios/Crud.php?IdUsuario=${usuarioSesion?.IdUsuario}`, dataToSend);
+                response = await apiService.put<RespuestaAPI>(`/Usuarios/Crud.php`, dataToSend);
             } else {
-                response = await apiService.post<RespuestaAPI>(`/Usuarios/Crud.php?IdUsuario=${usuarioSesion?.IdUsuario}`, dataToSend);
+                response = await apiService.post<RespuestaAPI>(`/Usuarios/Crud.php`, dataToSend);
             }
-            
+
             if (response.status) {
                 showToast({
                     text: response.message || (isUpdate ? 'Usuario actualizado correctamente' : 'Usuario guardado correctamente'),
                     type: 'success',
                     autoClose: 1500
                 });
-                
+
                 setShowForm(false);
                 resetForm();
                 setTipoFormulario('Agregar');
@@ -755,7 +768,6 @@ export const Usuario: React.FC = () => {
         }
     }, [usuarioForm, fetchUsuarios, usuarioSesion]);
 
-    // Cambiar contraseña
     const handleCambiarContrasenia = useCallback(async (data: { nuevaContrasenia: string; confirmarContrasenia: string }) => {
         if (!selectedUsuario) return;
 
@@ -764,10 +776,10 @@ export const Usuario: React.FC = () => {
 
             const response = await apiService.put<RespuestaAPI>(
                 `/Usuarios/CambiarContrasenia.php`,
-                { 
+                {
                     IdUsuario: selectedUsuario.IdUsuario,
                     IdUsuarioSesion: usuarioSesion?.IdUsuario,
-                    Contrasenia: data.nuevaContrasenia 
+                    Contrasenia: data.nuevaContrasenia
                 }
             );
 
@@ -792,14 +804,12 @@ export const Usuario: React.FC = () => {
         }
     }, [selectedUsuario, usuarioSesion]);
 
-    // Editar usuario
     const handleEditUsuario = useCallback((usuario: CatalogoUsuario) => {
         setTipoFormulario('Modificar');
         setUsuarioForm({ ...usuario });
         setShowForm(true);
     }, []);
 
-    // Eliminar usuario
     const handleDeleteUsuario = useCallback(async (usuario: CatalogoUsuario) => {
         if (window.confirm('¿Está seguro de que desea eliminar este usuario?')) {
             try {
@@ -831,13 +841,11 @@ export const Usuario: React.FC = () => {
         }
     }, [fetchUsuarios, usuarioSesion]);
 
-    // Abrir modal de cambio de contraseña
     const handleOpenPasswordModal = useCallback((usuario: CatalogoUsuario) => {
         setSelectedUsuario(usuario);
         setShowPasswordModal(true);
     }, []);
 
-    // Resetear formulario
     const resetForm = useCallback(() => {
         setUsuarioForm({
             IdUsuario: 0,
@@ -851,19 +859,37 @@ export const Usuario: React.FC = () => {
             Sesion: '',
             UltimaSesion: '',
             CreateDate: '',
-            Ubicacion: 0
+            Ubicacion: 0,
+            IdPersonal: 0,
+            NoEmpleado: '',
+            NombreCompleto: '',
+            Cargo: 0,
+            Departamento: 0,
+            Empresa: 0,
+            Status: '',
+            IdUbicacion: 0,
+            NSS: null,
+            esJefeInmediato: 0,
+            RutaFoto: '',
+            Email: '',
+            Contacto: null,
+            IdJefeInmediato: null,
+            TipoSangre: null,
+            FechaIngreso: '',
+            Alergias: null,
+            Turno: null,
+            FechadeNacimiento: null,
+            Direccion: null
         });
         setTipoFormulario('Agregar');
     }, []);
 
-    // Mostrar formulario
     const handleShowForm = useCallback(() => {
         resetForm();
         setShowForm(true);
         setTipoFormulario('Agregar');
     }, [resetForm]);
 
-    // Efectos
     useEffect(() => {
         aplicarFiltros();
     }, [aplicarFiltros]);
@@ -873,11 +899,11 @@ export const Usuario: React.FC = () => {
         cargarOpcionesCatalogos();
         const usuario = obtenerUsuarioSesion();
         setUsuarioSesion(usuario);
-    }, [fetchUsuarios, cargarOpcionesCatalogos]);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (openActionDropdown && !(event.target as HTMLElement).closest('.actions-dropdown-container')) {
+            if (openActionDropdown !== null && !(event.target as HTMLElement).closest('.actions-dropdown-container')) {
                 setOpenActionDropdown(null);
             }
         };
@@ -1049,7 +1075,6 @@ export const Usuario: React.FC = () => {
                 />
             </div>
 
-            {/* Modal de formulario */}
             {showForm && (
                 <div className="modal-overlay">
                     <div className="modal-container" style={{ width: '800px', maxWidth: '90vw' }}>
@@ -1205,7 +1230,6 @@ export const Usuario: React.FC = () => {
                 </div>
             )}
 
-            {/* Modal de cambio de contraseña */}
             {showPasswordModal && (
                 <CambioContraseniaModal
                     usuario={selectedUsuario}

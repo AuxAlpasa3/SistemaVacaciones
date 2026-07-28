@@ -5,7 +5,7 @@ export interface CatalogoUsuario {
     Descripcion?: string;
     TipoUsuario?: number;
     TipoUsuarioNombre?: string;
-    Estatus?: string;
+    Estatus?: number;
     rol?: number;
     RolUsuario?: string;
     Ubicacion?: number;
@@ -13,6 +13,9 @@ export interface CatalogoUsuario {
     NoEmpleado: string;
     NombreCompleto: string;
     Cargo: number;
+    Contrasenia?: string;
+    Sesion: string;
+    UltimaSesion: string;
     Departamento: number;
     Empresa: number;
     Status: string;
@@ -27,6 +30,7 @@ export interface CatalogoUsuario {
     FechaIngreso: string;
     Alergias: string | null;
     Turno: string | null;
+    CreateDate: string;
     FechadeNacimiento: string | null;
     Direccion: string | null;
 }

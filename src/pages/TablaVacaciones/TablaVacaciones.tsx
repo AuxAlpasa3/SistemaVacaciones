@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Plus, X, FileText, Edit, Trash2, Eye, MoreVertical } from 'lucide-react';
+import { Plus, X, FileText, Edit, Trash2, Eye, MoreVertical, Save } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
 import './tablaVacaciones.css';
@@ -73,15 +73,44 @@ const MemoizedActionButtons = React.memo(({
     </div>
 ));
 
-// Componente para el modal de detalle
+// Componente para el modal de detalle con edición
 const DetailModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
     tablaVacaciones: InterfacetablaVacaciones | null;
     detalles: InterfaceDetalletablaVacaciones[];
     loading: boolean;
-}> = ({ isOpen, onClose, tablaVacaciones, detalles, loading }) => {
+    onSaveDetails: (detalles: InterfaceDetalletablaVacaciones[]) => Promise<void>;
+    onAddDetail: () => void;
+    onRemoveDetail: (id: string) => void;
+    onUpdateDetail: (id: string, field: keyof InterfaceDetalletablaVacaciones, value: string) => void;
+    saving: boolean;
+}> = ({ 
+    isOpen, 
+    onClose, 
+    tablaVacaciones, 
+    detalles, 
+    loading, 
+    onSaveDetails,
+    onAddDetail,
+    onRemoveDetail,
+    onUpdateDetail,
+    saving
+}) => {
+    const [isEditing, setIsEditing] = useState(false);
+
     if (!isOpen) return null;
+
+    const handleSave = async () => {
+        await onSaveDetails(detalles);
+        setIsEditing(false);
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        // Recargar los detalles originales
+        onClose();
+    };
 
     return (
         <div className="detail-modal-overlay" onClick={onClose}>
@@ -117,22 +146,110 @@ const DetailModal: React.FC<{
                                 </div>
                             </div>
 
-                            {/* Tabla de detalles */}
+                            {/* Tabla de detalles con edición */}
                             <div className="detail-section">
-                                <h3>Detalles de Antigüedad y Días</h3>
+                                <div className="detail-header-actions">
+                                    <h3>Detalles de Antigüedad y Días</h3>
+                                    <div className="detail-actions">
+                                        {!isEditing ? (
+                                            <button 
+                                                className="btn btn-primary btn-sm"
+                                                onClick={() => setIsEditing(true)}
+                                            >
+                                                <Edit size={14} />
+                                                Editar detalles
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button 
+                                                    className="btn btn-success btn-sm"
+                                                    onClick={onAddDetail}
+                                                >
+                                                    <Plus size={14} />
+                                                    Agregar fila
+                                                </button>
+                                                <button 
+                                                    className="btn btn-primary btn-sm"
+                                                    onClick={handleSave}
+                                                    disabled={saving}
+                                                >
+                                                    <Save size={14} />
+                                                    {saving ? 'Guardando...' : 'Guardar cambios'}
+                                                </button>
+                                                <button 
+                                                    className="btn btn-secondary btn-sm"
+                                                    onClick={handleCancel}
+                                                    disabled={saving}
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                                
                                 {detalles.length > 0 ? (
                                     <table className="detail-table">
                                         <thead>
                                             <tr>
                                                 <th>Antigüedad</th>
                                                 <th>Días</th>
+                                                {isEditing && <th>Acciones</th>}
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {detalles.map((detalle) => (
                                                 <tr key={detalle.IdDetalleTablaVacaciones}>
-                                                    <td>{formatAntiguedad(detalle.Antiguedad)}</td>
-                                                    <td>{formatDias(detalle.Dias)}</td>
+                                                    <td>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="number"
+                                                                value={detalle.Antiguedad}
+                                                                onChange={(e) => onUpdateDetail(
+                                                                    detalle.IdDetalleTablaVacaciones,
+                                                                    'Antiguedad',
+                                                                    e.target.value
+                                                                )}
+                                                                className="detail-input"
+                                                                min="0"
+                                                                step="1"
+                                                                disabled={saving}
+                                                            />
+                                                        ) : (
+                                                            formatAntiguedad(detalle.Antiguedad)
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="number"
+                                                                value={detalle.Dias}
+                                                                onChange={(e) => onUpdateDetail(
+                                                                    detalle.IdDetalleTablaVacaciones,
+                                                                    'Dias',
+                                                                    e.target.value
+                                                                )}
+                                                                className="detail-input"
+                                                                min="0"
+                                                                step="1"
+                                                                disabled={saving}
+                                                            />
+                                                        ) : (
+                                                            formatDias(detalle.Dias)
+                                                        )}
+                                                    </td>
+                                                    {isEditing && (
+                                                        <td>
+                                                            <button
+                                                                className="btn btn-danger btn-sm"
+                                                                onClick={() => onRemoveDetail(detalle.IdDetalleTablaVacaciones)}
+                                                                disabled={saving || detalles.length <= 1}
+                                                                title={detalles.length <= 1 ? "Debe haber al menos un detalle" : "Eliminar"}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </td>
+                                                    )}
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -181,7 +298,13 @@ export const TablaVacaciones: React.FC = () => {
     const [selectedTablaVacaciones, setSelectedTablaVacaciones] = useState<InterfacetablaVacaciones | null>(null);
     const [detallesTabla, setDetallesTabla] = useState<InterfaceDetalletablaVacaciones[]>([]);
     const [loadingDetalles, setLoadingDetalles] = useState(false);
+    const [savingDetalles, setSavingDetalles] = useState(false);
     const [openActionDropdown, setOpenActionDropdown] = useState<string | null>(null);
+
+    // Generar ID temporal para nuevos detalles
+    const generateTempId = () => {
+        return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    };
 
     useEffect(() => {
         const fetchtablaVacacionesListado = async () => {
@@ -207,8 +330,7 @@ export const TablaVacaciones: React.FC = () => {
             showToast({ text: err?.data?.message || err.message, type: 'error' });
         }
     };
-
-    // Función para obtener los detalles de una tabla de vacaciones
+ 
     const obtenerDetallesTabla = useCallback(async (idTablaVacaciones: number) => {
         try {
             setLoadingDetalles(true);
@@ -234,6 +356,100 @@ export const TablaVacaciones: React.FC = () => {
             setLoadingDetalles(false);
         }
     }, []);
+
+    const handleAddDetail = useCallback(() => {
+        const newDetail: InterfaceDetalletablaVacaciones = {
+            IdDetalleTablaVacaciones: generateTempId(),
+            IdTablaVacaciones: String(selectedTablaVacaciones?.IdTablaVacaciones || ''),
+            Antiguedad: '0',
+            Dias: '0'
+        };
+        setDetallesTabla(prev => [...prev, newDetail]);
+    }, [selectedTablaVacaciones]);
+
+    const handleRemoveDetail = useCallback((id: string) => {
+        setDetallesTabla(prev => {
+            if (prev.length <= 1) {
+                showToast({
+                    text: 'Debe haber al menos un detalle',
+                    type: 'warning',
+                    autoClose: 1500
+                });
+                return prev;
+            }
+            return prev.filter(d => d.IdDetalleTablaVacaciones !== id);
+        });
+    }, []);
+
+    const handleUpdateDetail = useCallback((id: string, field: keyof InterfaceDetalletablaVacaciones, value: string) => {
+        setDetallesTabla(prev => 
+            prev.map(d => 
+                d.IdDetalleTablaVacaciones === id 
+                    ? { ...d, [field]: value }
+                    : d
+            )
+        );
+    }, []);
+
+    const handleSaveDetails = useCallback(async (detalles: InterfaceDetalletablaVacaciones[]) => {
+        if (!selectedTablaVacaciones) return;
+
+        try {
+            setSavingDetalles(true);
+            
+            // Validar que los datos sean correctos
+            const invalidDetails = detalles.some(d => 
+                parseInt(String(d.Antiguedad)) < 0 || 
+                parseInt(String(d.Dias)) < 0
+            );
+            
+            if (invalidDetails) {
+                showToast({
+                    text: 'Los valores de antigüedad y días no pueden ser negativos',
+                    type: 'error',
+                    autoClose: 1500
+                });
+                return;
+            }
+
+            const payload = {
+                IdTablaVacaciones: selectedTablaVacaciones.IdTablaVacaciones,
+                Detalles: detalles.map(d => ({
+                    ...d,
+                    Antiguedad: parseInt(String(d.Antiguedad)),
+                    Dias: parseInt(String(d.Dias))
+                }))
+            };
+
+            const response = await apiService.put<RespuestaAPI>(
+                `/tablaVacaciones/actualizarDetalles.php?IdUsuario=${usuarioSesion?.IdUsuario}`,
+                payload
+            );
+
+            if (response.status) {
+                showToast({
+                    text: 'Detalles guardados correctamente',
+                    type: 'success',
+                    autoClose: 1500
+                }); 
+                await obtenerDetallesTabla(selectedTablaVacaciones.IdTablaVacaciones);
+            } else {
+                showToast({
+                    text: response.message || 'Error al guardar los detalles',
+                    type: 'error',
+                    autoClose: 1500
+                });
+            }
+        } catch (error) {
+            showToast({
+                text: 'Error al guardar los detalles',
+                type: 'error',
+                autoClose: 1500
+            });
+        } finally {
+            setSavingDetalles(false);
+        }
+    }, [selectedTablaVacaciones, usuarioSesion, obtenerDetallesTabla]);
 
     const handleViewDetail = useCallback(async (tablaVacaciones: InterfacetablaVacaciones) => {
         setSelectedTablaVacaciones(tablaVacaciones);
@@ -545,8 +761,7 @@ export const TablaVacaciones: React.FC = () => {
                     </div>
                 </div>
             )}
-
-            {/* Modal de Detalle */}
+ 
             <DetailModal
                 isOpen={showDetailModal}
                 onClose={() => {
@@ -557,6 +772,11 @@ export const TablaVacaciones: React.FC = () => {
                 tablaVacaciones={selectedTablaVacaciones}
                 detalles={detallesTabla}
                 loading={loadingDetalles}
+                saving={savingDetalles}
+                onSaveDetails={handleSaveDetails}
+                onAddDetail={handleAddDetail}
+                onRemoveDetail={handleRemoveDetail}
+                onUpdateDetail={handleUpdateDetail}
             />
         </div>
     );
