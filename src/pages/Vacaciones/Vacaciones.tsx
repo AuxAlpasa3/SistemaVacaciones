@@ -589,13 +589,7 @@ export const Vacaciones: React.FC = () => {
             setAdvertenciaRetornoDomingo('');
         }
     }, [vacacionesForm.FechaRetornoLabores, vacacionesForm.Departamento]);
-
-    const esSabado = useCallback((fecha: string) => {
-        if (!fecha) return false;
-        const date = new Date(fecha + 'T00:00:00');
-        return date.getDay() === 6;
-    }, []);
-
+ 
     const contarDiasHabiles = useCallback((fechaInicio: string, fechaFin: string, excluirDomingos: boolean) => {
         if (!fechaInicio || !fechaFin) return 0;
         
@@ -729,7 +723,7 @@ export const Vacaciones: React.FC = () => {
             const departamentoUsuario = usuario?.Departamento?.toString() || '';
             const esAdministracion = departamentoUsuario === '1' || departamentoUsuario === 'Administración';
              
-            let url = `/vacaciones/opciones/ObtenerEmpleados.php?idusuario=${usuarioSesion?.IdUsuario}`;
+            let url = `/vacaciones/opciones/ObtenerEmpleados.php?IdUsuario=${usuarioSesion?.IdUsuario}`;
              
             if (esAdministracion) {
                 url += `&departamento=1&soloAsignados=true`;
@@ -1541,6 +1535,10 @@ export const Vacaciones: React.FC = () => {
                 estatusInicial = 1;
             }
             
+            const usuarioSolicitaId = usuarioSesion?.IdUsuario?.toString() || '';
+            const usuarioAutorizaId = usuarioSesion?.IdUsuario?.toString() || '';
+            const esMismoUsuario = usuarioSolicitaId === usuarioAutorizaId;
+            
             let datosNormalizados: any = {
                 ...vacacionesForm,
                 IdPersonal: vacacionesForm.IdPersonal,
@@ -1552,10 +1550,6 @@ export const Vacaciones: React.FC = () => {
                 Antiguedad: vacacionesForm.Antiguedad || 0,
                 NoContarDomingos: noContarDomingos ? 1 : 0
             };
-            
-            const usuarioSolicitaId = vacacionesForm.IdPersonal?.toString() || '';
-            const usuarioAutorizaId = usuarioSesion?.IdUsuario?.toString() || '';
-            const esMismoUsuario = usuarioSolicitaId === usuarioAutorizaId;
             
             if (!esActualizacion) {
                 const fechaSolicitudSeleccionada = vacacionesForm.FechaSolicitud || new Date().toISOString().split('T')[0];

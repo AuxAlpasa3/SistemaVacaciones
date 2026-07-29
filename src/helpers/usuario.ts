@@ -22,7 +22,7 @@ export function obtenerUsuarioSesion(): CatalogoUsuario | null {
         else if (typeof tokenData === 'string') {
             tokenString = tokenData;
         }
-        // Si tokenData tiene la propiedad usr directamente
+        // Si tokenData tiene la propiedad usr directamente 
         else if (tokenData?.usr) {
             tokenString = tokenData.usr;
         }
@@ -124,7 +124,10 @@ function mapearUsuario(data: any): CatalogoUsuario | null {
             Alergias: data.Alergias || data.alergias || null,
             Turno: data.Turno || data.turno || null,
             FechadeNacimiento: data.FechadeNacimiento || data.fechadeNacimiento || data.nacimiento || null,
-            Direccion: data.Direccion || data.direccion || null
+            Direccion: data.Direccion || data.direccion || null,
+            Sesion: "",
+            UltimaSesion: "",
+            CreateDate: ""
         };
 
         return usuario;
