@@ -715,51 +715,154 @@ export const Vacaciones: React.FC = () => {
         }, 50);
     }, [diasDisponiblesPeriodo, esDomingo, calcularFechaFin, calcularFechaRetorno, contarDiasHabiles, verificarRetornoDomingo]);
 
-    const cargarOpcionesCatalogos = useCallback(async () => {
-        try {
-            setLoadingOptions(true);
-             
-            const usuario = usuarioSesion;
-            const departamentoUsuario = usuario?.Departamento?.toString() || '';
-            const esAdministracion = departamentoUsuario === '1' || departamentoUsuario === 'Administración';
-             
-            let url = `/vacaciones/opciones/ObtenerEmpleados.php?IdUsuario=${usuarioSesion?.IdUsuario}`;
-             
-            if (esAdministracion) {
-                url += `&departamento=1&soloAsignados=true`;
-            }
-            
-            const [empleadosResponse, departamentosResponse] = await Promise.all([
-                apiService.get<RespuestaAPI>(url),
-                apiService.get<RespuestaAPI>('/vacaciones/opciones/ObtenerDepartamentos.php')
-            ]);
+    const cargarOpcionesCatalogos = useCallback(
+        async (usuario: CatalogoUsuario | null) => {
+            try {
+                setLoadingOptions(true);
 
-            if (empleadosResponse.status && empleadosResponse.data) {
-                const empleadosData = Array.isArray(empleadosResponse.data) ? empleadosResponse.data : [];
-                setEmpleados(empleadosData.map((e: any) => ({ 
-                    id: e.NoEmpleado?.toString() || e.id?.toString() || '', 
-                    valor: e.NombreCompleto || e.valor || '' 
-                })));
-            }
+                if (!usuario?.IdUsuario) {
+                    setEmpleados([]);
+                    setDepartamentos([]);
+                    return;
+                }
 
-            if (departamentosResponse.status && departamentosResponse.data) {
-                const departamentosData = Array.isArray(departamentosResponse.data) ? departamentosResponse.data : [];
-                setDepartamentos(departamentosData.map((d: any) => ({ 
-                    id: d.Departamento?.toString() || d.id?.toString() || '', 
-                    valor: d.Departamento || d.valor || '' 
-                })));
+                const departamentoUsuario = String(
+                    usuario.Departamento ?? ''
+                )
+                    .trim()
+                    .toLowerCase();
+
+                const tipoUsuario = Number(
+                    (usuario as any).TipoUsuario ??
+                    (usuario as any).tipoUsuario ??
+                    0
+                );
+
+                const rolUsuario = Number(
+                    (usuario as any).Rol ??
+                    usuario.rol ??
+                    0
+                );
+
+                const esAdministracion =
+                    departamentoUsuario === '1' ||
+                    departamentoUsuario === 'administración' ||
+                    departamentoUsuario === 'administracion';
+
+                const puedeVerTodosEmpleados =
+                    tipoUsuario === 1 &&
+                    rolUsuario === 2;
+
+                const params = new URLSearchParams();
+
+                params.append(
+                    'IdUsuario',
+                    usuario.IdUsuario.toString()
+                );
+
+                params.append(
+                    'TipoUsuario',
+                    tipoUsuario.toString()
+                );
+
+                params.append(
+                    'Rol',
+                    rolUsuario.toString()
+                );
+
+                if (puedeVerTodosEmpleados) {
+                    params.append('todosEmpleados', 'true');
+                } else if (esAdministracion) {
+                    params.append('departamento', '1');
+                    params.append('soloAsignados', 'true');
+                }
+
+                const url =
+                    `/vacaciones/opciones/ObtenerEmpleados.php?${params.toString()}`;
+
+                const [
+                    empleadosResponse,
+                    departamentosResponse
+                ] = await Promise.all([
+                    apiService.get<RespuestaAPI>(url),
+                    apiService.get<RespuestaAPI>(
+                        '/vacaciones/opciones/ObtenerDepartamentos.php'
+                    )
+                ]);
+
+                if (
+                    empleadosResponse.status &&
+                    empleadosResponse.data
+                ) {
+                    const empleadosData = Array.isArray(
+                        empleadosResponse.data
+                    )
+                        ? empleadosResponse.data
+                        : [];
+
+                    setEmpleados(
+                        empleadosData.map((empleado: any) => ({
+                            id:
+                                empleado.NoEmpleado?.toString() ||
+                                empleado.id?.toString() ||
+                                '',
+                            valor:
+                                empleado.NombreCompleto ||
+                                empleado.valor ||
+                                ''
+                        }))
+                    );
+                } else {
+                    setEmpleados([]);
+                }
+
+                if (
+                    departamentosResponse.status &&
+                    departamentosResponse.data
+                ) {
+                    const departamentosData = Array.isArray(
+                        departamentosResponse.data
+                    )
+                        ? departamentosResponse.data
+                        : [];
+
+                    setDepartamentos(
+                        departamentosData.map(
+                            (departamento: any) => ({
+                                id:
+                                    departamento.Departamento?.toString() ||
+                                    departamento.id?.toString() ||
+                                    '',
+                                valor:
+                                    departamento.Departamento ||
+                                    departamento.valor ||
+                                    ''
+                            })
+                        )
+                    );
+                } else {
+                    setDepartamentos([]);
+                }
+            } catch (error) {
+                console.error(
+                    'Error cargando opciones:',
+                    error
+                );
+
+                setEmpleados([]);
+                setDepartamentos([]);
+
+                showToast({
+                    text: 'Error al cargar opciones',
+                    type: 'error',
+                    autoClose: 1500
+                });
+            } finally {
+                setLoadingOptions(false);
             }
-        } catch (error) {
-            console.error('Error cargando opciones:', error);
-            showToast({
-                text: 'Error al cargar opciones',
-                type: 'error',
-                autoClose: 1500
-            });
-        } finally {
-            setLoadingOptions(false);
-        }
-    }, [usuarioSesion]);
+        },
+        []
+    );
 
     const cargarPeriodosVacaciones = useCallback(async (idPersonal: number, anioSeleccionado?: number) => {
         if (!idPersonal || idPersonal === 0) {
@@ -2032,11 +2135,19 @@ export const Vacaciones: React.FC = () => {
     };
 
     useEffect(() => {
-        const usuario = obtenerUsuarioSesion();
-        setUsuarioSesion(usuario);
-        cargarOpcionesCatalogos();
-        fetchVacaciones();
-    }, []);
+    const usuario = obtenerUsuarioSesion();
+
+    setUsuarioSesion(usuario);
+
+    if (usuario) {
+        cargarOpcionesCatalogos(usuario);
+    } else {
+        setEmpleados([]);
+        setDepartamentos([]);
+    }
+
+    fetchVacaciones();
+}, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

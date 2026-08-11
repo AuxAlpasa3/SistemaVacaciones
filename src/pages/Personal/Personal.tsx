@@ -2141,11 +2141,10 @@ export const Personal: React.FC = () => {
                 onClose={() => {
                     setVacacionesModalVisible(false);
                     setPersonalVacaciones(null);
-                }}
+                } }
                 idPersonal={personalVacaciones?.id || 0}
                 nombrePersonal={personalVacaciones?.nombre || ''}
-                noEmpleado={personalVacaciones?.noEmpleado || 0}
-            />
+                noEmpleado={personalVacaciones?.noEmpleado || 0} usuarioId={usuarioSesion?.IdUsuario || 0}            />
 
             <CambioEstatusModal
                 visible={cambioEstatusModalVisible}

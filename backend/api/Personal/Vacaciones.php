@@ -70,7 +70,8 @@ try {
                             'DiasDisfrutados' => isset($row['DiasTomados']) ? intval($row['DiasTomados']) : 0,
                             'DiasRestantes' => isset($row['DiasRestantes']) ? intval($row['DiasRestantes']) : 0,
                             'DiasDisponibles' => isset($row['DiasDisponibles']) ? intval($row['DiasDisponibles']) : 0,
-                            'DiasVencidos' => isset($row['DiasVencidos']) ? intval($row['DiasVencidos']) : 0
+                            'DiasVencidos' => isset($row['DiasVencidos']) ? intval($row['DiasVencidos']) : 0,
+                                 'FechaInicioPeriodo' => isset($row['FechaInicioPeriodo']) ? $row['FechaInicioPeriodo'] : null
                         ];
                     }
                 }
