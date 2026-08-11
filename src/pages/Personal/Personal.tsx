@@ -331,19 +331,29 @@ const DatePickerInput: React.FC<{
 }> = ({ value, onChange, placeholder = "dd/mm/aaaa" }) => {
     const [showCalendar, setShowCalendar] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [inputValue, setInputValue] = useState(value);
+    const [inputValue, setInputValue] = useState('');
 
     useEffect(() => {
         if (value) {
-            const parts = value.split('-');
-            if (parts.length === 3) {
-                setInputValue(`${parts[2]}/${parts[1]}/${parts[0]}`);
-            } else {
-                setInputValue(value);
+            if (value.includes('-')) {
+                const parts = value.split('-');
+                if (parts.length === 3) {
+                    const year = parts[0];
+                    const month = parts[1];
+                    const day = parts[2];
+                    const testDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    if (!isNaN(testDate.getTime())) {
+                        setInputValue(`${day}/${month}/${year}`);
+                        return;
+                    }
+                }
             }
-        } else {
-            setInputValue('');
+            if (value.includes('/')) {
+                setInputValue(value);
+                return;
+            }
         }
+        setInputValue('');
     }, [value]);
 
     const formatDateForInput = (date: Date): string => {
@@ -355,24 +365,33 @@ const DatePickerInput: React.FC<{
 
     const formatDateForStorage = (dateStr: string): string => {
         if (!dateStr) return '';
+        if (dateStr.includes('-') && dateStr.length === 10) {
+            return dateStr;
+        }
         const parts = dateStr.split('/');
         if (parts.length === 3) {
-            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            const testDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            if (!isNaN(testDate.getTime())) {
+                return `${year}-${month}-${day}`;
+            }
         }
         return dateStr;
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let newValue = e.target.value;
-        
-        if (newValue.length === 2 && inputValue.length === 1) {
-            newValue = newValue + '/';
-        } else if (newValue.length === 5 && inputValue.length === 4) {
-            newValue = newValue + '/';
+        const cleanValue = newValue.replace(/\D/g, '');
+        if (cleanValue.length <= 2) {
+            newValue = cleanValue;
+        } else if (cleanValue.length <= 4) {
+            newValue = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2)}`;
+        } else {
+            newValue = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2, 4)}/${cleanValue.slice(4, 8)}`;
         }
-        
         setInputValue(newValue);
-        
         if (newValue.length === 10) {
             const [day, month, year] = newValue.split('/');
             if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
@@ -401,7 +420,6 @@ const DatePickerInput: React.FC<{
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
         const startingDayOfWeek = firstDay.getDay();
-        
         const days: (number | null)[] = [];
         for (let i = 0; i < startingDayOfWeek; i++) {
             days.push(null);
@@ -422,10 +440,15 @@ const DatePickerInput: React.FC<{
 
     const isSelectedDate = (day: number, month: number, year: number) => {
         if (!value) return false;
-        const [storedYear, storedMonth, storedDay] = value.split('-');
-        return parseInt(storedDay) === day && 
-               parseInt(storedMonth) === month + 1 && 
-               parseInt(storedYear) === year;
+        if (value.includes('-')) {
+            const [storedYear, storedMonth, storedDay] = value.split('-').map(Number);
+            return storedDay === day && storedMonth === month + 1 && storedYear === year;
+        }
+        if (value.includes('/')) {
+            const [storedDay, storedMonth, storedYear] = value.split('/').map(Number);
+            return storedDay === day && storedMonth === month + 1 && storedYear === year;
+        }
+        return false;
     };
 
     const days = getDaysInMonth(currentMonth);
@@ -442,6 +465,7 @@ const DatePickerInput: React.FC<{
                     onChange={handleInputChange}
                     placeholder={placeholder}
                     style={{ paddingRight: '35px' }}
+                    maxLength={10}
                 />
                 <button
                     type="button"
@@ -550,12 +574,10 @@ const DatePickerInput: React.FC<{
                                 if (day === null) {
                                     return <div key={`empty-${index}`} style={{ padding: '4px' }} />;
                                 }
-                                
                                 const isSelected = isSelectedDate(day, currentMonth.getMonth(), currentMonth.getFullYear());
                                 const isToday = day === new Date().getDate() && 
                                                currentMonth.getMonth() === new Date().getMonth() && 
                                                currentMonth.getFullYear() === new Date().getFullYear();
-                                
                                 return (
                                     <button
                                         key={day}
@@ -665,14 +687,12 @@ export const Personal: React.FC = () => {
     const [cambioEstatusModalVisible, setCambioEstatusModalVisible] = useState(false);
     const [personalCambioEstatus, setPersonalCambioEstatus] = useState<Interfacepersonal | null>(null);
     const [cambiandoEstatus, setCambiandoEstatus] = useState(false);
-    
     const [vacacionesModalVisible, setVacacionesModalVisible] = useState(false);
     const [personalVacaciones, setPersonalVacaciones] = useState<{id: number, nombre: string, noEmpleado: number} | null>(null);
 
     const cargarOpcionesCatalogos = useCallback(async () => {
         try {
             setLoadingOptions(true);
-            
             const [cargosResponse, departamentosResponse, empresasResponse, 
                     ubicacionesResponse, supervisoresResponse, turnosResponse] = await Promise.all([
                 apiService.get<RespuestaAPI>('/personal/opciones/ObtenerCargos.php'),
@@ -753,10 +773,8 @@ export const Personal: React.FC = () => {
     const handleCreateNewOption = useCallback(async (type: string, value: string): Promise<boolean> => {
         try {
             setCreatingNewOption({ type, value });
-            
             let endpoint = '';
             let data: any = { valor: value };
-            
             switch (type) {
                 case 'Cargo':
                     endpoint = `/personal/crear/Cargo.php?IdUsuario=${usuarioSesion?.IdUsuario}`;
@@ -773,18 +791,14 @@ export const Personal: React.FC = () => {
                 default:
                     return false;
             }
-            
             const response = await apiService.post<RespuestaAPI>(endpoint, data);
-            
             if (response.status && response.data) {
                 showToast({
                     text: `${type} creado exitosamente`,
                     type: 'success',
                     autoClose: 1500
                 });
-                
                 await cargarOpcionesCatalogos();
-                
                 setTimeout(() => {
                     let nuevaLista: OpcionSelect[] = [];
                     switch (type) {
@@ -798,11 +812,9 @@ export const Personal: React.FC = () => {
                             nuevaLista = empresas;
                             break;
                     }
-                    
                     const nuevoElemento = nuevaLista.find(item => 
                         item.valor.toLowerCase() === value.toLowerCase()
                     );
-                    
                     if (nuevoElemento) {
                         switch (type) {
                             case 'Cargo':
@@ -817,10 +829,8 @@ export const Personal: React.FC = () => {
                         }
                     }
                 }, 100);
-                
                 return true;
             }
-            
             return false;
         } catch (error) {
             console.error(`Error creando ${type}:`, error);
@@ -848,27 +858,22 @@ export const Personal: React.FC = () => {
         try {
             setUploadingPhoto(true);
             const formData = new FormData();
-            
             const extension = file.name.split('.').pop();
             const nombreLimpio = nombreCompleto
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
                 .replace(/[^a-zA-Z0-9]/g, '_');
             const nuevoNombre = `${noEmpleado}_${nombreLimpio}.${extension}`;
-            
             const modifiedFile = new File([file], nuevoNombre, { type: file.type });
             formData.append('foto', modifiedFile);
             formData.append('IdPersonal', idPersonal.toString());
             formData.append('nombreArchivo', nuevoNombre);
-            
             const API_URL = import.meta.env.VITE_API_BASE_URL_PROD;
             const response = await fetch(`${API_URL}/personal/actualizarFoto.php`, {
                 method: 'POST',
                 body: formData,
             });
-            
             const result = await response.json();
-            
             if (result.status && result.data && result.data.ruta) {
                 return result.data.ruta;
             } else {
@@ -904,7 +909,6 @@ export const Personal: React.FC = () => {
                 });
                 return;
             }
-            
             if (file.size > 5 * 1024 * 1024) {
                 showToast({
                     text: 'La imagen no debe exceder los 5MB',
@@ -913,7 +917,6 @@ export const Personal: React.FC = () => {
                 });
                 return;
             }
-            
             setSelectedFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -925,19 +928,16 @@ export const Personal: React.FC = () => {
 
     const aplicarFiltros = useCallback(() => {
         let filtrados = [...personal];
-
         if (filtros.NoEmpleado) {
             filtrados = filtrados.filter(p => 
                 p.NoEmpleado.toString().toLowerCase().includes(filtros.NoEmpleado.toString().toLowerCase())
             );
         }
-
         if (filtros.NombreCompleto) {
             filtrados = filtrados.filter(p => 
                 p.NombreCompleto.toLowerCase().includes(filtros.NombreCompleto.toLowerCase())
             );
         }
-
         if (filtros.FechaIngresoInicio) {
             filtrados = filtrados.filter(p => 
                 p.FechaIngreso && p.FechaIngreso >= filtros.FechaIngresoInicio
@@ -948,29 +948,23 @@ export const Personal: React.FC = () => {
                 p.FechaIngreso && p.FechaIngreso <= filtros.FechaIngresoFin
             );
         }
-
         if (filtros.Status) {
             filtrados = filtrados.filter(p => p.Status === filtros.Status);
         }
-
         if (filtros.Empresa && filtros.Empresa !== '0') {
             filtrados = filtrados.filter(p => p.Empresa?.toString() === filtros.Empresa);
         }
-
         if (filtros.Departamento && filtros.Departamento !== '0') {
             filtrados = filtrados.filter(p => p.Departamento?.toString() === filtros.Departamento);
         }
-
         if (filtros.Cargo && filtros.Cargo !== '0') {
             filtrados = filtrados.filter(p => p.Cargo?.toString() === filtros.Cargo);
         }
-
         if (filtros.IdJefeInmediato && filtros.IdJefeInmediato !== '0') {
             filtrados = filtrados.filter(p => 
                 p.IdJefeInmediato && p.IdJefeInmediato.toString() === filtros.IdJefeInmediato
             );
         }
-
         setPersonalFiltrados(filtrados);
     }, [personal, filtros]);
 
@@ -1006,17 +1000,14 @@ export const Personal: React.FC = () => {
             });
             return;
         }
-
         const params = new URLSearchParams();
         Object.entries(filtros).forEach(([key, value]) => {
             if (value !== '' && value !== null && value !== undefined) {
                 params.append(key, value.toString());
             }
         });
-        
         const API = import.meta.env.VITE_API_BASE_URL_PROD;
         window.open(`${API}/personal/ExportarExcel.php?${params.toString()}`, '_blank');
-        
         showToast({
             text: 'Generando archivo Excel...',
             type: 'success',
@@ -1033,17 +1024,14 @@ export const Personal: React.FC = () => {
             });
             return;
         }
-
         const params = new URLSearchParams();
         Object.entries(filtros).forEach(([key, value]) => {
             if (value !== '' && value !== null && value !== undefined) {
                 params.append(key, value.toString());
             }
         });
-        
         const API = import.meta.env.VITE_API_BASE_URL_PROD;
         window.open(`${API}/personal/ExportarPDF.php?${params.toString()}`, '_blank');
-        
         showToast({
             text: 'Generando archivo PDF...',
             type: 'success',
@@ -1060,17 +1048,14 @@ export const Personal: React.FC = () => {
             });
             return;
         }
-
         const params = new URLSearchParams();
         Object.entries(filtros).forEach(([key, value]) => {
             if (value !== '' && value !== null && value !== undefined) {
                 params.append(key, value.toString());
             }
         });
-        
         const API = import.meta.env.VITE_API_BASE_URL_PROD;
         window.open(`${API}/personal/Imprimir.php?${params.toString()}`, '_blank');
-        
         showToast({
             text: 'Preparando impresión...',
             type: 'success',
@@ -1108,23 +1093,60 @@ export const Personal: React.FC = () => {
         }
     }, []);
 
+    const formatDateForApi = useCallback((dateString: string): string => {
+        if (!dateString) return '';
+        if (dateString.includes('-') && dateString.length === 10) {
+            const [year, month, day] = dateString.split('-');
+            const testDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            if (!isNaN(testDate.getTime())) {
+                return dateString;
+            }
+        }
+        if (dateString.includes('/')) {
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+                const testDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                if (!isNaN(testDate.getTime())) {
+                    return `${year}-${month}-${day}`;
+                }
+            }
+        }
+        try {
+            const date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        } catch (error) {
+            console.error('Error formateando fecha:', error);
+        }
+        return '';
+    }, []);
+
     const handleViewPersonal = useCallback(async (personal: Interfacepersonal) => {
         navigate(`/Personal/VerDetallePersonal/01_${personal.NoEmpleado}`);
     }, [navigate]);
 
     const handleEditPersonal = useCallback((personal: Interfacepersonal) => {
         setTipoFormulario('Modificar');
+        const fechaIngreso = personal.FechaIngreso ? formatDateForApi(personal.FechaIngreso) : '';
+        const fechaNacimiento = personal.FechadeNacimiento ? formatDateForApi(personal.FechadeNacimiento) : '';
         setPersonalForm({
             ...personal,
-            FechaIngreso: personal.FechaIngreso || '',
+            FechaIngreso: fechaIngreso,
+            FechadeNacimiento: fechaNacimiento,
             Alergias: personal.Alergias || '',
             Turno: personal.Turno?.toString() || '',
-            FechadeNacimiento: personal.FechadeNacimiento || '',
             Direccion: personal.Direccion || ''
         });
         setPreviewFoto(personal.RutaFoto || '');
         setShowForm(true);
-    }, []);
+    }, [formatDateForApi]);
 
     const handleCambiarEstatus = useCallback((personal: Interfacepersonal) => {
         setPersonalCambioEstatus(personal);
@@ -1142,7 +1164,6 @@ export const Personal: React.FC = () => {
 
     const handleConfirmarCambioEstatus = useCallback(async (nuevoEstatus: string) => {
         if (!personalCambioEstatus) return;
-        
         if (!usuarioSesion?.IdUsuario) {
             showToast({
                 text: 'No se pudo obtener la información del usuario',
@@ -1151,14 +1172,12 @@ export const Personal: React.FC = () => {
             });
             return;
         }
-        
         try {
             setCambiandoEstatus(true);
             const response = await apiService.put<RespuestaAPI>(
                 `/personal/cambiarEstatus.php?IdPersonal=${personalCambioEstatus.IdPersonal}&Status=${nuevoEstatus}&IdUsuario=${usuarioSesion.IdUsuario}`,
                 {}
             );
-
             if (response.status) {
                 const statusText = nuevoEstatus === '1' ? 'activado' : (nuevoEstatus === '0' ? 'desactivado temporalmente' : 'desactivado permanentemente');
                 showToast({
@@ -1212,58 +1231,74 @@ export const Personal: React.FC = () => {
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-        
         if (!personalForm.NoEmpleado) {
             showToast({ text: 'El número de empleado es requerido', type: 'error' });
             return;
         }
-        
         const nombreCompleto = `${personalForm.Nombre || ''} ${personalForm.ApPaterno || ''} ${personalForm.ApMaterno || ''}`.trim();
-        
         try {
             setSubmitting(true);
             const isUpdate = personal.some(p => p.IdPersonal === personalForm.IdPersonal);
             let response: RespuestaAPI;
-            
             const dataToSend = {
                 ...personalForm,
+                FechaIngreso: formatDateForApi(personalForm.FechaIngreso),
+                FechadeNacimiento: formatDateForApi(personalForm.FechadeNacimiento),
+                Alergias: personalForm.Alergias || '',
+                Direccion: personalForm.Direccion || '',
+                TipoSangre: personalForm.TipoSangre || '',
+                NSS: personalForm.NSS || '',
                 UsuarioCreacion: usuarioSesion?.IdUsuario,
                 RutaFoto: selectedFile ? '' : personalForm.RutaFoto,
-                Turno: personalForm.Turno ? (isNaN(Number(personalForm.Turno)) ? personalForm.Turno : Number(personalForm.Turno)) : null
+                Turno: personalForm.Turno ? (isNaN(Number(personalForm.Turno)) ? personalForm.Turno : Number(personalForm.Turno)) : null,
+                NoEmpleado: Number(personalForm.NoEmpleado),
+                IdPersonal: Number(personalForm.IdPersonal)
             };
-            
-            if (isUpdate) {
-                response = await apiService.put<RespuestaAPI>(`/personal/crud.php`, dataToSend);
-            } else {
-                response = await apiService.postForm<RespuestaAPI>(`/personal/crud.php`, dataToSend);
+            if (dataToSend.FechaIngreso && !isNaN(new Date(dataToSend.FechaIngreso).getTime())) {
+            } else if (dataToSend.FechaIngreso) {
+                showToast({ 
+                    text: 'La fecha de ingreso no es válida', 
+                    type: 'error' 
+                });
+                return;
             }
-            
+            if (dataToSend.FechadeNacimiento && !isNaN(new Date(dataToSend.FechadeNacimiento).getTime())) {
+            } else if (dataToSend.FechadeNacimiento) {
+                showToast({ 
+                    text: 'La fecha de nacimiento no es válida', 
+                    type: 'error' 
+                });
+                return;
+            }
+            const endpoint = isUpdate 
+                ? `/personal/actualizar.php?IdPersonal=${dataToSend.IdPersonal}` 
+                : `/personal/crear.php`;
+            if (isUpdate) {
+                response = await apiService.put<RespuestaAPI>(endpoint, dataToSend);
+            } else {
+                response = await apiService.postForm<RespuestaAPI>(endpoint, dataToSend);
+            }
             if (response.status) {
                 if (selectedFile) {
                     let idPersonal = personalForm.IdPersonal;
                     let nombreCompletoFoto = nombreCompleto;
                     let noEmpleado = personalForm.NoEmpleado;
-                    
                     if (!isUpdate && response.data && (response.data as any).IdPersonal) {
                         idPersonal = (response.data as any).IdPersonal;
                     }
-                    
                     if (!nombreCompletoFoto && personalForm.NombreCompleto) {
                         nombreCompletoFoto = personalForm.NombreCompleto;
                     }
-                    
                     const ruta = await uploadPhoto(selectedFile, idPersonal, nombreCompletoFoto, personalForm.NoEmpleado);
                     if (ruta) {
                         setPersonalForm(prev => ({ ...prev, RutaFoto: ruta }));
                     }
                 }
-                
                 showToast({
                     text: response.message || (isUpdate ? 'Personal actualizado correctamente' : 'Personal guardado correctamente'),
                     type: 'success',
                     autoClose: 1500
                 });
-                
                 setShowForm(false);
                 resetForm();
                 setTipoFormulario('Agregar');
@@ -1276,7 +1311,7 @@ export const Personal: React.FC = () => {
                 });
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error al procesar la solicitud:', error);
             showToast({
                 text: 'Error al procesar la solicitud',
                 type: 'error',
@@ -1285,7 +1320,7 @@ export const Personal: React.FC = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [personalForm, personal, fetchPersonal, usuarioSesion, selectedFile, uploadPhoto]);
+    }, [personalForm, personal, fetchPersonal, usuarioSesion, selectedFile, uploadPhoto, formatDateForApi]);
 
     const resetForm = useCallback(() => {
         setPersonalForm({
@@ -1549,7 +1584,6 @@ export const Personal: React.FC = () => {
                 setOpenActionDropdown(null);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [openActionDropdown]);
@@ -1561,7 +1595,6 @@ export const Personal: React.FC = () => {
                 handleShowForm();
             }
         };
-
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [showForm, handleShowForm]);

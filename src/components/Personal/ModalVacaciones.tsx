@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, AlertCircle, RefreshCw, Edit, CheckCircle } from 'lucide-react';
 import { apiService } from '../../api/apiService';
 import { formatDateForDisplay } from '../../helpers/date';
+import { showToast } from '../../helpers/toast'; // Importar showToast
 
 interface VacacionesPersonal {
     IdPersonalVacaciones: number;
@@ -78,6 +79,11 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
         } catch (error) {
             console.error('Error cargando vacaciones:', error);
             setVacaciones([]);
+            showToast({
+                text: 'Error al cargar las vacaciones',
+                type: 'error',
+                autoClose: 1500
+            });
         } finally {
             setLoading(false);
         }
@@ -96,6 +102,11 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
             }
         } catch (error) {
             console.error('Error cargando información personal:', error);
+            showToast({
+                text: 'Error al cargar información personal',
+                type: 'error',
+                autoClose: 1500
+            });
         }
     };
 
@@ -118,7 +129,11 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
 
     const handleEditarVacacion = (vacacion: VacacionesPersonal) => {
         if (vacacion.DiasDisponibles <= 0) {
-            alert('No hay días disponibles para este año');
+            showToast({
+                text: 'No hay días disponibles para este año',
+                type: 'warning',
+                autoClose: 2000
+            });
             return;
         }
         
@@ -202,17 +217,29 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
 
     const handleAgregarVacacion = async () => {
         if (!nuevaVacacion.FechaInicio || !nuevaVacacion.FechaFin) {
-            alert('Por favor selecciona las fechas de inicio y fin');
+            showToast({
+                text: 'Por favor selecciona las fechas de inicio y fin',
+                type: 'error',
+                autoClose: 2000
+            });
             return;
         }
         
         if (nuevaVacacion.DiasTomar <= 0) {
-            alert('Los días a tomar deben ser mayores a 0');
+            showToast({
+                text: 'Los días a tomar deben ser mayores a 0',
+                type: 'error',
+                autoClose: 2000
+            });
             return;
         }
 
         if (selectedVacacion && nuevaVacacion.DiasTomar > selectedVacacion.DiasDisponibles) {
-            alert(`No puedes tomar más de ${selectedVacacion.DiasDisponibles} días disponibles para el año ${selectedVacacion.Año}`);
+            showToast({
+                text: `No puedes tomar más de ${selectedVacacion.DiasDisponibles} días disponibles para el año ${selectedVacacion.Año}`,
+                type: 'error',
+                autoClose: 3000
+            });
             return;
         }
 
@@ -220,7 +247,11 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
         const fechaFin = new Date(nuevaVacacion.FechaFin);
         
         if (fechaFin < fechaInicio) {
-            alert('La fecha de fin no puede ser anterior a la fecha de inicio');
+            showToast({
+                text: 'La fecha de fin no puede ser anterior a la fecha de inicio',
+                type: 'error',
+                autoClose: 2000
+            });
             return;
         }
 
@@ -264,7 +295,11 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
             const response = await apiService.post('/Vacaciones/AgregarVacacion.php', payload) as unknown as ApiResponse;
             
             if (response && response.status) {
-                alert(`Vacación agregada correctamente para el año ${selectedYear}`);
+                showToast({
+                    text: `Vacación agregada correctamente para el año ${selectedYear}`,
+                    type: 'success',
+                    autoClose: 1500
+                });
                 setShowEditModal(false);
                 setNuevaVacacion({
                     FechaInicio: '',
@@ -278,11 +313,19 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
                 await cargarTodasVacaciones();
                 await cargarInfoPersonal();
             } else {
-                alert(response.message || 'Error al agregar la vacación');
+                showToast({
+                    text: response.message || 'Error al agregar la vacación',
+                    type: 'error',
+                    autoClose: 1500
+                });
             }
         } catch (error) {
             console.error('Error agregando vacación:', error);
-            alert('Error al agregar la vacación');
+            showToast({
+                text: 'Error al agregar la vacación',
+                type: 'error',
+                autoClose: 1500
+            });
         } finally {
             setEditLoading(false);
         }
@@ -452,18 +495,7 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="modal-body">
-                            <div style={{ 
-                                backgroundColor: '#E3F2FD', 
-                                padding: '10px', 
-                                borderRadius: '6px', 
-                                marginBottom: '16px',
-                                border: '1px solid #BBDEFB'
-                            }}>
-                                <div style={{ fontSize: '13px', color: '#1565C0' }}>
-                                    <strong>Registrado por:</strong> {usuarioNombre} (ID: {usuarioId})
-                                </div>
-                            </div>
+                        <div className="modal-body"> 
 
                             <div style={{ 
                                 backgroundColor: '#E8F5E9', 
@@ -524,7 +556,11 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
                                         if (valor <= selectedVacacion.DiasDisponibles) {
                                             setNuevaVacacion({...nuevaVacacion, DiasTomar: valor});
                                         } else {
-                                            alert(`El número de días no puede exceder los ${selectedVacacion.DiasDisponibles} días disponibles`);
+                                            showToast({
+                                                text: `El número de días no puede exceder los ${selectedVacacion.DiasDisponibles} días disponibles`,
+                                                type: 'error',
+                                                autoClose: 3000
+                                            });
                                         }
                                     }}
                                     min="1"
@@ -592,24 +628,7 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
                                     }}
                                 />
                             </div>
-
-                            <div style={{ 
-                                backgroundColor: '#E8F5E9', 
-                                padding: '10px', 
-                                borderRadius: '6px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                border: '1px solid #C8E6C9'
-                            }}>
-                                <CheckCircle size={18} color="#2E7D32" style={{ marginRight: '8px' }} />
-                                <span style={{ color: '#2E7D32', fontWeight: '500' }}>
-                                    Esta vacación se registrará como VALIDADA automáticamente
-                                    <br />
-                                    <span style={{ fontSize: '12px', fontWeight: 'normal' }}>
-                                        por: {usuarioNombre} (ID: {usuarioId})
-                                    </span>
-                                </span>
-                            </div>
+ 
                         </div>
                         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '16px', borderTop: '1px solid #FFE0B5' }}>
                             <button
