@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, AlertCircle, RefreshCw, Edit, CheckCircle } from 'lucide-react';
 import { apiService } from '../../api/apiService';
 import { formatDateForDisplay } from '../../helpers/date';
-import { showToast } from '../../helpers/toast'; // Importar showToast
+import { showToast } from '../../helpers/toast';
 
 interface VacacionesPersonal {
     IdPersonalVacaciones: number;
@@ -263,14 +263,11 @@ export const ModalVacaciones: React.FC<ModalVacacionesProps> = ({
 
             let diasTomar = nuevaVacacion.DiasTomar;
             if (nuevaVacacion.NoContarDomingos === 1) {
-                let diasHabiles = 0;
-                let fechaActual = new Date(fechaInicio);
-                while (fechaActual <= fechaFin) {
-                    if (fechaActual.getDay() !== 0) {
-                        diasHabiles++;
-                    }
-                    fechaActual.setDate(fechaActual.getDate() + 1);
-                }
+                const diasHabiles = contarDiasHabiles(
+                    nuevaVacacion.FechaInicio,
+                    nuevaVacacion.FechaFin,
+                    true
+                );
                 diasTomar = diasHabiles;
             }
 
