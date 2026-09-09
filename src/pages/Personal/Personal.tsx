@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Plus, X, FileText, Edit, MoreVertical, Filter, ChevronDown, FileDown, Printer, Download, Upload, Eye, RefreshCw, Calendar } from 'lucide-react';
+import { Plus, X, FileText, Edit, MoreVertical, Filter, ChevronDown, FileDown, Printer, Download, Upload, Eye, RefreshCw, Calendar, User, Briefcase } from 'lucide-react';
 import { Tabla } from '../../components/Tabla/Tabla';
 import type { Column } from '../../components/Tabla/Tabla';
 import { SelectConBusqueda } from '../../components/Select/SelectConBusqueda';
@@ -15,6 +15,246 @@ import { showToast } from '../../helpers/toast';
 import { formatDateForServer } from '../../helpers/date';
 import { apiService } from '../../api/apiService';
 import { useNavigate } from 'react-router-dom';
+
+const formatDateToSpanish = (dateString: string | undefined | null): string => {
+    if (!dateString) return 'N/A';
+    try {
+        let date: Date;
+        if (dateString.includes('-') && dateString.length === 10) {
+            const parts = dateString.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1;
+            const day = parseInt(parts[2]);
+            date = new Date(year, month, day);
+        } else {
+            date = new Date(dateString);
+        }
+        if (isNaN(date.getTime())) return 'N/A';
+        const day = date.getDate();
+        const month = date.getMonth();
+        const year = date.getFullYear();
+        const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        return `${day} de ${monthNames[month]} de ${year}`;
+    } catch {
+        return 'N/A';
+    }
+};
+
+const VerPersonalModal: React.FC<{
+    visible: boolean;
+    onClose: () => void;
+    personal: Interfacepersonal | null;
+    cargos: OpcionSelect[];
+    departamentos: OpcionSelect[];
+    empresas: OpcionSelect[];
+    ubicaciones: OpcionSelect[];
+    jefes: OpcionSelect[];
+    turnos: OpcionSelect[];
+}> = ({ visible, onClose, personal, cargos, departamentos, empresas, ubicaciones, jefes, turnos }) => {
+    const obtenerTexto = (value: string | number | null | undefined, opciones: OpcionSelect[]): string => {
+        if (value === null || value === undefined || value === 0 || value === '0' || value === '') {
+            return 'N/A';
+        }
+        const valueStr = value.toString();
+        const opcion = opciones.find(op => op.id.toString() === valueStr);
+        return opcion ? opcion.valor : valueStr;
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case '1': return { text: 'Activo', class: 'status-active' };
+            case '0': return { text: 'Inactivo', class: 'status-inactive' };
+            case '2': return { text: 'Desactivado', class: 'status-desactivado' };
+            default: return { text: 'Desconocido', class: 'status-unknown' };
+        }
+    };
+
+    if (!visible || !personal) return null;
+
+    const API_URL = import.meta.env.VITE_API_BASE_URL_PROD_VACACIONES;
+    const imageUrl = personal.RutaFoto && !personal.RutaFoto.startsWith('http') && !personal.RutaFoto.startsWith('data:')
+        ? `${API_URL}/${personal.RutaFoto}`
+        : personal.RutaFoto || '';
+
+    const statusInfo = getStatusText(personal.Status);
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ width: '900px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden' }}>
+                <div className="modal-header">
+                    <h3 className="modal-title">Detalles del Personal</h3>
+                    <button className="modal-close" onClick={onClose}>
+                        <X size={20} />
+                    </button>
+                </div>
+                <div className="modal-body" style={{ overflow: 'auto', maxHeight: 'calc(90vh - 120px)', padding: '20px' }}>
+                    <div style={{ display: 'flex', gap: '30px', marginBottom: '30px', flexWrap: 'wrap' }}>
+                        <div style={{ flexShrink: 0 }}>
+                            <div style={{
+                                width: '180px',
+                                height: '180px',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                border: '2px solid #e0e0e0',
+                                backgroundColor: '#f5f5f5',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                {imageUrl ? (
+                                    <img
+                                        src={imageUrl}
+                                        alt={personal.NombreCompleto}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover'
+                                        }}
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2"%3E%3Crect x="2" y="3" width="20" height="20" rx="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpolyline points="21 15 16 10 5 21"%3E%3C/polyline%3E%3C/svg%3E';
+                                        }}
+                                    />
+                                ) : (
+                                    <User size={80} color="#ccc" />
+                                )}
+                            </div>
+                            <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                                <span className={`status-badge ${statusInfo.class}`} style={{ fontSize: '14px', padding: '4px 16px' }}>
+                                    {statusInfo.text}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style={{ flex: 1, minWidth: '250px' }}>
+                            <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', color: '#333' }}>
+                                {personal.NombreCompleto}
+                            </h2>
+                            <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                                <strong>No. Empleado:</strong> {personal.NoEmpleado}
+                            </p>
+                            <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                                <strong>Cargo:</strong> {obtenerTexto(personal.Cargo, cargos)}
+                            </p>
+                            <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                                <strong>Departamento:</strong> {obtenerTexto(personal.Departamento, departamentos)}
+                            </p>
+                            <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                                <strong>Empresa:</strong> {obtenerTexto(personal.Empresa, empresas)}
+                            </p>
+                            <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                                <strong>Ubicación:</strong> {obtenerTexto(personal.IdUbicacion, ubicaciones)}
+                            </p>
+                            <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
+                                <strong>Jefe Inmediato:</strong> {obtenerTexto(personal.IdJefeInmediato, jefes)}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
+                        <div style={{ backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '8px' }}>
+                            <h4 style={{ margin: '0 0 16px 0', color: '#E85C0D', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <User size={18} /> Información Personal
+                            </h4>
+                            <div style={{ display: 'grid', gap: '10px' }}>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Fecha de Nacimiento</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {formatDateToSpanish(personal.FechadeNacimiento)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Tipo de Sangre</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.TipoSangre || 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>NSS</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.NSS || 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>CURP</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.CURP || 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>RFC</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.RFC || 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Dirección</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.Direccion || 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Alergias</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.Alergias || 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '8px' }}>
+                            <h4 style={{ margin: '0 0 16px 0', color: '#E85C0D', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Briefcase size={18} /> Información Laboral y Contacto
+                            </h4>
+                            <div style={{ display: 'grid', gap: '10px' }}>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Fecha de Ingreso</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {formatDateToSpanish(personal.FechaIngreso)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Turno</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {obtenerTexto(personal.Turno, turnos)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Es Jefe Inmediato</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.EsJefeInmediato === 'SI' ? 'Sí' : 'No'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Email</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.Email || 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Teléfono</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {personal.Contacto || 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style={{ color: '#555', fontSize: '13px' }}>Fecha de Creación</strong>
+                                    <p style={{ margin: '2px 0 0 0', fontSize: '14px' }}>
+                                        {formatDateToSpanish(personal.FechaCreacion)}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px', borderTop: '1px solid #E0E0E0' }}>
+                    <button className="btn btn-primary orange-button" onClick={onClose} style={{ background: '#E85C0D' }}>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const CambioEstatusModal: React.FC<{
     visible: boolean;
@@ -183,7 +423,7 @@ const PhotoCell: React.FC<{ value: string; personalName: string }> = ({ value, p
         }
     };
 
-    const API_URL = import.meta.env.VITE_API_BASE_URL_PROD;
+    const API_URL = import.meta.env.VITE_API_BASE_URL_PROD_VACACIONES;
     const imageUrl = value && !value.startsWith('http') && !value.startsWith('data:') 
         ? `${API_URL}/${value}` 
         : value;
@@ -299,6 +539,16 @@ const MemoizedActionButtons = React.memo(({
         {openActionDropdown === row.IdPersonal && (
             <div className="actions-dropdown-menu">
                 <button 
+                    className="actions-dropdown-item view-action" 
+                    onClick={() => { 
+                        onView(row); 
+                        setOpenActionDropdown(null); 
+                    }}
+                >
+                    <Eye size={14} />
+                    <span>Ver</span>
+                </button>
+                <button 
                     className="actions-dropdown-item edit-action" 
                     onClick={() => { 
                         onEdit(row); 
@@ -335,17 +585,15 @@ const DatePickerInput: React.FC<{
 
     useEffect(() => {
         if (value) {
-            if (value.includes('-')) {
+            if (value.includes('-') && value.length === 10) {
                 const parts = value.split('-');
-                if (parts.length === 3) {
-                    const year = parts[0];
-                    const month = parts[1];
-                    const day = parts[2];
-                    const testDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                    if (!isNaN(testDate.getTime())) {
-                        setInputValue(`${day}/${month}/${year}`);
-                        return;
-                    }
+                const year = parts[0];
+                const month = parts[1];
+                const day = parts[2];
+                const testDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                if (!isNaN(testDate.getTime())) {
+                    setInputValue(`${day}/${month}/${year}`);
+                    return;
                 }
             }
             if (value.includes('/')) {
@@ -645,7 +893,9 @@ export const Personal: React.FC = () => {
         Alergias: '',
         Turno: '',
         FechadeNacimiento: '',
-        Direccion: ''
+        Direccion: '',
+        CURP: '',
+        RFC: ''
     });
     
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
@@ -661,6 +911,9 @@ export const Personal: React.FC = () => {
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [showFiltrosAvanzados, setShowFiltrosAvanzados] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [verModalVisible, setVerModalVisible] = useState(false);
+    const [personalVerDetalle, setPersonalVerDetalle] = useState<Interfacepersonal | null>(null);
 
     const [cargos, setCargos] = useState<OpcionSelect[]>([]);
     const [departamentos, setDepartamentos] = useState<OpcionSelect[]>([]);
@@ -868,13 +1121,23 @@ export const Personal: React.FC = () => {
             formData.append('foto', modifiedFile);
             formData.append('IdPersonal', idPersonal.toString());
             formData.append('nombreArchivo', nuevoNombre);
-            const API_URL = import.meta.env.VITE_API_BASE_URL_PROD;
+            const API_URL = import.meta.env.VITE_API_BASE_URL_PROD_VACACIONES;
             const response = await fetch(`${API_URL}/personal/actualizarFoto.php`, {
                 method: 'POST',
                 body: formData,
             });
             const result = await response.json();
             if (result.status && result.data && result.data.ruta) {
+                setPersonal(prev => prev.map(p => 
+                    p.IdPersonal === idPersonal 
+                        ? { ...p, RutaFoto: result.data.ruta }
+                        : p
+                ));
+                setPersonalFiltrados(prev => prev.map(p => 
+                    p.IdPersonal === idPersonal 
+                        ? { ...p, RutaFoto: result.data.ruta }
+                        : p
+                ));
                 return result.data.ruta;
             } else {
                 showToast({
@@ -1006,7 +1269,7 @@ export const Personal: React.FC = () => {
                 params.append(key, value.toString());
             }
         });
-        const API = import.meta.env.VITE_API_BASE_URL_PROD;
+        const API = import.meta.env.VITE_API_BASE_URL_PROD_VACACIONES;
         window.open(`${API}/personal/ExportarExcel.php?${params.toString()}`, '_blank');
         showToast({
             text: 'Generando archivo Excel...',
@@ -1030,7 +1293,7 @@ export const Personal: React.FC = () => {
                 params.append(key, value.toString());
             }
         });
-        const API = import.meta.env.VITE_API_BASE_URL_PROD;
+        const API = import.meta.env.VITE_API_BASE_URL_PROD_VACACIONES;
         window.open(`${API}/personal/ExportarPDF.php?${params.toString()}`, '_blank');
         showToast({
             text: 'Generando archivo PDF...',
@@ -1054,7 +1317,7 @@ export const Personal: React.FC = () => {
                 params.append(key, value.toString());
             }
         });
-        const API = import.meta.env.VITE_API_BASE_URL_PROD;
+        const API = import.meta.env.VITE_API_BASE_URL_PROD_VACACIONES;
         window.open(`${API}/personal/Imprimir.php?${params.toString()}`, '_blank');
         showToast({
             text: 'Preparando impresión...',
@@ -1128,9 +1391,10 @@ export const Personal: React.FC = () => {
         return '';
     }, []);
 
-    const handleViewPersonal = useCallback(async (personal: Interfacepersonal) => {
-        navigate(`/Personal/VerDetallePersonal/01_${personal.NoEmpleado}`);
-    }, [navigate]);
+    const handleViewPersonal = useCallback((personal: Interfacepersonal) => {
+        setPersonalVerDetalle(personal);
+        setVerModalVisible(true);
+    }, []);
 
     const handleEditPersonal = useCallback((personal: Interfacepersonal) => {
         setTipoFormulario('Modificar');
@@ -1142,7 +1406,9 @@ export const Personal: React.FC = () => {
             FechadeNacimiento: fechaNacimiento,
             Alergias: personal.Alergias || '',
             Turno: personal.Turno?.toString() || '',
-            Direccion: personal.Direccion || ''
+            Direccion: personal.Direccion || '',
+            CURP: personal.CURP || '',
+            RFC: personal.RFC || ''
         });
         setPreviewFoto(personal.RutaFoto || '');
         setShowForm(true);
@@ -1248,6 +1514,8 @@ export const Personal: React.FC = () => {
                 Direccion: personalForm.Direccion || '',
                 TipoSangre: personalForm.TipoSangre || '',
                 NSS: personalForm.NSS || '',
+                CURP: personalForm.CURP || '',
+                RFC: personalForm.RFC || '',
                 UsuarioCreacion: usuarioSesion?.IdUsuario,
                 RutaFoto: selectedFile ? '' : personalForm.RutaFoto,
                 Turno: personalForm.Turno ? (isNaN(Number(personalForm.Turno)) ? personalForm.Turno : Number(personalForm.Turno)) : null,
@@ -1271,10 +1539,10 @@ export const Personal: React.FC = () => {
                 return;
             }
             const endpoint = isUpdate 
-                ? `/personal/actualizar.php?IdPersonal=${dataToSend.IdPersonal}` 
-                : `/personal/crear.php`;
+                ? `/personal/Actualizar.php?IdPersonal=${dataToSend.IdPersonal}` 
+                : `/personal/Crear.php`;
             if (isUpdate) {
-                response = await apiService.put<RespuestaAPI>(endpoint, dataToSend);
+                response = await apiService.putForm<RespuestaAPI>(endpoint, dataToSend);
             } else {
                 response = await apiService.postForm<RespuestaAPI>(endpoint, dataToSend);
             }
@@ -1347,7 +1615,9 @@ export const Personal: React.FC = () => {
             Alergias: '',
             Turno: '',
             FechadeNacimiento: '',
-            Direccion: ''
+            Direccion: '',
+            CURP: '',
+            RFC: ''
         });
         setPreviewFoto('');
         setSelectedFile(null);
@@ -1413,7 +1683,7 @@ export const Personal: React.FC = () => {
             width: '150px',
             align: 'center',
             headerAlign: 'center',
-            render: (value: string) => formatDateForServer(value)
+            render: (value: string) => formatDateToSpanish(value)
         },
         {
             key: 'Turno',
@@ -1525,7 +1795,7 @@ export const Personal: React.FC = () => {
             width: '150px',
             align: 'center',
             headerAlign: 'center',
-            render: (value) => formatDateForServer(value)
+            render: (value) => formatDateToSpanish(value)
         },
         {
             key: 'actions',
@@ -1814,6 +2084,21 @@ export const Personal: React.FC = () => {
                 />
             </div>
 
+            <VerPersonalModal
+                visible={verModalVisible}
+                onClose={() => {
+                    setVerModalVisible(false);
+                    setPersonalVerDetalle(null);
+                }}
+                personal={personalVerDetalle}
+                cargos={cargos}
+                departamentos={departamentos}
+                empresas={empresas}
+                ubicaciones={ubicaciones}
+                jefes={jefes}
+                turnos={turnos}
+            />
+
             {showForm && (
                 <div className="form-personal-modal-overlay">
                     <div className="form-personal-modal">
@@ -1864,7 +2149,7 @@ export const Personal: React.FC = () => {
                                                     <div className="photo-preview">
                                                         <div className="photo-preview-container">
                                                             <img 
-                                                                src={previewFoto.startsWith('http') || previewFoto.startsWith('data:') ? previewFoto : `${import.meta.env.VITE_API_BASE_URL_PROD}/${previewFoto}`}
+                                                                src={previewFoto.startsWith('http') || previewFoto.startsWith('data:') ? previewFoto : `${import.meta.env.VITE_API_BASE_URL_PROD_VACACIONES}/${previewFoto}`}
                                                                 alt="Vista previa"
                                                                 className="photo-preview-img"
                                                                 onError={(e) => {
@@ -1908,7 +2193,7 @@ export const Personal: React.FC = () => {
                                             <div className="form-personal-group">
                                                 <label htmlFor='FechaIngreso' className="form-personal-label">Fecha de Ingreso</label>
                                                 <DatePickerInput
-                                                    value={formatDateForServer(personalForm.FechaIngreso)}
+                                                    value={formatDateForApi(personalForm.FechaIngreso)}
                                                     onChange={handleFechaChange}
                                                     placeholder="dd/mm/aaaa"
                                                 />
@@ -1957,7 +2242,7 @@ export const Personal: React.FC = () => {
                                             <div className="form-personal-group">
                                                 <label htmlFor='FechadeNacimiento' className="form-personal-label">Fecha de Nacimiento</label>
                                                 <DatePickerInput
-                                                    value={formatDateForServer(personalForm.FechadeNacimiento)}
+                                                    value={formatDateForApi(personalForm.FechadeNacimiento)}
                                                     onChange={handleFechaNacimientoChange}
                                                     placeholder="dd/mm/aaaa"
                                                 />
@@ -1986,6 +2271,32 @@ export const Personal: React.FC = () => {
                                                     onChange={handleInputChange}
                                                     className="form-personal-input"
                                                     placeholder="Número de Seguro Social"
+                                                />
+                                            </div>
+
+                                            <div className="form-personal-group">
+                                                <label htmlFor='CURP' className="form-personal-label">CURP</label>
+                                                <input
+                                                    type="text"
+                                                    name="CURP"
+                                                    value={personalForm.CURP}
+                                                    onChange={handleInputChange}
+                                                    className="form-personal-input"
+                                                    placeholder="CURP del personal"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-personal-row two-columns">
+                                            <div className="form-personal-group">
+                                                <label htmlFor='RFC' className="form-personal-label">RFC</label>
+                                                <input
+                                                    type="text"
+                                                    name="RFC"
+                                                    value={personalForm.RFC}
+                                                    onChange={handleInputChange}
+                                                    className="form-personal-input"
+                                                    placeholder="RFC del personal"
                                                 />
                                             </div>
 

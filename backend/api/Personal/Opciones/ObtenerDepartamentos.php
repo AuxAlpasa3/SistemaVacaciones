@@ -1,36 +1,39 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: access");
+header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
+header("Content-Type: application/json; charset=UTF-8");
 
 include_once '../../../db/Connection.php';
 
+$method = $_SERVER["REQUEST_METHOD"];
+
 try {
-    $query = "SELECT IdDepartamento, NomDepto FROM t_departamento ORDER BY IdDepartamento";
-    $stmt = $Conexion->prepare($query);
-    $stmt->execute();
-    
-    $departamentos = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $departamentos[] = [
-            'id' => (int)$row['IdDepartamento'],
-            'valor' => $row['NomDepto']
-        ];
+    switch ($method) {
+        case "GET":
+            $query = "SELECT IdDepartamento as id, NomDepto as valor FROM t_departamento ORDER BY NomDepto";
+            $stmt = $Conexion->prepare($query);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($data)) {
+                http_response_code(200);
+                echo json_encode(['status' => true, 'data' => $data]);
+            } else {
+                http_response_code(200);
+                echo json_encode(['status' => false, 'message' => 'No hay departamentos disponibles']);
+            }
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['status' => false, 'message' => 'Método no permitido']);
+            break;
     }
-    
-    echo json_encode([
-        'status' => true,
-        'data' => $departamentos,
-        'message' => 'Departamentos obtenidos correctamente'
-    ]);
-    
-} catch (Exception $e) {
-    echo json_encode([
-        'status' => false,
-        'data' => [],
-        'message' => 'Error al obtener departamentos: ' . $e->getMessage()
-    ]);
+} catch (\Throwable $th) {
+    http_response_code(500);
+    echo json_encode(['status' => false, 'message' => 'Error: ' . $th->getMessage()]);
+} finally {
+    $Conexion = null;
 }
 ?>

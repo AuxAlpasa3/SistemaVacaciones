@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import qs from 'qs'; 
 
-export const apiURL = import.meta.env.VITE_API_BASE_URL_PROD;
+export const apiURL = import.meta.env.VITE_API_BASE_URL_PROD_VACACIONES;
 
 type ApiResponse<T> = Promise<T>;
 type ApiError = {

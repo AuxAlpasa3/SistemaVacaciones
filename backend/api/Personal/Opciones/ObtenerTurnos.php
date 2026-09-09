@@ -1,36 +1,39 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: access");
+header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
+header("Content-Type: application/json; charset=UTF-8");
 
 include_once '../../../db/Connection.php';
 
+$method = $_SERVER["REQUEST_METHOD"];
+
 try {
-    $query = "SELECT IdTurno, Turno FROM t_turno ORDER BY IdTurno ASC";
-    $stmt = $Conexion->prepare($query);
-    $stmt->execute();
-    
-    $cargos = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $cargos[] = [
-            'id' => (int)$row['IdTurno'],
-            'valor' => $row['Turno']
-        ];
+    switch ($method) {
+        case "GET":
+            $query = "SELECT IdTurno as id, Turno as valor FROM t_turno ORDER BY Turno";
+            $stmt = $Conexion->prepare($query);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($data)) {
+                http_response_code(200);
+                echo json_encode(['status' => true, 'data' => $data]);
+            } else {
+                http_response_code(200);
+                echo json_encode(['status' => false, 'message' => 'No hay turnos disponibles']);
+            }
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['status' => false, 'message' => 'Método no permitido']);
+            break;
     }
-    
-    echo json_encode([
-        'status' => true,
-        'data' => $cargos,
-        'message' => 'Turnos obtenidos correctamente'
-    ]);
-    
-} catch (Exception $e) {
-    echo json_encode([
-        'status' => false,
-        'data' => [],
-        'message' => 'Error al obtener cargos: ' . $e->getMessage()
-    ]);
+} catch (\Throwable $th) {
+    http_response_code(500);
+    echo json_encode(['status' => false, 'message' => 'Error: ' . $th->getMessage()]);
+} finally {
+    $Conexion = null;
 }
 ?>

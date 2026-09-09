@@ -1,117 +1,54 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: access");
+header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
+header("Content-Type: application/json; charset=UTF-8");
 
 include_once '../../../db/Connection.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-    echo json_encode([
-        'status' => false,
-        'message' => 'Método no permitido. Use POST'
-    ]);
-    exit();
-}
+$method = $_SERVER["REQUEST_METHOD"];
 
 try {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    if (!isset($input['Departamento']) || empty(trim($input['Departamento']))) {
-        echo json_encode([
-            'status' => false,
-            'message' => 'El campo "departamento" es requerido'
-        ]);
-        exit();
+    switch ($method) {
+        case "POST":
+            $data = json_decode(file_get_contents("php://input"));
+            
+            if (!isset($data->Departamento) || empty($data->Departamento)) {
+                http_response_code(400);
+                echo json_encode(['status' => false, 'message' => 'El nombre del departamento es requerido']);
+                exit;
+            }
+
+            $Departamento = strtoupper(trim($data->Departamento));
+            $IdUsuario = $_GET['IdUsuario'] ?? null;
+
+            $query = "INSERT INTO t_departamento (NomDepto) VALUES (:Departamento)";
+            $stmt = $Conexion->prepare($query);
+            $stmt->bindParam(':Departamento', $Departamento); 
+
+            if ($stmt->execute()) {
+                $IdDepartamento = $Conexion->lastInsertId();
+                http_response_code(201);
+                echo json_encode([
+                    'status' => true, 
+                    'message' => 'Departamento creado correctamente',
+                    'data' => ['IdDepartamento' => $IdDepartamento]
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode(['status' => false, 'message' => 'Error al crear departamento']);
+            }
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['status' => false, 'message' => 'Método no permitido']);
+            break;
     }
-    
-    $departamento = trim($input['Departamento']);
-    $IdUsuario = isset($_GET['IdUsuario']) ? (int)$_GET['IdUsuario'] : null;
-    
-    $Conexion->beginTransaction();
-    
-    $checkQuery = "SELECT IdDepartamento, NomDepto FROM t_departamento WHERE NomDepto = :departamento";
-    $checkStmt = $Conexion->prepare($checkQuery);
-    $checkStmt->bindParam(':departamento', $departamento, PDO::PARAM_STR);
-    $checkStmt->execute();
-    
-    if ($checkStmt->rowCount() > 0) {
-        $Conexion->rollBack();
-        $existingRecord = $checkStmt->fetch(PDO::FETCH_ASSOC);
-        echo json_encode([
-            'status' => true,
-            'data' => [
-                'IdDepartamento' => (int)$existingRecord['IdDepartamento'],
-                'departamento' => $existingRecord['NomDepto'],
-                'already_exists' => true
-            ],
-            'message' => 'El departamento ya existe en la base de datos'
-        ]);
-        exit();
-    }
-    
-    $query = "INSERT INTO t_departamento (NomDepto) VALUES (:departamento)";
-    $stmt = $Conexion->prepare($query);
-    $stmt->bindParam(':departamento', $departamento, PDO::PARAM_STR);
-    $stmt->execute();
-    
-    $lastInsertId = $Conexion->lastInsertId();
-    
-    $tabla = 't_departamento';
-    $folioMovimiento = $lastInsertId;
-    $fecha = date('Y-m-d H:i:s');
-    
-    $consulta = "INSERT INTO t_departamento (NomDepto) VALUES ('" . addslashes($departamento) . "')";
-    
-    $bitacoraQuery = "INSERT INTO t_bitacora (Tabla, FolMovimiento, Fecha, Consulta, Usuario) 
-                      VALUES (:tabla, :folioMovimiento, :fecha, :consulta, :usuario)";
-    $bitacoraStmt = $Conexion->prepare($bitacoraQuery);
-    $bitacoraStmt->bindParam(':tabla', $tabla, PDO::PARAM_STR);
-    $bitacoraStmt->bindParam(':folioMovimiento', $folioMovimiento, PDO::PARAM_INT);
-    $bitacoraStmt->bindParam(':fecha', $fecha, PDO::PARAM_STR);
-    $bitacoraStmt->bindParam(':consulta', $consulta, PDO::PARAM_STR);
-    $bitacoraStmt->bindParam(':usuario', $IdUsuario, PDO::PARAM_INT);
-    $bitacoraStmt->execute();
-    
-    $Conexion->commit();
-    
-    echo json_encode([
-        'status' => true,
-        'data' => [
-            'IdDepartamento' => (int)$lastInsertId,
-            'departamento' => $departamento,
-            'already_exists' => false,
-            'bitacora_id' => $Conexion->lastInsertId()
-        ],
-        'message' => 'Departamento insertado correctamente y registrado en bitácora'
-    ]);
-    
-} catch (PDOException $e) {
-    if ($Conexion->inTransaction()) {
-        $Conexion->rollBack();
-    }
-    
-    $errorCode = $e->getCode();
-    $errorMessage = $e->getMessage();
-    
-    echo json_encode([
-        'status' => false,
-        'message' => 'Error al procesar la solicitud: ' . $errorMessage
-    ]);
-    
-} catch (Exception $e) {
-    if ($Conexion->inTransaction()) {
-        $Conexion->rollBack();
-    }
-    
-    echo json_encode([
-        'status' => false,
-        'message' => 'Error: ' . $e->getMessage()
-    ]);
+} catch (\Throwable $th) {
+    http_response_code(500);
+    echo json_encode(['status' => false, 'message' => 'Error: ' . $th->getMessage()]);
+} finally {
+    $Conexion = null;
 }
 ?>

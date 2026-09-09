@@ -1,38 +1,42 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: access");
+header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
+header("Content-Type: application/json; charset=UTF-8");
 
 include_once '../../../db/Connection.php';
 
+$method = $_SERVER["REQUEST_METHOD"];
+
 try {
-    $query = "SELECT DISTINCT t1.IdPersonal,
-        CONCAT(t1.Nombre, ' ', t1.ApPaterno, ' ', t1.ApMaterno) AS NombreCompleto
-    FROM t_personal as t1 where t1.EsJefeInmediato=1;";
-    $stmt = $Conexion->prepare($query);
-    $stmt->execute();
-    
-    $supervisores = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $supervisores[] = [
-            'id' => (int)$row['IdPersonal'],
-            'valor' => $row['NombreCompleto']
-        ];
+    switch ($method) {
+        case "GET":
+            $query = "SELECT IdPersonal as id, CONCAT(Nombre, ' ', ApPaterno, ' ', ApMaterno) as valor 
+                      FROM t_personal 
+                      WHERE EsJefeInmediato = 1 AND Status = '1'
+                      ORDER BY Nombre";
+            $stmt = $Conexion->prepare($query);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($data)) {
+                http_response_code(200);
+                echo json_encode(['status' => true, 'data' => $data]);
+            } else {
+                http_response_code(200);
+                echo json_encode(['status' => false, 'message' => 'No hay jefes inmediatos disponibles']);
+            }
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['status' => false, 'message' => 'Método no permitido']);
+            break;
     }
-    
-    echo json_encode([
-        'status' => true,
-        'data' => $supervisores,
-        'message' => 'JefeInmediatoes obtenidos correctamente'
-    ]);
-    
-} catch (Exception $e) {
-    echo json_encode([
-        'status' => false,
-        'data' => [],
-        'message' => 'Error al obtener supervisores: ' . $e->getMessage()
-    ]);
+} catch (\Throwable $th) {
+    http_response_code(500);
+    echo json_encode(['status' => false, 'message' => 'Error: ' . $th->getMessage()]);
+} finally {
+    $Conexion = null;
 }
 ?>

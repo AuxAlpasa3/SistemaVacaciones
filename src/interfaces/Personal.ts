@@ -1,6 +1,4 @@
-// interfaces/Personal.ts
-
-export interface Interfacepersonal {
+ export interface Interfacepersonal {
     IdPersonal: number;
     NoEmpleado: number;
     NombreCompleto: string;
@@ -22,9 +20,11 @@ export interface Interfacepersonal {
     NSS: string;
     EsJefeInmediato: string;
     Alergias: string;
-    Turno: string;           // Nuevo campo
-    FechadeNacimiento: string; // Nuevo campo
-    Direccion: string;       // Nuevo campo
+    Turno: string;            
+    FechadeNacimiento: string;  
+    Direccion: string;       
+    RFC: string;
+    CURP: string;
 }
 
 export interface FiltrosPersonal {

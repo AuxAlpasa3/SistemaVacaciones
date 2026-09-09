@@ -1,36 +1,39 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: access");
+header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
+header("Content-Type: application/json; charset=UTF-8");
 
 include_once '../../../db/Connection.php';
 
+$method = $_SERVER["REQUEST_METHOD"];
+
 try {
-    $query = "SELECT IdUbicacion, NomLargo FROM t_ubicacion ORDER BY IdUbicacion";
-    $stmt = $Conexion->prepare($query);
-    $stmt->execute();
-    
-    $ubicaciones = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $ubicaciones[] = [
-            'id' => (int)$row['IdUbicacion'],
-            'valor' => $row['NomLargo']
-        ];
+    switch ($method) {
+        case "GET":
+            $query = "SELECT IdUbicacion as id, nomLargo as valor FROM t_ubicacion  ORDER BY nomLargo";
+            $stmt = $Conexion->prepare($query);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($data)) {
+                http_response_code(200);
+                echo json_encode(['status' => true, 'data' => $data]);
+            } else {
+                http_response_code(200);
+                echo json_encode(['status' => false, 'message' => 'No hay ubicaciones disponibles']);
+            }
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['status' => false, 'message' => 'Método no permitido']);
+            break;
     }
-    
-    echo json_encode([
-        'status' => true,
-        'data' => $ubicaciones,
-        'message' => 'Ubicaciones obtenidas correctamente'
-    ]);
-    
-} catch (Exception $e) {
-    echo json_encode([
-        'status' => false,
-        'data' => [],
-        'message' => 'Error al obtener ubicaciones: ' . $e->getMessage()
-    ]);
+} catch (\Throwable $th) {
+    http_response_code(500);
+    echo json_encode(['status' => false, 'message' => 'Error: ' . $th->getMessage()]);
+} finally {
+    $Conexion = null;
 }
 ?>
