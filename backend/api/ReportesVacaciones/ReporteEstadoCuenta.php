@@ -53,8 +53,6 @@ try {
         exit;
     }
 
-    /* El SP devuelve los datos del empleado repetidos en cada fila.
-       Tomamos el primero y armamos el detalle por año. */
     $primera = $data[0];
 
     $detalle = [];
@@ -79,13 +77,14 @@ try {
     }
 
     $resultado = [
-        'IdPersonal'     => isset($primera['IdPersonal'])     ? (int)$primera['IdPersonal']     : 0,
-        'NoEmpleado'     => $primera['NoEmpleado']     ?? '',
-        'NombreCompleto' => $primera['NombreCompleto'] ?? '',
-        'Departamento'   => $primera['Departamento']   ?? '',
-        'FechaIngreso'   => normalizarFecha($primera['FechaIngreso'] ?? null),
-        'Antiguedad'     => isset($primera['Antiguedad']) ? (int)$primera['Antiguedad'] : 0,
-        'Detalle'        => $detalle,
+        'IdPersonal'         => isset($primera['IdPersonal'])     ? (int)$primera['IdPersonal']     : 0,
+        'NoEmpleado'         => $primera['NoEmpleado']     ?? '',
+        'NombreCompleto'     => $primera['NombreCompleto'] ?? '',
+        'Departamento'       => $primera['Departamento']   ?? '',
+        'FechaIngreso'       => normalizarFecha($primera['FechaIngreso'] ?? null),
+        'ProximoAniversario' => normalizarFecha($primera['ProximoAniversario'] ?? null),
+        'Antiguedad'         => isset($primera['Antiguedad']) ? (int)$primera['Antiguedad'] : 0,
+        'Detalle'            => $detalle,
     ];
 
     echo json_encode([

@@ -1,26 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiService } from '../../api/apiService';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
+import type { EmpleadoOpcion } from '../../interfaces/EstadoCuentaVacaciones';
 import './BuscadorEmpleado.css';
-
-export interface EmpleadoOpcion {
-    IdPersonal: number;
-    NoEmpleado: string;
-    NombreCompleto: string;
-    Departamento: string;
-    Cargo: string;
-    FechaIngreso: string;
-}
 
 interface Props {
     idUsuario: number;
     onSelect: (empleado: EmpleadoOpcion | null) => void;
 }
 
-export const BuscadorEmpleado: React.FC<Props> = ({
-    idUsuario,
-    onSelect
-}) => {
+export const BuscadorEmpleado: React.FC<Props> = ({ idUsuario, onSelect }) => {
     const [texto, setTexto] = useState('');
     const [empleados, setEmpleados] = useState<EmpleadoOpcion[]>([]);
     const [abierto, setAbierto] = useState(false);
@@ -142,13 +131,9 @@ export const BuscadorEmpleado: React.FC<Props> = ({
                             Escriba nombre o número de empleado
                         </li>
                     )}
-                    {!loading &&
-                        texto.trim() !== '' &&
-                        filtrados.length === 0 && (
-                            <li className="buscador-empleado-vacio">
-                                Sin resultados
-                            </li>
-                        )}
+                    {!loading && texto.trim() !== '' && filtrados.length === 0 && (
+                        <li className="buscador-empleado-vacio">Sin resultados</li>
+                    )}
                     {!loading &&
                         filtrados.map(item => (
                             <li

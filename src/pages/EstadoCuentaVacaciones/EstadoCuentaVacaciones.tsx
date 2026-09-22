@@ -8,13 +8,13 @@ import { formatReportDate } from '../../helpers/reportDate';
 import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
 import type {
     EstadoVacaciones,
-    EstadoCuentaPorAnio
+    EstadoCuentaPorAnio,
+    EmpleadoOpcion
 } from '../../interfaces/EstadoCuentaVacaciones';
-import { BuscadorEmpleado } from '../../components/BuscadorEmpleado/BuscadorEmpleado';
-import type { EmpleadoOpcion } from '../../components/BuscadorEmpleado/BuscadorEmpleado';
+import { BuscadorEmpleado } from '../../components/BuscadorEmpleado/BuscadorEmpleado'; 
 import { EstadoCuentaVacacionesPDF } from '../../components/Reportes/EstadoCuentaVacacionesPDF'; 
 import './EstadoCuentaVacaciones.css';
-
+ 
 interface Props {
     idUsuario: number;
 }
@@ -32,7 +32,7 @@ export const EstadoCuentaVacaciones: React.FC<Props> = ({ idUsuario }) => {
             setEstadoCuenta(null);
 
             const respuesta = await apiService.get<RespuestaAPI>(
-                `/ReportesVacaciones/EstadoCuentaVacaciones.php?busqueda=${encodeURIComponent(
+                `/ReportesVacaciones/ReporteEstadoCuenta.php?busqueda=${encodeURIComponent(
                     noEmpleado
                 )}`
             );

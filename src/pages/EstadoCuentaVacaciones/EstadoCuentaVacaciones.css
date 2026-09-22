@@ -4,7 +4,7 @@
     padding: 16px 20px;
     margin-bottom: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-left: 4px solid #dc2626;
+    border-left: 4px solid #ea580c;
 }
 
 .estado-cuenta-info {
@@ -22,7 +22,7 @@
 .estado-cuenta-info span {
     font-size: 11px;
     text-transform: uppercase;
-    color: #dc2626;
+    color: #ea580c;
     font-weight: 700;
 }
 
@@ -89,5 +89,5 @@
     font-size: 15px;
     background: #fff;
     border-radius: 10px;
-    border: 2px dashed #dc2626;
+    border: 2px dashed #ea580c;
 }

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Printer, X } from 'lucide-react';
 import { formatReportDate } from '../../helpers/reportDate';
 import type { EstadoVacaciones } from '../../interfaces/EstadoCuentaVacaciones';
+import logoAlpasa from '../../assets/logocredencial.png';
 import './EstadoCuentaVacacionesPDF.css';
 
 interface Props {
@@ -15,19 +16,51 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
     data,
     onClose
 }) => {
-    if (!visible || !data) return null;
+    const [aniosSeleccionados, setAniosSeleccionados] = useState<number[]>([]);
 
-    const totales = data.Detalle.reduce(
-        (acc, d) => ({
-            habilitados: acc.habilitados + d.DiasHabilitados,
-            tomados: acc.tomados + d.DiasTomados,
-            vencidos: acc.vencidos + d.DiasVencidos,
-            vigentes: acc.vigentes + d.DiasVigentes
-        }),
-        { habilitados: 0, tomados: 0, vencidos: 0, vigentes: 0 }
-    );
+    useEffect(() => {
+        if (data) {
+            setAniosSeleccionados(data.Detalle.map(d => d.Anio));
+        }
+    }, [data]);
+
+    const detalleFiltrado = useMemo(() => {
+        if (!data) return [];
+        return data.Detalle.filter(d => aniosSeleccionados.includes(d.Anio));
+    }, [data, aniosSeleccionados]);
+
+    const totales = useMemo(() => {
+        return detalleFiltrado.reduce(
+            (acc, d) => ({
+                habilitados: acc.habilitados + d.DiasHabilitados,
+                tomados: acc.tomados + d.DiasTomados,
+                vencidos: acc.vencidos + d.DiasVencidos,
+                vigentes: acc.vigentes + d.DiasVigentes
+            }),
+            { habilitados: 0, tomados: 0, vencidos: 0, vigentes: 0 }
+        );
+    }, [detalleFiltrado]);
+
+    const toggleAnio = (anio: number) => {
+        setAniosSeleccionados(actual =>
+            actual.includes(anio)
+                ? actual.filter(a => a !== anio)
+                : [...actual, anio]
+        );
+    };
+
+    const seleccionarTodos = () => {
+        if (!data) return;
+        setAniosSeleccionados(data.Detalle.map(d => d.Anio));
+    };
+
+    const limpiarSeleccion = () => {
+        setAniosSeleccionados([]);
+    };
 
     const imprimir = () => {
+        if (detalleFiltrado.length === 0) return;
+
         const contenido = document.getElementById('pdf-estado-cuenta');
         if (!contenido) return;
 
@@ -39,25 +72,37 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
                 * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
                 body { margin: 0; padding: 24px; color: #000; }
                 .pdf-titulo { text-align: center; margin-bottom: 16px; }
-                .pdf-titulo h1 { margin: 0; font-size: 20px; color: #dc2626; }
+                .pdf-titulo h1 { margin: 0; font-size: 20px; color: #ea580c; }
                 .pdf-titulo span { font-size: 12px; color: #000; }
-                .pdf-info {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 10px 20px;
-                    border: 1px solid #dc2626;
+                .pdf-cabecera {
+                    display: flex;
+                    gap: 20px;
+                    align-items: center;
+                    border: 1px solid #ea580c;
                     border-radius: 8px;
                     padding: 12px 16px;
-                    margin-bottom: 16px;
+                    margin-bottom: 12px;
                 }
-                .pdf-info > div { display: flex; flex-direction: column; }
-                .pdf-info span {
+                .pdf-logo {
+                    width: 130px;
+                    height: auto;
+                    flex-shrink: 0;
+                    object-fit: contain;
+                }
+                .pdf-cabecera-datos {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 8px 20px;
+                    flex: 1;
+                }
+                .pdf-cabecera-datos > div { display: flex; flex-direction: column; }
+                .pdf-cabecera-datos span {
                     font-size: 10px;
                     text-transform: uppercase;
-                    color: #dc2626;
+                    color: #ea580c;
                     font-weight: 700;
                 }
-                .pdf-info strong { font-size: 13px; color: #000; }
+                .pdf-cabecera-datos strong { font-size: 13px; color: #000; }
                 .pdf-resumen {
                     display: grid;
                     grid-template-columns: repeat(4, 1fr);
@@ -65,7 +110,7 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
                     margin-bottom: 16px;
                 }
                 .pdf-card {
-                    border: 1px solid #dc2626;
+                    border: 1px solid #ea580c;
                     border-radius: 8px;
                     padding: 10px;
                     text-align: center;
@@ -85,14 +130,14 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
                 .pdf-card.vencidos strong    { color: #dc2626; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
                 th, td {
-                    border: 1px solid #dc2626;
+                    border: 1px solid #ea580c;
                     padding: 6px 8px;
                     font-size: 12px;
                     text-align: center;
                     color: #000;
                 }
                 th {
-                    background: #dc2626;
+                    background: #000;
                     color: #fff;
                     text-transform: uppercase;
                     font-size: 11px;
@@ -148,6 +193,8 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
         }, 400);
     };
 
+    if (!visible || !data) return null;
+
     return (
         <div className="pdf-modal-overlay">
             <div className="pdf-modal">
@@ -158,6 +205,7 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
                             type="button"
                             className="pdf-btn-print"
                             onClick={imprimir}
+                            disabled={detalleFiltrado.length === 0}
                         >
                             <Printer size={16} />
                             Imprimir
@@ -173,6 +221,39 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
                 </div>
 
                 <div className="pdf-modal-body">
+                    <div className="pdf-anios-selector">
+                        <div className="pdf-anios-header">
+                            <span>Años a imprimir</span>
+                            <div className="pdf-anios-actions">
+                                <button type="button" onClick={seleccionarTodos}>
+                                    Todos
+                                </button>
+                                <button type="button" onClick={limpiarSeleccion}>
+                                    Ninguno
+                                </button>
+                            </div>
+                        </div>
+                        <div className="pdf-anios-lista">
+                            {data.Detalle.map(d => (
+                                <label
+                                    key={d.Anio}
+                                    className={`pdf-anio-check ${
+                                        aniosSeleccionados.includes(d.Anio)
+                                            ? 'activo'
+                                            : ''
+                                    }`}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={aniosSeleccionados.includes(d.Anio)}
+                                        onChange={() => toggleAnio(d.Anio)}
+                                    />
+                                    <span>{d.Anio}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
                     <div id="pdf-estado-cuenta" className="pdf-contenido">
                         <div className="pdf-titulo">
                             <h1>Estado de Cuenta de Vacaciones</h1>
@@ -182,35 +263,44 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
                             </span>
                         </div>
 
-                        <div className="pdf-info">
-                            <div>
-                                <span>No. Empleado</span>
-                                <strong>{data.NoEmpleado}</strong>
-                            </div>
-                            <div>
-                                <span>Nombre</span>
-                                <strong>{data.NombreCompleto}</strong>
-                            </div>
-                            <div>
-                                <span>Departamento</span>
-                                <strong>{data.Departamento}</strong>
-                            </div>
-                            <div>
-                                <span>Fecha de Ingreso</span>
-                                <strong>{formatReportDate(data.FechaIngreso)}</strong>
-                            </div>
-                            <div>
-                                <span>Próxima Fecha de Aniversario</span>
-                                <strong>
-                                    {formatReportDate(data.ProximoAniversario)}
-                                </strong>
-                            </div>
-                            <div>
-                                <span>Antigüedad</span>
-                                <strong>
-                                    {data.Antiguedad}{' '}
-                                    {data.Antiguedad === 1 ? 'año' : 'años'}
-                                </strong>
+                        <div className="pdf-cabecera">
+                            <img
+                                src={logoAlpasa}
+                                alt="Alpasa"
+                                className="pdf-logo"
+                            />
+                            <div className="pdf-cabecera-datos">
+                                <div>
+                                    <span>No. Empleado</span>
+                                    <strong>{data.NoEmpleado}</strong>
+                                </div>
+                                <div>
+                                    <span>Nombre</span>
+                                    <strong>{data.NombreCompleto}</strong>
+                                </div>
+                                <div>
+                                    <span>Departamento</span>
+                                    <strong>{data.Departamento}</strong>
+                                </div>
+                                <div>
+                                    <span>Fecha de Ingreso</span>
+                                    <strong>
+                                        {formatReportDate(data.FechaIngreso)}
+                                    </strong>
+                                </div>
+                                <div>
+                                    <span>Próxima Fecha de Aniversario</span>
+                                    <strong>
+                                        {formatReportDate(data.ProximoAniversario)}
+                                    </strong>
+                                </div>
+                                <div>
+                                    <span>Antigüedad</span>
+                                    <strong>
+                                        {data.Antiguedad}{' '}
+                                        {data.Antiguedad === 1 ? 'año' : 'años'}
+                                    </strong>
+                                </div>
                             </div>
                         </div>
 
@@ -244,7 +334,7 @@ export const EstadoCuentaVacacionesPDF: React.FC<Props> = ({
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.Detalle.map(row => (
+                                {detalleFiltrado.map(row => (
                                     <tr key={row.Anio}>
                                         <td>{row.Anio}</td>
                                         <td className="hab">{row.DiasHabilitados}</td>

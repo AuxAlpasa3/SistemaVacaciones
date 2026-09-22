@@ -4,8 +4,8 @@ export interface EstadoVacaciones {
     NombreCompleto: string;
     Departamento: string;
     FechaIngreso: string;
-    Antiguedad: number; 
     ProximoAniversario: string;
+    Antiguedad: number;
     Detalle: EstadoCuentaPorAnio[];
 }
 
@@ -14,6 +14,16 @@ export interface EstadoCuentaPorAnio {
     DiasHabilitados: number;
     DiasTomados: number;
     DiasVencidos: number;
-    DiasVigentes: number; 
+    DiasVigentes: number;
+    EstadoPeriodo: string;
     FechasTomadas: string[];
+}
+
+export interface EmpleadoOpcion {
+    IdPersonal: number;
+    NoEmpleado: string;
+    NombreCompleto: string;
+    Departamento: string;
+    Cargo: string;
+    FechaIngreso: string;
 }
