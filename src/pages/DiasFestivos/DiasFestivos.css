@@ -1,0 +1,621 @@
+.DiasFestivos-container {
+    padding: 20px;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+}
+
+.DiasFestivos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 18px;
+    background-color: white;
+    padding: 20px 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.DiasFestivos-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.page-title-DiasFestivos {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.DiasFestivos-header-subtitle {
+    font-size: 13px;
+    color: #718096;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 18px;
+    background-color: #e86f0c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background-color: #d95f00;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(217, 95, 0, 0.22);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.DiasFestivos-filters {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 20px;
+    margin-bottom: 8px;
+    background-color: white;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.DiasFestivos-filters-left {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.DiasFestivos-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.DiasFestivos-filter-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.DiasFestivos-filter-select {
+    min-width: 180px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    background-color: white;
+    color: #374151;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.DiasFestivos-filter-select:hover {
+    border-color: #b6bcc5;
+}
+
+.DiasFestivos-filter-select:focus {
+    border-color: #e86f0c;
+    box-shadow: 0 0 0 3px rgba(232, 111, 12, 0.12);
+}
+
+.DiasFestivos-clear-filter {
+    height: 42px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.DiasFestivos-clear-filter:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+    border-color: #9ca3af;
+}
+
+.DiasFestivos-result-count {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 42px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.DiasFestivos-result-count strong {
+    color: #e86f0c;
+    font-size: 15px;
+}
+
+.DiasFestivos-filter-summary {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    padding-left: 4px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.DiasFestivos-filter-summary strong {
+    color: #374151;
+}
+
+.DiasFestivos-content {
+    background: white;
+    border-radius: 10px;
+    overflow: visible;
+}
+
+.form-DiasFestivos-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 2147483647 !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    overflow-y: auto !important;
+    padding: 20px;
+}
+
+.form-DiasFestivos-modal {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.form-DiasFestivos-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+    border-radius: 10px 10px 0 0;
+}
+
+.form-DiasFestivos-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.close-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #718096;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    background-color: #edf2f7;
+    color: #2d3748;
+}
+
+.form-DiasFestivos-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.form-DiasFestivos-row {
+    display: grid;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-DiasFestivos-row.two-columns {
+    grid-template-columns: 1fr 1fr;
+}
+
+.form-DiasFestivos-row.two-columns-3-1 {
+    grid-template-columns: 3fr 1fr;
+}
+
+.form-DiasFestivos-row.two-columns-1-3 {
+    grid-template-columns: 1fr 3fr;
+}
+
+.form-DiasFestivos-row.three-columns {
+    grid-template-columns: 1fr 2fr 1fr;
+}
+
+.form-DiasFestivos-row.three-columns-equal {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.form-DiasFestivos-row.four-columns {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.form-DiasFestivos-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-DiasFestivos-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 6px;
+}
+
+.form-DiasFestivos-input,
+.form-DiasFestivos-select,
+.form-DiasFestivos-textarea {
+    padding: 11px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    font-size: 14px;
+    background-color: white;
+    color: #374151;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.form-DiasFestivos-input,
+.form-DiasFestivos-select {
+    min-height: 42px;
+}
+
+.form-DiasFestivos-input:focus,
+.form-DiasFestivos-select:focus,
+.form-DiasFestivos-textarea:focus {
+    outline: none;
+    border-color: #e86f0c;
+    box-shadow: 0 0 0 3px rgba(232, 111, 12, 0.12);
+}
+
+.form-DiasFestivos-input:disabled,
+.form-DiasFestivos-select:disabled,
+.form-DiasFestivos-textarea:disabled,
+.form-DiasFestivos-input.readonly {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.form-DiasFestivos-select {
+    cursor: pointer;
+}
+
+.form-DiasFestivos-textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+.form-DiasFestivos-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.btn {
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: #e86f0c;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #d95f00;
+    transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background-color: #e5e7eb;
+}
+
+.actions-dropdown-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.actions-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.actions-dropdown-trigger:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+.actions-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    min-width: 150px;
+    z-index: 1000;
+    overflow: hidden;
+    animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.actions-dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #374151;
+    transition: background-color 0.2s ease;
+    text-align: left;
+}
+
+.actions-dropdown-item:hover {
+    background-color: #f9fafb;
+}
+
+.actions-dropdown-item.view-action {
+    color: #3b82f6;
+}
+
+.actions-dropdown-item.view-action:hover {
+    background-color: #eff6ff;
+}
+
+.actions-dropdown-item.edit-action {
+    color: #e86f0c;
+}
+
+.actions-dropdown-item.edit-action:hover {
+    background-color: #fff7ed;
+}
+
+.actions-dropdown-item.delete-action {
+    color: #ef4444;
+}
+
+.actions-dropdown-item.delete-action:hover {
+    background-color: #fef2f2;
+}
+
+.actions-dropdown-divider {
+    height: 1px;
+    background-color: #f3f4f6;
+    margin: 2px 0;
+}
+
+@media (max-width: 900px) {
+    .DiasFestivos-filters {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .DiasFestivos-result-count {
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 768px) {
+    .DiasFestivos-container {
+        padding: 15px;
+    }
+
+    .DiasFestivos-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        width: 100%;
+    }
+
+    .action-btn {
+        width: 100%;
+    }
+
+    .DiasFestivos-filters-left {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    .DiasFestivos-filter-select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .DiasFestivos-clear-filter {
+        grid-column: 1 / -1;
+    }
+
+    .form-DiasFestivos-modal {
+        margin: 10px;
+        max-height: 95vh;
+    }
+
+    .form-DiasFestivos-modal-body {
+        padding: 18px;
+    }
+
+    .form-DiasFestivos-row.two-columns,
+    .form-DiasFestivos-row.two-columns-3-1,
+    .form-DiasFestivos-row.two-columns-1-3,
+    .form-DiasFestivos-row.three-columns,
+    .form-DiasFestivos-row.three-columns-equal,
+    .form-DiasFestivos-row.four-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .DiasFestivos-container {
+        padding: 10px;
+    }
+
+    .DiasFestivos-header {
+        padding: 16px;
+    }
+
+    .page-title-DiasFestivos {
+        font-size: 20px;
+    }
+
+    .DiasFestivos-filters {
+        padding: 14px;
+    }
+
+    .DiasFestivos-filters-left {
+        grid-template-columns: 1fr;
+    }
+
+    .DiasFestivos-clear-filter {
+        grid-column: auto;
+        width: 100%;
+    }
+
+    .DiasFestivos-result-count {
+        justify-content: flex-start;
+    }
+
+    .form-DiasFestivos-modal-overlay {
+        padding: 8px;
+    }
+
+    .form-DiasFestivos-modal {
+        margin: 0;
+    }
+
+    .form-DiasFestivos-modal-header {
+        padding: 14px 16px;
+    }
+
+    .form-DiasFestivos-modal-body {
+        padding: 16px;
+    }
+
+    .form-DiasFestivos-modal-title {
+        font-size: 16px;
+    }
+
+    .form-DiasFestivos-actions {
+        flex-direction: column-reverse;
+    }
+
+    .form-DiasFestivos-actions .btn {
+        width: 100%;
+    }
+}

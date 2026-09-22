@@ -27,8 +27,7 @@ try {
         $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $conjuntoActual++;
         
-        if ($resultados && count($resultados) > 0) {
-            // El primer conjunto contiene los períodos (tiene la columna Periodo)
+        if ($resultados && count($resultados) > 0) { 
             if ($conjuntoActual == 1 && isset($resultados[0]['Periodo'])) {
                 foreach ($resultados as $row) {
                     $periodos[] = [
@@ -48,8 +47,7 @@ try {
                         'Motivo' => isset($row['Motivo']) ? $row['Motivo'] : ''
                     ];
                 }
-            } 
-            // El segundo conjunto contiene los totales (tiene la columna TotalGenerados)
+            }  
             elseif ($conjuntoActual == 2 && isset($resultados[0]['TotalGenerados'])) {
                 $totales = $resultados[0];
             }
@@ -57,13 +55,11 @@ try {
     } while ($stmt->nextRowset());
     
     $stmt->closeCursor();
-    
-    // Ordenar períodos por período (año de antigüedad)
+     
     usort($periodos, function($a, $b) {
         return $a['Periodo'] - $b['Periodo'];
     });
     
-    // Transformar al formato que espera el frontend
     $periodosTransformados = array_map(function($periodo) {
         return [
             'Año' => $periodo['Anio'],
@@ -80,8 +76,7 @@ try {
             'FechaMitadPeriodo' => $periodo['FechaMitadPeriodo']
         ];
     }, $periodos);
-    
-    // 🔴 MODIFICADO: SOLO mostrar períodos con días disponibles (DiasDisponibles > 0)
+     
     $periodosFiltrados = array_filter($periodosTransformados, function($p) {
         return $p['DiasDisponibles'] > 0;
     });

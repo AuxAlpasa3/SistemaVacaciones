@@ -13,6 +13,30 @@ export const formatDate = (date: Date | string | undefined): string => {
     return `${day}/${month}/${year}`;
 };
 
+export const formatDateToSpanish = (dateString: string | undefined | null): string => {
+    if (!dateString) return 'N/A';
+    try {
+        let date: Date;
+        if (dateString.includes('-') && dateString.length === 10) {
+            const parts = dateString.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1;
+            const day = parseInt(parts[2]);
+            date = new Date(year, month, day);
+        } else {
+            date = new Date(dateString);
+        }
+        if (isNaN(date.getTime())) return 'N/A';
+        const day = date.getDate();
+        const month = date.getMonth();
+        const year = date.getFullYear();
+        const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        return `${day} de ${monthNames[month]} de ${year}`;
+    } catch {
+        return 'N/A';
+    }
+};
+
 export const formatDateForInput = (date: Date | string | undefined): string => {
     if (!date) return '';
     
@@ -193,4 +217,222 @@ export const formatDateForDisplay = (dateString: string): string => {
     }
     
     return dateString;
+};
+
+export const parseLocalDate = (
+    value: Date | string | null | undefined
+): Date | null => {
+
+    if (!value) {
+        return null;
+    }
+
+    if (value instanceof Date) {
+
+        if (isNaN(value.getTime())) {
+            return null;
+        }
+
+        const result = new Date(value);
+
+        result.setHours(12, 0, 0, 0);
+
+        return result;
+    }
+
+    const texto =
+        String(value)
+            .trim();
+
+    if (!texto) {
+        return null;
+    }
+
+    const isoMatch =
+        texto.match(
+            /^(\d{4})-(\d{2})-(\d{2})/
+        );
+
+    if (isoMatch) {
+
+        const year =
+            Number(isoMatch[1]);
+
+        const month =
+            Number(isoMatch[2]);
+
+        const day =
+            Number(isoMatch[3]);
+
+        if (
+            year <= 0 ||
+            month < 1 ||
+            month > 12 ||
+            day < 1 ||
+            day > 31
+        ) {
+            return null;
+        }
+
+        const date =
+            new Date(
+                year,
+                month - 1,
+                day,
+                12,
+                0,
+                0,
+                0
+            );
+
+        if (
+            date.getFullYear() !== year ||
+            date.getMonth() + 1 !== month ||
+            date.getDate() !== day
+        ) {
+            return null;
+        }
+
+        return date;
+    }
+
+    const slashMatch =
+        texto.match(
+            /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+        );
+
+    if (slashMatch) {
+
+        const day =
+            Number(slashMatch[1]);
+
+        const month =
+            Number(slashMatch[2]);
+
+        const year =
+            Number(slashMatch[3]);
+
+        const date =
+            new Date(
+                year,
+                month - 1,
+                day,
+                12,
+                0,
+                0,
+                0
+            );
+
+        if (
+            date.getFullYear() !== year ||
+            date.getMonth() + 1 !== month ||
+            date.getDate() !== day
+        ) {
+            return null;
+        }
+
+        return date;
+    }
+
+    const date =
+        new Date(texto);
+
+    if (
+        isNaN(
+            date.getTime()
+        )
+    ) {
+        return null;
+    }
+
+    date.setHours(
+        12,
+        0,
+        0,
+        0
+    );
+
+    return date;
+};
+
+
+export const getYearNumberFromDate = (
+    value: Date | string | null | undefined
+): number | null => {
+
+    const date =
+        parseLocalDate(
+            value
+        );
+
+    if (!date) {
+        return null;
+    }
+
+    const year =
+        date.getFullYear();
+
+    if (
+        !Number.isFinite(year) ||
+        year <= 0
+    ) {
+        return null;
+    }
+
+    return year;
+};
+
+
+export const getMonthNumberFromDate = (
+    value: Date | string | null | undefined
+): number | null => {
+
+    const date =
+        parseLocalDate(
+            value
+        );
+
+    if (!date) {
+        return null;
+    }
+
+    return (
+        date.getMonth() + 1
+    );
+};
+
+
+export const formatLocalDate = (
+    value: Date | string | null | undefined
+): string => {
+
+    const date =
+        parseLocalDate(
+            value
+        );
+
+    if (!date) {
+        return 'N/A';
+    }
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            '0'
+        );
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            '0'
+        );
+
+    const year =
+        date.getFullYear();
+
+    return `${day}/${month}/${year}`;
 };

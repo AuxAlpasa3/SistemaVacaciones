@@ -12,33 +12,9 @@ import type { RespuestaAPI } from '../../interfaces/RespuestaAPI';
 import type { CatalogoUsuario} from '../../interfaces/Usuario';
 import { obtenerUsuarioSesion } from '../../helpers/usuario';
 import { showToast } from '../../helpers/toast';
-import { formatDateForServer } from '../../helpers/date';
+import { formatDateToSpanish } from '../../helpers/date';
 import { apiService } from '../../api/apiService';
 import { useNavigate } from 'react-router-dom';
-
-const formatDateToSpanish = (dateString: string | undefined | null): string => {
-    if (!dateString) return 'N/A';
-    try {
-        let date: Date;
-        if (dateString.includes('-') && dateString.length === 10) {
-            const parts = dateString.split('-');
-            const year = parseInt(parts[0]);
-            const month = parseInt(parts[1]) - 1;
-            const day = parseInt(parts[2]);
-            date = new Date(year, month, day);
-        } else {
-            date = new Date(dateString);
-        }
-        if (isNaN(date.getTime())) return 'N/A';
-        const day = date.getDate();
-        const month = date.getMonth();
-        const year = date.getFullYear();
-        const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-        return `${day} de ${monthNames[month]} de ${year}`;
-    } catch {
-        return 'N/A';
-    }
-};
 
 const VerPersonalModal: React.FC<{
     visible: boolean;

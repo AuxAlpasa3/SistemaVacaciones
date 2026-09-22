@@ -22,6 +22,15 @@ interface EmpleadoResponse {
     IdPersonal: number;
 }
 
+interface DiaFestivo {
+    IdDiaFestivo: number;
+    Anio: number;
+    Fecha: string;
+    Nombre: string;
+    Tipo: string;
+    Descripcion?: string;
+}
+
 type TabType = 'solicitadas' | 'autorizadas' | 'validadas';
 
 const StatusBadge: React.FC<{ estatus: number }> = ({ estatus }) => {
@@ -135,9 +144,9 @@ const ActionConfirmationModal: React.FC<{
                 </div>
                 <div className="modal-body">
                     <p style={{ marginBottom: '16px' }}>{config.message}</p>
-                    <div style={{ 
-                        backgroundColor: '#FFF3E0', 
-                        padding: '12px', 
+                    <div style={{
+                        backgroundColor: '#FFF3E0',
+                        padding: '12px',
                         borderRadius: '8px',
                         marginBottom: '16px'
                     }}>
@@ -154,7 +163,7 @@ const ActionConfirmationModal: React.FC<{
                             <strong>Días:</strong> {vacacion?.DiasTomar}
                         </p>
                     </div>
-                    
+
                     {config.requiresComentarios && (
                         <div className="form-group" style={{ marginTop: '16px' }}>
                             <label className="form-label required">Comentarios:</label>
@@ -232,7 +241,7 @@ const MemoizedActionButtons = React.memo(({
     const showReauthorizeButton = (idRolUsuario === 2 || idRolUsuario === 3) && row.Estatus === 4 && activeTab === 'autorizadas';
     const showEditButtons = canEditDelete && (row.Estatus === 0 || row.Estatus === 1 || row.Estatus === 4) && activeTab !== 'validadas';
     const showDeleteButton = canEditDelete && row.Estatus === 0 && activeTab === 'solicitadas';
-    const showCancelButton = (idRolUsuario === 1 || idRolUsuario === 2 || idRolUsuario === 3) && 
+    const showCancelButton = (idRolUsuario === 1 || idRolUsuario === 2 || idRolUsuario === 3) &&
                              (row.Estatus === 0 || row.Estatus === 1) &&
                              activeTab !== 'validadas';
     const showReturnToReviewButton = idRolUsuario === 2 && row.Estatus === 2 && activeTab === 'validadas';
@@ -254,25 +263,25 @@ const MemoizedActionButtons = React.memo(({
 
             {openActionDropdown === row.IdVacaciones && (
                 <div className="actions-dropdown-menu">
-                    <button 
-                        className="actions-dropdown-item view-action" 
-                        onClick={() => { 
-                            onView(row); 
-                            setOpenActionDropdown(null); 
+                    <button
+                        className="actions-dropdown-item view-action"
+                        onClick={() => {
+                            onView(row);
+                            setOpenActionDropdown(null);
                         }}
                     >
                         <Eye size={14} />
                         <span>Ver</span>
                     </button>
-                    
+
                     {showAuthorizeButton && (
                         <>
                             <div className="actions-dropdown-divider"></div>
-                            <button 
-                                className="actions-dropdown-item authorize-action" 
-                                onClick={() => { 
-                                    onAuthorize(row); 
-                                    setOpenActionDropdown(null); 
+                            <button
+                                className="actions-dropdown-item authorize-action"
+                                onClick={() => {
+                                    onAuthorize(row);
+                                    setOpenActionDropdown(null);
                                 }}
                             >
                                 <CheckCircle size={14} />
@@ -280,26 +289,26 @@ const MemoizedActionButtons = React.memo(({
                             </button>
                         </>
                     )}
-                    
+
                     {showValidateButtons && (
                         <>
                             <div className="actions-dropdown-divider"></div>
-                            <button 
-                                className="actions-dropdown-item validate-action" 
-                                onClick={() => { 
-                                    onValidate(row); 
-                                    setOpenActionDropdown(null); 
+                            <button
+                                className="actions-dropdown-item validate-action"
+                                onClick={() => {
+                                    onValidate(row);
+                                    setOpenActionDropdown(null);
                                 }}
                             >
                                 <CheckCircle size={14} />
                                 <span>Validar</span>
                             </button>
                             <div className="actions-dropdown-divider"></div>
-                            <button 
-                                className="actions-dropdown-item review-action" 
-                                onClick={() => { 
-                                    onReview(row); 
-                                    setOpenActionDropdown(null); 
+                            <button
+                                className="actions-dropdown-item review-action"
+                                onClick={() => {
+                                    onReview(row);
+                                    setOpenActionDropdown(null);
                                 }}
                             >
                                 <AlertCircle size={14} />
@@ -311,11 +320,11 @@ const MemoizedActionButtons = React.memo(({
                     {showReauthorizeButton && (
                         <>
                             <div className="actions-dropdown-divider"></div>
-                            <button 
-                                className="actions-dropdown-item reauthorize-action" 
-                                onClick={() => { 
-                                    onReauthorize(row); 
-                                    setOpenActionDropdown(null); 
+                            <button
+                                className="actions-dropdown-item reauthorize-action"
+                                onClick={() => {
+                                    onReauthorize(row);
+                                    setOpenActionDropdown(null);
                                 }}
                             >
                                 <RefreshCw size={14} />
@@ -323,15 +332,15 @@ const MemoizedActionButtons = React.memo(({
                             </button>
                         </>
                     )}
-                    
+
                     {showReturnToReviewButton && (
                         <>
                             <div className="actions-dropdown-divider"></div>
-                            <button 
-                                className="actions-dropdown-item return-review-action" 
-                                onClick={() => { 
-                                    onReturnToReview(row); 
-                                    setOpenActionDropdown(null); 
+                            <button
+                                className="actions-dropdown-item return-review-action"
+                                onClick={() => {
+                                    onReturnToReview(row);
+                                    setOpenActionDropdown(null);
                                 }}
                             >
                                 <RefreshCw size={14} />
@@ -339,15 +348,15 @@ const MemoizedActionButtons = React.memo(({
                             </button>
                         </>
                     )}
-                    
+
                     {showCancelButton && (
                         <>
                             <div className="actions-dropdown-divider"></div>
-                            <button 
-                                className="actions-dropdown-item cancel-action" 
-                                onClick={() => { 
-                                    onCancel(row); 
-                                    setOpenActionDropdown(null); 
+                            <button
+                                className="actions-dropdown-item cancel-action"
+                                onClick={() => {
+                                    onCancel(row);
+                                    setOpenActionDropdown(null);
                                 }}
                             >
                                 <XCircle size={14} />
@@ -355,15 +364,15 @@ const MemoizedActionButtons = React.memo(({
                             </button>
                         </>
                     )}
-                    
+
                     {showEditButtons && (
                         <>
                             <div className="actions-dropdown-divider"></div>
-                            <button 
-                                className="actions-dropdown-item edit-action" 
-                                onClick={() => { 
-                                    onEdit(row); 
-                                    setOpenActionDropdown(null); 
+                            <button
+                                className="actions-dropdown-item edit-action"
+                                onClick={() => {
+                                    onEdit(row);
+                                    setOpenActionDropdown(null);
                                 }}
                             >
                                 <Edit size={14} />
@@ -375,11 +384,11 @@ const MemoizedActionButtons = React.memo(({
                     {showDeleteButton && (
                         <>
                             <div className="actions-dropdown-divider"></div>
-                            <button 
-                                className="actions-dropdown-item delete-action" 
-                                onClick={() => { 
-                                    onDelete(row); 
-                                    setOpenActionDropdown(null); 
+                            <button
+                                className="actions-dropdown-item delete-action"
+                                onClick={() => {
+                                    onDelete(row);
+                                    setOpenActionDropdown(null);
                                 }}
                             >
                                 <Trash2 size={14} />
@@ -417,9 +426,9 @@ const DeleteConfirmationModal: React.FC<{
                     <p style={{ marginBottom: '16px' }}>
                         ¿Está seguro de que desea eliminar la solicitud de vacaciones de?
                     </p>
-                    <div style={{ 
-                        backgroundColor: '#FFF3E0', 
-                        padding: '12px', 
+                    <div style={{
+                        backgroundColor: '#FFF3E0',
+                        padding: '12px',
                         borderRadius: '8px',
                         marginBottom: '8px'
                     }}>
@@ -485,7 +494,7 @@ export const Vacaciones: React.FC = () => {
         Antiguedad: 0,
         Comentarios: null
     });
-    
+
     const [fechaInicioInput, setFechaInicioInput] = useState('');
     const [fechaFinInput, setFechaFinInput] = useState('');
     const [fechaIngresoInput, setFechaIngresoInput] = useState('');
@@ -493,7 +502,7 @@ export const Vacaciones: React.FC = () => {
     const [fechaRetornoInput, setFechaRetornoInput] = useState('');
     const [noContarDomingos, setNoContarDomingos] = useState(false);
     const [diasSinDomingos, setDiasSinDomingos] = useState(0);
-    
+
     const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [vacaciones, setVacaciones] = useState<InterfaceVacaciones[]>([]);
     const [loading, setLoading] = useState(false);
@@ -503,25 +512,25 @@ export const Vacaciones: React.FC = () => {
     const [openActionDropdown, setOpenActionDropdown] = useState<number | null>(null);
     const [showFiltrosAvanzados, setShowFiltrosAvanzados] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('solicitadas');
-    
+
     const [empleados, setEmpleados] = useState<OpcionSelect[]>([]);
     const [departamentos, setDepartamentos] = useState<OpcionSelect[]>([]);
     const [loadingOptions, setLoadingOptions] = useState(false);
-    
+
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [vacacionAEliminar, setVacacionAEliminar] = useState<InterfaceVacaciones | null>(null);
     const [eliminando, setEliminando] = useState(false);
-    
+
     const [actionModalVisible, setActionModalVisible] = useState(false);
     const [vacacionAccion, setVacacionAccion] = useState<InterfaceVacaciones | null>(null);
     const [actionType, setActionType] = useState<'authorize' | 'validate' | 'cancel' | 'review' | 'reauthorize' | 'returnToReview'>('authorize');
     const [accionEnProceso, setAccionEnProceso] = useState(false);
-    
+
     const [selectedEmpleadoId, setSelectedEmpleadoId] = useState<string>('');
-    
+
     const today = new Date().toISOString().split('T')[0];
     const [filtroFecha, setFiltroFecha] = useState<string>('');
-    
+
     const [filtros, setFiltros] = useState<FiltrosVacaciones>({
         NoEmpleado: 0,
         NombreCompleto: '',
@@ -536,19 +545,21 @@ export const Vacaciones: React.FC = () => {
     });
 
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-    
+
     const [periodosVacaciones, setPeriodosVacaciones] = useState<PeriodoVacaciones[]>([]);
     const [aniosDisponibles, setAniosDisponibles] = useState<OpcionSelect[]>([]);
-    const [selectedAnio, setSelectedAnio] = useState<number | null>(null);
+    const [selectedAnios, setSelectedAnios] = useState<number[]>([]);
     const [diasDisponiblesPeriodo, setDiasDisponiblesPeriodo] = useState<number>(0);
     const [cargandoPeriodos, setCargandoPeriodos] = useState(false);
     const [saldoRestante, setSaldoRestante] = useState<number>(0);
-    const [periodoSeleccionado, setPeriodoSeleccionado] = useState<PeriodoVacaciones | null>(null);
     const [advertenciaAnticipacion, setAdvertenciaAnticipacion] = useState<string>('');
     const [advertenciaViernes, setAdvertenciaViernes] = useState<string>('');
     const [advertenciaRetornoDomingo, setAdvertenciaRetornoDomingo] = useState<string>('');
     const [advertenciaInicioDomingo, setAdvertenciaInicioDomingo] = useState<string>('');
     const [advertenciaFinDomingo, setAdvertenciaFinDomingo] = useState<string>('');
+
+    const [diasFestivos, setDiasFestivos] = useState<Set<string>>(new Set());
+    const [cargandoFestivos, setCargandoFestivos] = useState(false);
 
     const filtroTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -557,6 +568,151 @@ export const Vacaciones: React.FC = () => {
     const canEditDelete = isHRorAdmin;
     const isAuthorizer = idRolUsuario === 3 || idRolUsuario === 2;
     const isValidator = idRolUsuario === 2;
+
+    const periodosSeleccionados = useMemo(() => {
+        return periodosVacaciones
+            .filter(periodo => selectedAnios.includes(Number(periodo.Año)))
+            .sort((a, b) => Number(a.Año) - Number(b.Año));
+    }, [periodosVacaciones, selectedAnios]);
+
+    const totalDiasDisponiblesSeleccionados = useMemo(() => {
+        return periodosSeleccionados.reduce(
+            (total, periodo) => total + Number(periodo.DiasDisponibles || 0),
+            0
+        );
+    }, [periodosSeleccionados]);
+
+    const totalDiasGeneradosSeleccionados = useMemo(() => {
+        return periodosSeleccionados.reduce(
+            (total, periodo) => total + Number(periodo.DiasGenera || 0),
+            0
+        );
+    }, [periodosSeleccionados]);
+
+    const totalDiasDisfrutadosSeleccionados = useMemo(() => {
+        return periodosSeleccionados.reduce(
+            (total, periodo) => total + Number(periodo.DiasDisfrutados || 0),
+            0
+        );
+    }, [periodosSeleccionados]);
+
+    useEffect(() => {
+        const anioPrincipal =
+            selectedAnios.length > 0
+                ? Math.min(...selectedAnios)
+                : 0;
+
+        const antiguedad =
+            periodosSeleccionados.length > 0
+                ? Math.max(
+                    ...periodosSeleccionados.map(
+                        periodo => Number(periodo.AñosAntiguedad || 0)
+                    )
+                )
+                : 0;
+
+        setDiasDisponiblesPeriodo(totalDiasDisponiblesSeleccionados);
+
+        setVacacionesForm(prev => ({
+            ...prev,
+            Anio: anioPrincipal,
+            SaldoDias: totalDiasDisponiblesSeleccionados,
+            DiasCorresponden: totalDiasGeneradosSeleccionados,
+            Antiguedad: antiguedad
+        }));
+    }, [
+        selectedAnios,
+        periodosSeleccionados,
+        totalDiasDisponiblesSeleccionados,
+        totalDiasGeneradosSeleccionados
+    ]);
+
+    useEffect(() => {
+        const diasSolicitados = Number(vacacionesForm.DiasTomar || 0);
+
+        setSaldoRestante(
+            Math.max(
+                totalDiasDisponiblesSeleccionados - diasSolicitados,
+                0
+            )
+        );
+    }, [
+        totalDiasDisponiblesSeleccionados,
+        vacacionesForm.DiasTomar
+    ]);
+
+    const cargarDiasFestivos = useCallback(async (anios: number[]) => {
+        if (!anios.length) {
+            setDiasFestivos(new Set());
+            return;
+        }
+
+        try {
+            setCargandoFestivos(true);
+
+            const params = new URLSearchParams();
+            anios.forEach(a => params.append('anios[]', a.toString()));
+
+            const response = await apiService.get<RespuestaAPI>(
+                `/vacaciones/opciones/ObtenerDiasFestivos.php?${params.toString()}`
+            );
+
+            if (response.status && Array.isArray(response.data)) {
+                const fechas = (response.data as DiaFestivo[])
+                    .map(d => (d.Fecha || '').toString().split('T')[0])
+                    .filter(Boolean);
+
+                setDiasFestivos(new Set(fechas));
+            } else {
+                setDiasFestivos(new Set());
+            }
+        } catch (error) {
+            console.error('Error cargando días festivos:', error);
+            setDiasFestivos(new Set());
+        } finally {
+            setCargandoFestivos(false);
+        }
+    }, []);
+
+    const esDiaFestivo = useCallback((fecha: string) => {
+        if (!fecha) return false;
+        const key = fecha.split('T')[0];
+        return diasFestivos.has(key);
+    }, [diasFestivos]);
+
+    const obtenerAniosSolicitud = useCallback(
+        (vacacion: InterfaceVacaciones): number[] => {
+            const rawAnios =
+                (vacacion as any).Anios ??
+                (vacacion as any).anios ??
+                null;
+
+            if (Array.isArray(rawAnios)) {
+                return Array.from(
+                    new Set(
+                        rawAnios
+                            .map(anio => Number(anio))
+                            .filter(anio => Number.isFinite(anio) && anio > 0)
+                    )
+                ).sort((a, b) => a - b);
+            }
+
+            if (typeof rawAnios === 'string' && rawAnios.trim()) {
+                return Array.from(
+                    new Set(
+                        rawAnios
+                            .split(',')
+                            .map(anio => Number(anio.trim()))
+                            .filter(anio => Number.isFinite(anio) && anio > 0)
+                    )
+                ).sort((a, b) => a - b);
+            }
+
+            const anioActual = Number(vacacion.Anio || 0);
+            return anioActual > 0 ? [anioActual] : [];
+        },
+        []
+    );
 
     const esDomingo = useCallback((fecha: string) => {
         if (!fecha) return false;
@@ -567,50 +723,60 @@ export const Vacaciones: React.FC = () => {
     const verificarRetornoDomingo = useCallback(() => {
         const fechaRetorno = vacacionesForm.FechaRetornoLabores;
         const departamento = vacacionesForm.Departamento || '';
-        
+
         if (!fechaRetorno) {
             setAdvertenciaRetornoDomingo('');
             return;
         }
-        
+
         const esAdministracion = departamento === 'Administración' || departamento === '1';
-        
+
         if (!esAdministracion) {
             setAdvertenciaRetornoDomingo('');
             return;
         }
-        
+
         const retorno = new Date(fechaRetorno + 'T00:00:00');
         const esDomingoDay = retorno.getDay() === 0;
-        
+
         if (esDomingoDay) {
             setAdvertenciaRetornoDomingo("ADVERTENCIA: Para el departamento de Administración, la fecha de retorno no puede ser domingo. Debe ajustar la fecha.");
         } else {
             setAdvertenciaRetornoDomingo('');
         }
     }, [vacacionesForm.FechaRetornoLabores, vacacionesForm.Departamento]);
- 
-    const contarDiasHabiles = useCallback((fechaInicio: string, fechaFin: string, excluirDomingos: boolean) => {
+
+    const contarDiasHabiles = useCallback((
+        fechaInicio: string,
+        fechaFin: string,
+        excluirDomingos: boolean
+    ) => {
         if (!fechaInicio || !fechaFin) return 0;
-        
+
         const inicio = new Date(fechaInicio + 'T00:00:00');
         const fin = new Date(fechaFin + 'T00:00:00');
-        
+
         if (fin < inicio) return 0;
-        
+
         let contador = 0;
         const fechaActual = new Date(inicio);
-        
+
         while (fechaActual <= fin) {
             const diaSemana = fechaActual.getDay();
-            if (!excluirDomingos || diaSemana !== 0) {
+            const fechaStr = fechaActual.toISOString().split('T')[0];
+
+            const esDomingoDay = diaSemana === 0;
+            const esFestivo = diasFestivos.has(fechaStr);
+
+            if (!esFestivo && (!excluirDomingos || !esDomingoDay)) {
                 contador++;
             }
+
             fechaActual.setDate(fechaActual.getDate() + 1);
         }
-        
+
         return contador;
-    }, []);
+    }, [diasFestivos]);
 
     const calcularFechaFin = useCallback((
         fechaInicio: string,
@@ -622,25 +788,43 @@ export const Vacaciones: React.FC = () => {
         const fecha = new Date(fechaInicio + 'T00:00:00');
         let diasContados = 0;
 
-        if (excluirDomingos && fecha.getDay() === 0) {
+        while (
+            (excluirDomingos && fecha.getDay() === 0) ||
+            diasFestivos.has(fecha.toISOString().split('T')[0])
+        ) {
             fecha.setDate(fecha.getDate() + 1);
         }
 
         while (diasContados < dias) {
-            if (!excluirDomingos || fecha.getDay() !== 0) {
+            const fechaStr = fecha.toISOString().split('T')[0];
+            const esDomingoDay = fecha.getDay() === 0;
+            const esFestivo = diasFestivos.has(fechaStr);
+
+            if ((!excluirDomingos || !esDomingoDay) && !esFestivo) {
                 diasContados++;
             }
+
             if (diasContados < dias) {
                 fecha.setDate(fecha.getDate() + 1);
+
+                while (
+                    (excluirDomingos && fecha.getDay() === 0) ||
+                    diasFestivos.has(fecha.toISOString().split('T')[0])
+                ) {
+                    fecha.setDate(fecha.getDate() + 1);
+                }
             }
         }
 
-        if (excluirDomingos && fecha.getDay() === 0) {
+        while (
+            (excluirDomingos && fecha.getDay() === 0) ||
+            diasFestivos.has(fecha.toISOString().split('T')[0])
+        ) {
             fecha.setDate(fecha.getDate() + 1);
         }
 
         return fecha.toISOString().split('T')[0];
-    }, []);
+    }, [diasFestivos]);
 
     const calcularFechaRetorno = useCallback((
         fechaFin: string,
@@ -651,29 +835,30 @@ export const Vacaciones: React.FC = () => {
         const retorno = new Date(fechaFin + 'T00:00:00');
         retorno.setDate(retorno.getDate() + 1);
 
-        if (excluirDomingos) {
-            while (retorno.getDay() === 0) {
-                retorno.setDate(retorno.getDate() + 1);
-            }
+        while (
+            (excluirDomingos && retorno.getDay() === 0) ||
+            diasFestivos.has(retorno.toISOString().split('T')[0])
+        ) {
+            retorno.setDate(retorno.getDate() + 1);
         }
 
         return retorno.toISOString().split('T')[0];
-    }, []);
+    }, [diasFestivos]);
 
     const recalcularTodo = useCallback((fechaInicio: string, dias: number, excluirDomingos: boolean) => {
         if (!fechaInicio || !dias || dias <= 0) {
             setFechaFinInput('');
             setFechaRetornoInput('');
             setDiasSinDomingos(0);
-            setVacacionesForm(prev => ({ 
-                ...prev, 
-                FechaFin: '', 
+            setVacacionesForm(prev => ({
+                ...prev,
+                FechaFin: '',
                 FechaRetornoLabores: '',
                 DiasTomar: 0
             }));
             return;
         }
-        
+
         if (excluirDomingos && esDomingo(fechaInicio)) {
             setAdvertenciaInicioDomingo("ADVERTENCIA: La fecha de inicio no puede ser domingo cuando no se cuentan domingos.");
             const fecha = new Date(fechaInicio + 'T00:00:00');
@@ -688,236 +873,248 @@ export const Vacaciones: React.FC = () => {
         } else {
             setAdvertenciaInicioDomingo('');
         }
-        
+
         const fechaFin = calcularFechaFin(fechaInicio, dias, excluirDomingos);
         setFechaFinInput(fechaFin);
         setVacacionesForm(prev => ({ ...prev, FechaFin: fechaFin }));
-        
+
         const diasContados = contarDiasHabiles(fechaInicio, fechaFin, excluirDomingos);
         setDiasSinDomingos(diasContados);
         setVacacionesForm(prev => ({ ...prev, DiasTomar: diasContados }));
-        
+
         const nuevoSaldo = diasDisponiblesPeriodo - diasContados;
         setSaldoRestante(nuevoSaldo >= 0 ? nuevoSaldo : 0);
-        
+
         const fechaRetorno = calcularFechaRetorno(fechaFin, excluirDomingos);
         setFechaRetornoInput(fechaRetorno);
         setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: fechaRetorno }));
-        
+
         if (excluirDomingos && esDomingo(fechaFin)) {
             setAdvertenciaFinDomingo(`La fecha de fin no puede ser domingo. Se ajustó automáticamente a ${fechaFin}`);
         } else {
             setAdvertenciaFinDomingo('');
         }
-        
+
         setTimeout(() => {
             verificarRetornoDomingo();
         }, 50);
     }, [diasDisponiblesPeriodo, esDomingo, calcularFechaFin, calcularFechaRetorno, contarDiasHabiles, verificarRetornoDomingo]);
 
     const cargarOpcionesCatalogos = useCallback(
-    async (usuario: CatalogoUsuario | null) => {
-        try {
-            setLoadingOptions(true);
+        async (usuario: CatalogoUsuario | null) => {
+            try {
+                setLoadingOptions(true);
 
-            if (!usuario?.IdUsuario) {
-                setEmpleados([]);
-                setDepartamentos([]);
-                return;
-            }
+                if (!usuario?.IdUsuario) {
+                    setEmpleados([]);
+                    setDepartamentos([]);
+                    return;
+                }
 
-            const departamentoUsuario = String(
-                usuario.Departamento ?? ''
-            )
-                .trim()
-                .toLowerCase();
-
-            const tipoUsuario = Number(
-                (usuario as any).TipoUsuario ??
-                (usuario as any).tipoUsuario ??
-                0
-            );
-
-            const rolUsuario = Number(
-                (usuario as any).Rol ??
-                usuario.rol ??
-                0
-            );
-
-            const esAdministracion =
-                departamentoUsuario === '1' ||
-                departamentoUsuario === 'administración' ||
-                departamentoUsuario === 'administracion';
-
-            const puedeVerTodosEmpleados =
-                tipoUsuario === 1 &&
-                rolUsuario === 2;
-
-            const params = new URLSearchParams();
-
-            params.append(
-                'IdUsuario',
-                usuario.IdUsuario.toString()
-            );
-
-            params.append(
-                'TipoUsuario',
-                tipoUsuario.toString()
-            );
-
-            params.append(
-                'Rol',
-                rolUsuario.toString()
-            );
-
-            if (puedeVerTodosEmpleados) {
-                params.append('todosEmpleados', 'true');
-            } else if (esAdministracion) {
-                params.append('departamento', '1');
-                params.append('soloAsignados', 'true');
-                params.append('mostrarJefes', 'true');
-            }
-
-            const url =
-                `/vacaciones/opciones/ObtenerEmpleados.php?${params.toString()}`;
-
-            const [
-                empleadosResponse,
-                departamentosResponse
-            ] = await Promise.all([
-                apiService.get<RespuestaAPI>(url),
-                apiService.get<RespuestaAPI>(
-                    '/vacaciones/opciones/ObtenerDepartamentos.php'
+                const departamentoUsuario = String(
+                    usuario.Departamento ?? ''
                 )
-            ]);
+                    .trim()
+                    .toLowerCase();
 
-            if (
-                empleadosResponse.status &&
-                empleadosResponse.data
-            ) {
-                const empleadosData = Array.isArray(
-                    empleadosResponse.data
-                )
-                    ? empleadosResponse.data
-                    : [];
-
-                setEmpleados(
-                    empleadosData.map((empleado: any) => ({
-                        id:
-                            empleado.NoEmpleado?.toString() ||
-                            empleado.id?.toString() ||
-                            '',
-                        valor:
-                            empleado.NombreCompleto ||
-                            empleado.valor ||
-                            ''
-                    }))
+                const tipoUsuario = Number(
+                    (usuario as any).TipoUsuario ??
+                    (usuario as any).tipoUsuario ??
+                    0
                 );
-            } else {
-                setEmpleados([]);
-            }
 
-            if (
-                departamentosResponse.status &&
-                departamentosResponse.data
-            ) {
-                const departamentosData = Array.isArray(
-                    departamentosResponse.data
-                )
-                    ? departamentosResponse.data
-                    : [];
+                const rolUsuario = Number(
+                    (usuario as any).Rol ??
+                    usuario.rol ??
+                    0
+                );
 
-                setDepartamentos(
-                    departamentosData.map(
-                        (departamento: any) => ({
+                const esAdministracion =
+                    departamentoUsuario === '1' ||
+                    departamentoUsuario === 'administración' ||
+                    departamentoUsuario === 'administracion';
+
+                const puedeVerTodosEmpleados =
+                    tipoUsuario === 1 &&
+                    rolUsuario === 2;
+
+                const params = new URLSearchParams();
+
+                params.append(
+                    'IdUsuario',
+                    usuario.IdUsuario.toString()
+                );
+
+                params.append(
+                    'TipoUsuario',
+                    tipoUsuario.toString()
+                );
+
+                params.append(
+                    'Rol',
+                    rolUsuario.toString()
+                );
+
+                if (puedeVerTodosEmpleados) {
+                    params.append('todosEmpleados', 'true');
+                } else if (esAdministracion) {
+                    params.append('departamento', '1');
+                    params.append('soloAsignados', 'true');
+                    params.append('mostrarJefes', 'true');
+                }
+
+                const url =
+                    `/vacaciones/opciones/ObtenerEmpleados.php?${params.toString()}`;
+
+                const [
+                    empleadosResponse,
+                    departamentosResponse
+                ] = await Promise.all([
+                    apiService.get<RespuestaAPI>(url),
+                    apiService.get<RespuestaAPI>(
+                        '/vacaciones/opciones/ObtenerDepartamentos.php'
+                    )
+                ]);
+
+                if (
+                    empleadosResponse.status &&
+                    empleadosResponse.data
+                ) {
+                    const empleadosData = Array.isArray(
+                        empleadosResponse.data
+                    )
+                        ? empleadosResponse.data
+                        : [];
+
+                    setEmpleados(
+                        empleadosData.map((empleado: any) => ({
                             id:
-                                departamento.Departamento?.toString() ||
-                                departamento.id?.toString() ||
+                                empleado.NoEmpleado?.toString() ||
+                                empleado.id?.toString() ||
                                 '',
                             valor:
-                                departamento.Departamento ||
-                                departamento.valor ||
+                                empleado.NombreCompleto ||
+                                empleado.valor ||
                                 ''
-                        })
+                        }))
+                    );
+                } else {
+                    setEmpleados([]);
+                }
+
+                if (
+                    departamentosResponse.status &&
+                    departamentosResponse.data
+                ) {
+                    const departamentosData = Array.isArray(
+                        departamentosResponse.data
                     )
+                        ? departamentosResponse.data
+                        : [];
+
+                    setDepartamentos(
+                        departamentosData.map(
+                            (departamento: any) => ({
+                                id:
+                                    departamento.Departamento?.toString() ||
+                                    departamento.id?.toString() ||
+                                    '',
+                                valor:
+                                    departamento.Departamento ||
+                                    departamento.valor ||
+                                    ''
+                            })
+                        )
+                    );
+                } else {
+                    setDepartamentos([]);
+                }
+            } catch (error) {
+                console.error(
+                    'Error cargando opciones:',
+                    error
                 );
-            } else {
+
+                setEmpleados([]);
                 setDepartamentos([]);
+
+                showToast({
+                    text: 'Error al cargar opciones',
+                    type: 'error',
+                    autoClose: 1500
+                });
+            } finally {
+                setLoadingOptions(false);
             }
-        } catch (error) {
-            console.error(
-                'Error cargando opciones:',
-                error
-            );
+        },
+        []
+    );
 
-            setEmpleados([]);
-            setDepartamentos([]);
-
-            showToast({
-                text: 'Error al cargar opciones',
-                type: 'error',
-                autoClose: 1500
-            });
-        } finally {
-            setLoadingOptions(false);
-        }
-    },
-    []
-);
-
-    const cargarPeriodosVacaciones = useCallback(async (idPersonal: number, anioSeleccionado?: number) => {
+    const cargarPeriodosVacaciones = useCallback(async (
+        idPersonal: number,
+        aniosSeleccionados?: number | number[]
+    ) => {
         if (!idPersonal || idPersonal === 0) {
             return;
         }
-        
+
         try {
             setCargandoPeriodos(true);
+
             const response = await apiService.get<RespuestaAPI>(
                 `/vacaciones/ObtenerPeriodosVacaciones.php?IdPersonal=${idPersonal}`
             );
-            
-            if (response.status && response.data && Array.isArray(response.data) && response.data.length > 0) {
+
+            if (
+                response.status &&
+                response.data &&
+                Array.isArray(response.data) &&
+                response.data.length > 0
+            ) {
                 const periodos = response.data as PeriodoVacaciones[];
                 setPeriodosVacaciones(periodos);
-                
-                const aniosConDias = periodos.map(p => ({
-                    id: p.Año.toString(),
-                    valor: p.Año.toString()
+
+                const aniosConDias = periodos.map(periodo => ({
+                    id: periodo.Año.toString(),
+                    valor: periodo.Año.toString()
                 }));
-                
+
                 setAniosDisponibles(aniosConDias);
-                
-                let anioParaSeleccionar = anioSeleccionado;
-                if (!anioParaSeleccionar && periodos.length > 0) {
-                    anioParaSeleccionar = Math.min(...periodos.map(p => p.Año));
+
+                const aniosSolicitados = Array.isArray(aniosSeleccionados)
+                    ? aniosSeleccionados
+                    : aniosSeleccionados
+                        ? [aniosSeleccionados]
+                        : [];
+
+                const aniosValidos = new Set(
+                    periodos.map(periodo => Number(periodo.Año))
+                );
+
+                let seleccion = Array.from(
+                    new Set(
+                        aniosSolicitados
+                            .map(anio => Number(anio))
+                            .filter(anio => aniosValidos.has(anio))
+                    )
+                ).sort((a, b) => a - b);
+
+                if (seleccion.length === 0 && aniosSolicitados.length === 0) {
+                    seleccion = [
+                        Math.min(
+                            ...periodos.map(periodo => Number(periodo.Año))
+                        )
+                    ];
                 }
-                
-                if (anioParaSeleccionar) {
-                    setSelectedAnio(anioParaSeleccionar);
-                    const periodo = periodos.find(p => p.Año === anioParaSeleccionar);
-                    if (periodo) {
-                        setPeriodoSeleccionado(periodo);
-                        setDiasDisponiblesPeriodo(periodo.DiasDisponibles);
-                        const diasActuales = vacacionesForm.DiasTomar || 0;
-                        setSaldoRestante(periodo.DiasDisponibles - diasActuales);
-                        
-                        setVacacionesForm(prev => ({
-                            ...prev,
-                            DiasCorresponden: periodo.DiasGenera,
-                            Antiguedad: periodo.AñosAntiguedad,
-                            SaldoDias: periodo.DiasDisponibles,
-                            Anio: periodo.Año
-                        }));
-                    }
-                }
+
+                setSelectedAnios([...seleccion]);
             } else {
                 setPeriodosVacaciones([]);
                 setAniosDisponibles([]);
-                setSelectedAnio(null);
+                setSelectedAnios([]);
                 setDiasDisponiblesPeriodo(0);
                 setSaldoRestante(0);
-                setPeriodoSeleccionado(null);
-                
+
                 setVacacionesForm(prev => ({
                     ...prev,
                     DiasCorresponden: 0,
@@ -925,8 +1122,8 @@ export const Vacaciones: React.FC = () => {
                     SaldoDias: 0,
                     Anio: 0
                 }));
-                
-                if (!anioSeleccionado) {
+
+                if (!aniosSeleccionados) {
                     showToast({
                         text: 'No se encontraron períodos de vacaciones para este empleado',
                         type: 'warning',
@@ -936,6 +1133,13 @@ export const Vacaciones: React.FC = () => {
             }
         } catch (error) {
             console.error('Error cargando períodos:', error);
+
+            setPeriodosVacaciones([]);
+            setAniosDisponibles([]);
+            setSelectedAnios([]);
+            setDiasDisponiblesPeriodo(0);
+            setSaldoRestante(0);
+
             showToast({
                 text: 'Error al cargar los períodos de vacaciones',
                 type: 'error',
@@ -944,7 +1148,7 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setCargandoPeriodos(false);
         }
-    }, [vacacionesForm.DiasTomar]);
+    }, []);
 
     const resetEmpleadoData = useCallback(() => {
         setVacacionesForm(prev => ({
@@ -964,25 +1168,24 @@ export const Vacaciones: React.FC = () => {
         setFechaIngresoInput('');
         setPeriodosVacaciones([]);
         setAniosDisponibles([]);
-        setSelectedAnio(null);
+        setSelectedAnios([]);
         setDiasDisponiblesPeriodo(0);
         setSaldoRestante(0);
-        setPeriodoSeleccionado(null);
     }, []);
 
-    const buscarEmpleado = useCallback(async (noEmpleado: string, anioParaCargar?: number) => {
+    const buscarEmpleado = useCallback(async (noEmpleado: string, aniosParaCargar?: number | number[]) => {
         if (!noEmpleado || noEmpleado.length < 3) return;
-        
+
         try {
             setLoadingOptions(true);
             const response = await apiService.get<RespuestaAPI>(
                 `/vacaciones/BuscarEmpleadoPorId.php?NoEmpleado=${noEmpleado}&idusuario=${usuarioSesion?.IdUsuario}`
             );
-            
+
             if (response.status && response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
                 const empleado = response.data as EmpleadoResponse;
                 const idPersonal = empleado.IdPersonal || 0;
-                
+
                 setVacacionesForm(prev => ({
                     ...prev,
                     NoEmpleado: empleado.NoEmpleado?.toString() || '0',
@@ -992,15 +1195,15 @@ export const Vacaciones: React.FC = () => {
                     FechaIngreso: empleado.FechaIngreso || '',
                     IdPersonal: idPersonal
                 }));
-                
+
                 setSelectedEmpleadoId(empleado.NoEmpleado?.toString() || '');
-                
+
                 if (empleado.FechaIngreso) {
                     setFechaIngresoInput(formatDateForInput(empleado.FechaIngreso));
                 }
-                
+
                 if (idPersonal > 0) {
-                    await cargarPeriodosVacaciones(idPersonal, anioParaCargar);
+                    await cargarPeriodosVacaciones(idPersonal, aniosParaCargar);
                 } else {
                     showToast({
                         text: 'El empleado no tiene un IdPersonal válido',
@@ -1008,7 +1211,7 @@ export const Vacaciones: React.FC = () => {
                         autoClose: 3000
                     });
                 }
-                
+
                 showToast({
                     text: 'Empleado encontrado',
                     type: 'success',
@@ -1035,7 +1238,6 @@ export const Vacaciones: React.FC = () => {
     }, [usuarioSesion?.IdUsuario, cargarPeriodosVacaciones, resetEmpleadoData]);
 
     const resetForm = useCallback(() => {
-        const todayStr = new Date().toISOString().split('T')[0];
         setVacacionesForm({
             IdVacaciones: 0,
             FechaSolicitud: '',
@@ -1069,10 +1271,9 @@ export const Vacaciones: React.FC = () => {
         setSelectedEmpleadoId('');
         setPeriodosVacaciones([]);
         setAniosDisponibles([]);
-        setSelectedAnio(null);
+        setSelectedAnios([]);
         setDiasDisponiblesPeriodo(0);
         setSaldoRestante(0);
-        setPeriodoSeleccionado(null);
         setAdvertenciaAnticipacion('');
         setAdvertenciaViernes('');
         setAdvertenciaRetornoDomingo('');
@@ -1091,7 +1292,7 @@ export const Vacaciones: React.FC = () => {
             });
             return;
         }
-        
+
         setSelectedEmpleadoId(selectedId);
         if (selectedId) {
             buscarEmpleado(selectedId);
@@ -1100,57 +1301,100 @@ export const Vacaciones: React.FC = () => {
         }
     }, [buscarEmpleado, resetEmpleadoData, tipoFormulario]);
 
-    const handleAnioChange = useCallback((value: string) => {
-        const anio = value ? parseInt(value) : null;
-        setSelectedAnio(anio);
-        
-        if (anio) {
-            const periodo = periodosVacaciones.find(p => p.Año === anio);
-            if (periodo) {
-                setPeriodoSeleccionado(periodo);
-                setDiasDisponiblesPeriodo(periodo.DiasDisponibles);
-                const diasActuales = vacacionesForm.DiasTomar || 0;
-                setSaldoRestante(periodo.DiasDisponibles - diasActuales);
-                
-                setVacacionesForm(prev => ({
-                    ...prev,
-                    DiasCorresponden: periodo.DiasGenera,
-                    Antiguedad: periodo.AñosAntiguedad,
-                    SaldoDias: periodo.DiasDisponibles,
-                    Anio: periodo.Año
-                }));
-            }
-        } else {
-            setPeriodoSeleccionado(null);
-            setDiasDisponiblesPeriodo(0);
-            setSaldoRestante(0);
-            setVacacionesForm(prev => ({
-                ...prev,
-                DiasCorresponden: 0,
-                Antiguedad: 0,
-                SaldoDias: 0,
-                Anio: 0
-            }));
-        }
-    }, [periodosVacaciones, vacacionesForm.DiasTomar]);
+    const handleAnioToggle = useCallback((anio: number) => {
+        const estaSeleccionado = selectedAnios.includes(anio);
 
+        if (estaSeleccionado) {
+            const nuevosAnios = selectedAnios.filter(
+                anioSeleccionado => anioSeleccionado !== anio
+            );
+
+            const nuevoTotalDisponible = periodosVacaciones
+                .filter(periodo =>
+                    nuevosAnios.includes(Number(periodo.Año))
+                )
+                .reduce(
+                    (total, periodo) =>
+                        total + Number(periodo.DiasDisponibles || 0),
+                    0
+                );
+
+            const diasSolicitados = Number(
+                vacacionesForm.DiasTomar || 0
+            );
+
+            if (diasSolicitados > nuevoTotalDisponible) {
+                showToast({
+                    text:
+                        `No puede quitar el período ${anio}. ` +
+                        `La solicitud actual es de ${diasSolicitados} días y ` +
+                        `quedarían solamente ${nuevoTotalDisponible} días disponibles.`,
+                    type: 'warning',
+                    autoClose: 3500
+                });
+                return;
+            }
+
+            setSelectedAnios(nuevosAnios);
+            return;
+        }
+
+        setSelectedAnios(prev =>
+            Array.from(
+                new Set([...prev, anio])
+            ).sort((a, b) => a - b)
+        );
+    }, [
+        selectedAnios,
+        periodosVacaciones,
+        vacacionesForm.DiasTomar
+    ]);
+
+    const distribuirDiasEntrePeriodos = useCallback(
+        (diasSolicitados: number) => {
+            let diasPendientes = Number(diasSolicitados || 0);
+
+            return [...periodosSeleccionados]
+                .sort((a, b) => Number(a.Año) - Number(b.Año))
+                .map(periodo => {
+                    const disponibles = Number(
+                        periodo.DiasDisponibles || 0
+                    );
+
+                    const diasAplicar = Math.min(
+                        disponibles,
+                        Math.max(diasPendientes, 0)
+                    );
+
+                    diasPendientes -= diasAplicar;
+
+                    return {
+                        Anio: Number(periodo.Año),
+                        DiasDisponibles: disponibles,
+                        DiasAplicar: diasAplicar
+                    };
+                })
+                .filter(periodo => periodo.DiasAplicar > 0);
+        },
+        [periodosSeleccionados]
+    );
 
     const verificarAnticipacionSolicitud = useCallback(() => {
         const fechaSolicitud = vacacionesForm.FechaSolicitud;
         const fechaInicio = vacacionesForm.FechaInicio;
         const diasTomar = vacacionesForm.DiasTomar || 0;
-        
+
         if (!fechaSolicitud || !fechaInicio || diasTomar === 0) {
             setAdvertenciaAnticipacion('');
             return;
         }
-        
+
         const solicitud = new Date(fechaSolicitud + 'T00:00:00');
         const inicio = new Date(fechaInicio + 'T00:00:00');
-        
+
         const diffTime = inicio.getTime() - solicitud.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         if (diasTomar >= 1 && diasTomar <= 3) {
             if (diffDays < 3) {
                 setAdvertenciaAnticipacion("ADVERTENCIA: Para solicitudes de 1 a 3 días, se requiere mínimo 3 días de anticipación.");
@@ -1174,10 +1418,10 @@ export const Vacaciones: React.FC = () => {
             setAdvertenciaViernes('');
             return;
         }
-        
+
         const inicio = new Date(fechaInicio + 'T00:00:00');
         const esViernes = inicio.getDay() === 5;
-        
+
         if (esViernes) {
             setAdvertenciaViernes("ADVERTENCIA: La solicitud comienza en viernes. Si el sábado estaba planeado como home office, deberá asistir a la oficina o solicitar ese día también.");
         } else {
@@ -1188,30 +1432,30 @@ export const Vacaciones: React.FC = () => {
     const handleNoContarDomingosChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const checked = e.target.checked;
         setNoContarDomingos(checked);
-        
+
         const fechaInicio = vacacionesForm.FechaInicio;
         const diasTomar = vacacionesForm.DiasTomar;
-        
+
         if (fechaInicio && diasTomar && diasTomar > 0) {
             recalcularTodo(fechaInicio, diasTomar, checked);
         } else if (fechaInicio && vacacionesForm.FechaFin) {
             const diasHabiles = contarDiasHabiles(fechaInicio, vacacionesForm.FechaFin, checked);
             setDiasSinDomingos(diasHabiles);
             setVacacionesForm(prev => ({ ...prev, DiasTomar: diasHabiles }));
-            
+
             const nuevoSaldo = diasDisponiblesPeriodo - diasHabiles;
             setSaldoRestante(nuevoSaldo >= 0 ? nuevoSaldo : 0);
-            
+
             const fechaRetorno = calcularFechaRetorno(vacacionesForm.FechaFin, checked);
             setFechaRetornoInput(fechaRetorno);
             setVacacionesForm(prev => ({ ...prev, FechaRetornoLabores: fechaRetorno }));
-            
+
             if (checked && esDomingo(fechaInicio)) {
                 setAdvertenciaInicioDomingo("ADVERTENCIA: La fecha de inicio no puede ser domingo cuando no se cuentan domingos.");
             } else {
                 setAdvertenciaInicioDomingo('');
             }
-            
+
             if (checked && esDomingo(vacacionesForm.FechaFin)) {
                 const nuevaFechaFin = calcularFechaFin(fechaInicio, diasHabiles, checked);
                 setFechaFinInput(nuevaFechaFin);
@@ -1227,24 +1471,36 @@ export const Vacaciones: React.FC = () => {
         const value = e.target.value;
         setFechaInicioInput(value);
         const isoDate = value || '';
+
+        if (esDiaFestivo(isoDate)) {
+            showToast({
+                text: 'La fecha de inicio no puede ser un día festivo.',
+                type: 'error',
+                autoClose: 2500
+            });
+            setFechaInicioInput('');
+            setVacacionesForm(prev => ({ ...prev, FechaInicio: '' }));
+            return;
+        }
+
         setVacacionesForm(prev => ({ ...prev, FechaInicio: isoDate }));
-        
+
         if (noContarDomingos && esDomingo(isoDate)) {
             setAdvertenciaInicioDomingo("ADVERTENCIA: La fecha de inicio no puede ser domingo cuando no se cuentan domingos.");
             return;
         } else {
             setAdvertenciaInicioDomingo('');
         }
-        
+
         const diasTomar = vacacionesForm.DiasTomar;
-        
+
         if (diasTomar && diasTomar > 0) {
             recalcularTodo(isoDate, diasTomar, noContarDomingos);
         }
-        
+
         verificarViernes();
         verificarAnticipacionSolicitud();
-    }, [vacacionesForm.DiasTomar, noContarDomingos, esDomingo, recalcularTodo, verificarViernes, verificarAnticipacionSolicitud]);
+    }, [vacacionesForm.DiasTomar, noContarDomingos, esDomingo, esDiaFestivo, recalcularTodo, verificarViernes, verificarAnticipacionSolicitud]);
 
     const handleFechaFinChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1256,6 +1512,15 @@ export const Vacaciones: React.FC = () => {
                     text: 'La fecha fin no puede ser domingo.',
                     type: 'warning',
                     autoClose: 2000
+                });
+                return;
+            }
+
+            if (esDiaFestivo(isoDate)) {
+                showToast({
+                    text: 'La fecha fin no puede ser un día festivo.',
+                    type: 'error',
+                    autoClose: 2500
                 });
                 return;
             }
@@ -1305,13 +1570,14 @@ export const Vacaciones: React.FC = () => {
             diasDisponiblesPeriodo,
             contarDiasHabiles,
             calcularFechaRetorno,
-            esDomingo
+            esDomingo,
+            esDiaFestivo
         ]);
 
     const handleDiasTomarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         const dias = value ? Number(value) : 0;
-        
+
         if (dias < 0) {
             showToast({
                 text: 'Los días no pueden ser negativos',
@@ -1320,7 +1586,7 @@ export const Vacaciones: React.FC = () => {
             });
             return;
         }
-        
+
         if (dias > diasDisponiblesPeriodo && diasDisponiblesPeriodo > 0) {
             showToast({
                 text: `Los días solicitados no pueden exceder los días disponibles (${diasDisponiblesPeriodo} días)`,
@@ -1329,13 +1595,13 @@ export const Vacaciones: React.FC = () => {
             });
             return;
         }
-        
+
         setVacacionesForm(prev => ({ ...prev, DiasTomar: dias }));
         setDiasSinDomingos(dias);
-        
+
         const nuevoSaldo = diasDisponiblesPeriodo - dias;
         setSaldoRestante(nuevoSaldo >= 0 ? nuevoSaldo : 0);
-        
+
         if (vacacionesForm.FechaInicio && dias > 0) {
             recalcularTodo(vacacionesForm.FechaInicio, dias, noContarDomingos);
         } else if (dias === 0) {
@@ -1344,7 +1610,7 @@ export const Vacaciones: React.FC = () => {
             setVacacionesForm(prev => ({ ...prev, FechaFin: '', FechaRetornoLabores: '' }));
             setDiasSinDomingos(0);
         }
-        
+
         verificarAnticipacionSolicitud();
     }, [vacacionesForm.FechaInicio, diasDisponiblesPeriodo, noContarDomingos, recalcularTodo, verificarAnticipacionSolicitud]);
 
@@ -1370,6 +1636,15 @@ export const Vacaciones: React.FC = () => {
                 return;
             }
 
+            if (esDiaFestivo(isoDate)) {
+                showToast({
+                    text: 'La fecha de reintegración no puede ser un día festivo.',
+                    type: 'error',
+                    autoClose: 2500
+                });
+                return;
+            }
+
             setFechaRetornoInput(value);
 
             setVacacionesForm(prev => ({
@@ -1379,7 +1654,8 @@ export const Vacaciones: React.FC = () => {
         },
         [
             noContarDomingos,
-            esDomingo
+            esDomingo,
+            esDiaFestivo
         ]);
 
     const validateForm = useCallback((): boolean => {
@@ -1403,20 +1679,53 @@ export const Vacaciones: React.FC = () => {
             showToast({ text: 'Los días a solicitar son requeridos y deben ser mayores a 0', type: 'error' });
             return false;
         }
-        if (!selectedAnio && !vacacionesForm.Anio) {
-            showToast({ text: 'Debe seleccionar el año del período de vacaciones', type: 'error' });
+        if (selectedAnios.length === 0) {
+            showToast({
+                text: 'Debe seleccionar al menos un período de vacaciones',
+                type: 'error'
+            });
             return false;
         }
         if (!vacacionesForm.FechaSolicitud) {
             showToast({ text: 'La fecha de solicitud es requerida', type: 'error' });
             return false;
         }
-        
+
         const fechaInicio = new Date(vacacionesForm.FechaInicio + 'T00:00:00');
         const fechaFin = new Date(vacacionesForm.FechaFin + 'T00:00:00');
-        
+
         if (fechaFin < fechaInicio) {
             showToast({ text: 'La fecha de fin debe ser mayor o igual a la fecha de inicio', type: 'error' });
+            return false;
+        }
+
+        if (esDiaFestivo(vacacionesForm.FechaInicio)) {
+            showToast({
+                text: 'La fecha de inicio no puede ser un día festivo.',
+                type: 'error',
+                autoClose: 3000
+            });
+            return false;
+        }
+
+        if (esDiaFestivo(vacacionesForm.FechaFin)) {
+            showToast({
+                text: 'La fecha de fin no puede ser un día festivo.',
+                type: 'error',
+                autoClose: 3000
+            });
+            return false;
+        }
+
+        if (
+            vacacionesForm.FechaRetornoLabores &&
+            esDiaFestivo(vacacionesForm.FechaRetornoLabores)
+        ) {
+            showToast({
+                text: 'La fecha de reintegración no puede ser un día festivo.',
+                type: 'error',
+                autoClose: 3000
+            });
             return false;
         }
 
@@ -1429,6 +1738,16 @@ export const Vacaciones: React.FC = () => {
                 showToast({ text: 'La fecha de fin no puede ser domingo cuando no se cuentan domingos', type: 'error' });
                 return false;
             }
+            if (
+                vacacionesForm.FechaRetornoLabores &&
+                esDomingo(vacacionesForm.FechaRetornoLabores)
+            ) {
+                showToast({
+                    text: 'La fecha de reintegración no puede ser domingo cuando no se cuentan domingos',
+                    type: 'error'
+                });
+                return false;
+            }
         }
 
         const diasTomar = noContarDomingos ? diasSinDomingos : vacacionesForm.DiasTomar;
@@ -1436,52 +1755,52 @@ export const Vacaciones: React.FC = () => {
             showToast({ text: `No hay suficientes días disponibles. Máximo: ${diasDisponiblesPeriodo} días`, type: 'error' });
             return false;
         }
-        
+
         return true;
-    }, [vacacionesForm, selectedAnio, diasDisponiblesPeriodo, noContarDomingos, diasSinDomingos, esDomingo]);
+    }, [vacacionesForm, selectedAnios, diasDisponiblesPeriodo, noContarDomingos, diasSinDomingos, esDomingo, esDiaFestivo]);
 
     const fetchVacaciones = useCallback(async () => {
         try {
             setLoading(true);
-            
+
             const params = new URLSearchParams();
-            
+
             if (filtroFecha) {
                 params.append('fechaSolicitud', filtroFecha);
             }
-            
+
             if (filtros.NoEmpleado && filtros.NoEmpleado !== 0) {
                 params.append('noEmpleado', filtros.NoEmpleado.toString());
             }
-            
+
             if (filtros.NombreCompleto) {
                 params.append('nombreCompleto', filtros.NombreCompleto);
             }
-            
+
             if (filtros.Departamento) {
                 params.append('departamento', filtros.Departamento);
             }
-            
+
             if (filtros.FechaInicioVacaciones) {
                 params.append('fechaInicioVacaciones', filtros.FechaInicioVacaciones);
             }
-            
+
             if (filtros.FechaFinVacaciones) {
                 params.append('fechaFinVacaciones', filtros.FechaFinVacaciones);
             }
-            
+
             if (filtros.FechaIngreso) {
                 params.append('fechaIngreso', filtros.FechaIngreso);
             }
-            
+
             if (filtros.Anio && filtros.Anio !== 0) {
                 params.append('anio', filtros.Anio.toString());
             }
-            
+
             const url = `/vacaciones/ObtenerListado.php${params.toString() ? '?' + params.toString() : ''}`;
-            
+
             const response = await apiService.get<RespuestaAPI>(url);
-            
+
             if (response.status && response.data) {
                 const vacacionesData = (response.data as any[]).map(item => ({
                     ...item,
@@ -1510,7 +1829,7 @@ export const Vacaciones: React.FC = () => {
                     UsuarioValida: item.UsuarioValida || '',
                     Comentarios: item.Comentarios || null
                 })) as InterfaceVacaciones[];
-                
+
                 setVacaciones(vacacionesData);
                 setFiltrosAplicados(true);
             } else {
@@ -1539,11 +1858,11 @@ export const Vacaciones: React.FC = () => {
             ...prev,
             [campo]: valor
         }));
-        
+
         if (filtroTimeoutRef.current) {
             clearTimeout(filtroTimeoutRef.current);
         }
-        
+
         filtroTimeoutRef.current = setTimeout(() => {
             fetchVacaciones();
         }, 500);
@@ -1552,11 +1871,11 @@ export const Vacaciones: React.FC = () => {
     const handleFiltroFechaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setFiltroFecha(value);
-        
+
         if (filtroTimeoutRef.current) {
             clearTimeout(filtroTimeoutRef.current);
         }
-        
+
         filtroTimeoutRef.current = setTimeout(() => {
             fetchVacaciones();
         }, 500);
@@ -1568,11 +1887,11 @@ export const Vacaciones: React.FC = () => {
             ...prev,
             Anio: value
         }));
-        
+
         if (filtroTimeoutRef.current) {
             clearTimeout(filtroTimeoutRef.current);
         }
-        
+
         filtroTimeoutRef.current = setTimeout(() => {
             fetchVacaciones();
         }, 500);
@@ -1593,13 +1912,13 @@ export const Vacaciones: React.FC = () => {
         });
         setFiltroFecha('');
         setFiltrosAplicados(false);
-        
+
         if (filtroTimeoutRef.current) {
             clearTimeout(filtroTimeoutRef.current);
         }
-        
+
         fetchVacaciones();
-        
+
         showToast({
             text: 'Filtros limpiados',
             type: 'info',
@@ -1609,55 +1928,80 @@ export const Vacaciones: React.FC = () => {
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         const diasTomarFinal = noContarDomingos ? diasSinDomingos : vacacionesForm.DiasTomar;
         const formData = {
             ...vacacionesForm,
             DiasTomar: diasTomarFinal
         };
-        
+
         setVacacionesForm(formData);
-        
+
         if (!validateForm()) {
             return;
         }
-        
+
         try {
             setSubmitting(true);
-            
+
             const esActualizacion = (vacacionesForm.IdVacaciones || 0) !== 0;
-            const anioParaEnviar = selectedAnio || vacacionesForm.Anio;
-            
-            if (!anioParaEnviar) {
-                showToast({ text: 'No se puede determinar el año de vacaciones', type: 'error' });
+
+            if (selectedAnios.length === 0) {
+                showToast({
+                    text: 'Debe seleccionar al menos un período de vacaciones',
+                    type: 'error'
+                });
                 setSubmitting(false);
                 return;
             }
-            
+
+            const aniosOrdenados = [...selectedAnios].sort(
+                (a, b) => a - b
+            );
+
+            const anioPrincipal = aniosOrdenados[0];
+
+            const distribucionPeriodos = distribuirDiasEntrePeriodos(
+                Number(diasTomarFinal || 0)
+            );
+
             let estatusInicial = 0;
             if (!esActualizacion && (isAuthorizer || isValidator)) {
                 estatusInicial = 1;
             }
-            
+
             const usuarioSolicitaId = usuarioSesion?.IdUsuario?.toString() || '';
             const usuarioAutorizaId = usuarioSesion?.IdUsuario?.toString() || '';
             const esMismoUsuario = usuarioSolicitaId === usuarioAutorizaId;
-            
+
             let datosNormalizados: any = {
                 ...vacacionesForm,
                 IdPersonal: vacacionesForm.IdPersonal,
-                Anio: anioParaEnviar,
+
+                Anio: anioPrincipal,
+
+                Anios: aniosOrdenados.join(','),
+                Periodos: JSON.stringify(distribucionPeriodos),
+
                 DiasTomar: diasTomarFinal,
                 FechaRetornoLabores: vacacionesForm.FechaRetornoLabores,
-                SaldoDias: vacacionesForm.SaldoDias || diasDisponiblesPeriodo,
-                DiasCorresponden: vacacionesForm.DiasCorresponden || 0,
-                Antiguedad: vacacionesForm.Antiguedad || 0,
+                SaldoDias: totalDiasDisponiblesSeleccionados,
+                DiasCorresponden: totalDiasGeneradosSeleccionados,
+                Antiguedad:
+                    periodosSeleccionados.length > 0
+                        ? Math.max(
+                            ...periodosSeleccionados.map(
+                                periodo =>
+                                    Number(periodo.AñosAntiguedad || 0)
+                            )
+                        )
+                        : 0,
                 NoContarDomingos: noContarDomingos ? 1 : 0
             };
-            
+
             if (!esActualizacion) {
                 const fechaSolicitudSeleccionada = vacacionesForm.FechaSolicitud || new Date().toISOString().split('T')[0];
-                
+
                 datosNormalizados = {
                     ...datosNormalizados,
                     FechaSolicitud: fechaSolicitudSeleccionada,
@@ -1673,13 +2017,13 @@ export const Vacaciones: React.FC = () => {
                 let nuevoEstatus = estatusActual;
                 let usuarioAutoriza = vacacionesForm.UsuarioAutoriza || '';
                 let fechaAutoriza = vacacionesForm.FechaAutoriza;
-                
+
                 if (estatusActual === 0 && !esMismoUsuario && (!usuarioAutoriza || usuarioAutoriza === '')) {
                     usuarioAutoriza = usuarioAutorizaId;
                     fechaAutoriza = new Date().toISOString().split('T')[0];
                     nuevoEstatus = 1;
                 }
-                
+
                 datosNormalizados = {
                     ...datosNormalizados,
                     FechaSolicitud: vacacionesForm.FechaSolicitud,
@@ -1689,27 +2033,27 @@ export const Vacaciones: React.FC = () => {
                     FechaAutoriza: fechaAutoriza || null,
                 };
             }
-            
+
             let response: RespuestaAPI;
-            
+
             if (esActualizacion) {
                 response = await apiService.put<RespuestaAPI>(
-                    `/vacaciones/crud.php?IdVacaciones=${vacacionesForm.IdVacaciones}&IdUsuario=${usuarioSesion?.IdUsuario}`, 
+                    `/vacaciones/crud.php?IdVacaciones=${vacacionesForm.IdVacaciones}&IdUsuario=${usuarioSesion?.IdUsuario}`,
                     datosNormalizados
                 );
             } else {
                 response = await apiService.postForm<RespuestaAPI>(
-                    `/vacaciones/crud.php?IdUsuario=${usuarioSesion?.IdUsuario}`, 
+                    `/vacaciones/crud.php?IdUsuario=${usuarioSesion?.IdUsuario}`,
                     datosNormalizados
                 );
             }
-            
+
             showToast({
                 text: response.message || (esActualizacion ? 'Vacaciones actualizadas correctamente' : 'Solicitud de vacaciones guardada correctamente'),
                 type: response.status ? 'success' : 'error',
                 autoClose: 1500
             });
-            
+
             if (response.status) {
                 setShowForm(false);
                 resetForm();
@@ -1726,7 +2070,22 @@ export const Vacaciones: React.FC = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [vacacionesForm, usuarioSesion, validateForm, selectedAnio, isAuthorizer, isValidator, fetchVacaciones, resetForm, diasDisponiblesPeriodo, noContarDomingos, diasSinDomingos]);
+    }, [
+        vacacionesForm,
+        usuarioSesion,
+        validateForm,
+        selectedAnios,
+        isAuthorizer,
+        isValidator,
+        fetchVacaciones,
+        resetForm,
+        noContarDomingos,
+        diasSinDomingos,
+        distribuirDiasEntrePeriodos,
+        totalDiasDisponiblesSeleccionados,
+        totalDiasGeneradosSeleccionados,
+        periodosSeleccionados
+    ]);
 
     const handleAuthorize = useCallback((vacacion: InterfaceVacaciones) => {
         setVacacionAccion(vacacion);
@@ -1766,26 +2125,26 @@ export const Vacaciones: React.FC = () => {
 
     const confirmAction = useCallback(async (comentarios?: string) => {
         if (!vacacionAccion) return;
-        
+
         try {
             setAccionEnProceso(true);
-            
+
             let newStatus: number;
             let datosActualizacion: any = {
                 Comentarios: comentarios || vacacionAccion.Comentarios || null
             };
-            
+
             switch (actionType) {
                 case 'authorize':
                     newStatus = 1;
                     let usuarioAutoriza = usuarioSesion?.IdUsuario?.toString() || '';
-                    
+
                     if (idRolUsuario === 1) {
                         try {
                             const response = await apiService.get<RespuestaAPI>(
                                 `/vacaciones/ObtenerJefeInmediato.php?IdPersonal=${vacacionAccion.IdPersonal}`
                             );
-                            
+
                             if (response.status && response.data) {
                                 usuarioAutoriza = usuarioSesion?.IdUsuario?.toString() || '';
                             }
@@ -1794,7 +2153,7 @@ export const Vacaciones: React.FC = () => {
                             usuarioAutoriza = usuarioSesion?.IdUsuario?.toString() || '';
                         }
                     }
-                    
+
                     datosActualizacion = {
                         ...datosActualizacion,
                         Estatus: newStatus,
@@ -1844,12 +2203,12 @@ export const Vacaciones: React.FC = () => {
                 default:
                     return;
             }
-            
+
             const response = await apiService.put<RespuestaAPI>(
                 `/vacaciones/cambiarEstatus.php?IdVacaciones=${vacacionAccion.IdVacaciones}&Estatus=${newStatus}&IdUsuario=${usuarioSesion?.IdUsuario}`,
                 datosActualizacion
             );
-            
+
             if (response.status) {
                 let message = '';
                 switch (actionType) {
@@ -1872,13 +2231,13 @@ export const Vacaciones: React.FC = () => {
                         message = 'Solicitud regresada a revisión correctamente';
                         break;
                 }
-                    
+
                 showToast({
                     text: message,
                     type: 'success',
                     autoClose: 1500
                 });
-                
+
                 fetchVacaciones();
                 setActionModalVisible(false);
                 setVacacionAccion(null);
@@ -1910,82 +2269,51 @@ export const Vacaciones: React.FC = () => {
         setFechaIngresoInput(formatDateForInput(vacacion.FechaIngreso || ''));
         setFechaSolicitudInput(formatDateForInput(vacacion.FechaSolicitud || ''));
         setFechaRetornoInput(formatDateForInput(vacacion.FechaRetornoLabores || ''));
-        
+
         setNoContarDomingos(vacacion.NoContarDomingos === 1);
-        if (vacacion.NoContarDomingos === 1 && vacacion.FechaInicio && vacacion.FechaFin) {
-            const diasHabiles = contarDiasHabiles(vacacion.FechaInicio, vacacion.FechaFin, true);
+
+        if (
+            vacacion.NoContarDomingos === 1 &&
+            vacacion.FechaInicio &&
+            vacacion.FechaFin
+        ) {
+            const diasHabiles = contarDiasHabiles(
+                vacacion.FechaInicio,
+                vacacion.FechaFin,
+                true
+            );
             setDiasSinDomingos(diasHabiles);
+        } else {
+            setDiasSinDomingos(Number(vacacion.DiasTomar || 0));
         }
-        
-        const idPersonal = vacacion.IdPersonal || 0;
-        const anioVacacion = vacacion.Anio || 0;
-        
+
+        const idPersonal = Number(vacacion.IdPersonal || 0);
+        const aniosVacacion = obtenerAniosSolicitud(vacacion);
+
         if (idPersonal > 0) {
-            setCargandoPeriodos(true);
-            try {
-                const response = await apiService.get<RespuestaAPI>(
-                    `/vacaciones/ObtenerPeriodosVacaciones.php?IdPersonal=${idPersonal}`
-                );
-                
-                if (response.status && response.data && Array.isArray(response.data) && response.data.length > 0) {
-                    const periodos = response.data as PeriodoVacaciones[];
-                    setPeriodosVacaciones(periodos);
-                    
-                    const aniosConDias = periodos.map(p => ({
-                        id: p.Año.toString(),
-                        valor: p.Año.toString()
-                    }));
-                    setAniosDisponibles(aniosConDias);
-                    
-                    let anioParaSeleccionar = anioVacacion;
-                    if (!anioParaSeleccionar && periodos.length > 0) {
-                        anioParaSeleccionar = periodos[0].Año;
-                    }
-                    
-                    if (anioParaSeleccionar) {
-                        setSelectedAnio(anioParaSeleccionar);
-                        const periodo = periodos.find(p => p.Año === anioParaSeleccionar);
-                        if (periodo) {
-                            setPeriodoSeleccionado(periodo);
-                            setDiasDisponiblesPeriodo(periodo.DiasDisponibles);
-                            setSaldoRestante(periodo.DiasDisponibles - (vacacion.DiasTomar || 0));
-                            setVacacionesForm(prev => ({
-                                ...prev,
-                                Anio: periodo.Año
-                            }));
-                        }
-                    }
-                } else {
-                    setPeriodosVacaciones([]);
-                    setAniosDisponibles([]);
-                    setSelectedAnio(null);
-                    setDiasDisponiblesPeriodo(0);
-                    setSaldoRestante(0);
-                    setPeriodoSeleccionado(null);
-                }
-            } catch (error) {
-                console.error('Error cargando períodos:', error);
-                showToast({
-                    text: 'Error al cargar los períodos de vacaciones',
-                    type: 'error',
-                    autoClose: 1500
-                });
-            } finally {
-                setCargandoPeriodos(false);
-            }
-        } else if (idPersonal > 0) {
-            await buscarEmpleado(vacacion.NoEmpleado?.toString() || '', anioVacacion);
+            await cargarPeriodosVacaciones(
+                idPersonal,
+                aniosVacacion
+            );
         }
-        
+
         setShowForm(true);
+
         setTimeout(() => {
             verificarAnticipacionSolicitud();
             verificarViernes();
             verificarRetornoDomingo();
         }, 100);
-    }, [verificarAnticipacionSolicitud, verificarViernes, verificarRetornoDomingo, buscarEmpleado, contarDiasHabiles]);
+    }, [
+        verificarAnticipacionSolicitud,
+        verificarViernes,
+        verificarRetornoDomingo,
+        contarDiasHabiles,
+        obtenerAniosSolicitud,
+        cargarPeriodosVacaciones
+    ]);
 
-    const handleView = useCallback((vacacion: InterfaceVacaciones) => {
+    const handleView = useCallback(async (vacacion: InterfaceVacaciones) => {
         setTipoFormulario('Ver');
         setVacacionesForm(vacacion);
         setSelectedEmpleadoId(vacacion.NoEmpleado?.toString() || '');
@@ -1994,18 +2322,40 @@ export const Vacaciones: React.FC = () => {
         setFechaIngresoInput(formatDateForInput(vacacion.FechaIngreso || ''));
         setFechaSolicitudInput(formatDateForInput(vacacion.FechaSolicitud || ''));
         setFechaRetornoInput(formatDateForInput(vacacion.FechaRetornoLabores || ''));
-        
+
         setNoContarDomingos(vacacion.NoContarDomingos === 1);
-        
-        const idPersonal = vacacion.IdPersonal || 0;
-        const anioVacacion = vacacion.Anio || 0;
-        
-        if (idPersonal > 0) {
-            cargarPeriodosVacaciones(idPersonal, anioVacacion);
+
+        if (
+            vacacion.NoContarDomingos === 1 &&
+            vacacion.FechaInicio &&
+            vacacion.FechaFin
+        ) {
+            const diasHabiles = contarDiasHabiles(
+                vacacion.FechaInicio,
+                vacacion.FechaFin,
+                true
+            );
+            setDiasSinDomingos(diasHabiles);
+        } else {
+            setDiasSinDomingos(Number(vacacion.DiasTomar || 0));
         }
-        
+
+        const idPersonal = Number(vacacion.IdPersonal || 0);
+        const aniosVacacion = obtenerAniosSolicitud(vacacion);
+
+        if (idPersonal > 0) {
+            await cargarPeriodosVacaciones(
+                idPersonal,
+                aniosVacacion
+            );
+        }
+
         setShowForm(true);
-    }, [cargarPeriodosVacaciones]);
+    }, [
+        contarDiasHabiles,
+        obtenerAniosSolicitud,
+        cargarPeriodosVacaciones
+    ]);
 
     const handleDeleteClick = useCallback((vacacion: InterfaceVacaciones) => {
         setVacacionAEliminar(vacacion);
@@ -2014,7 +2364,7 @@ export const Vacaciones: React.FC = () => {
 
     const handleConfirmDelete = useCallback(async () => {
         if (!vacacionAEliminar) return;
-        
+
         try {
             setEliminando(true);
             const response = await apiService.delete<RespuestaAPI>(
@@ -2060,6 +2410,30 @@ export const Vacaciones: React.FC = () => {
         verificarViernes();
         verificarRetornoDomingo();
     }, [vacacionesForm.FechaInicio, vacacionesForm.FechaSolicitud, vacacionesForm.DiasTomar, vacacionesForm.FechaRetornoLabores, vacacionesForm.Departamento, verificarAnticipacionSolicitud, verificarViernes, verificarRetornoDomingo]);
+
+    useEffect(() => {
+        if (selectedAnios.length > 0) {
+            cargarDiasFestivos(selectedAnios);
+        } else {
+            setDiasFestivos(new Set());
+        }
+    }, [selectedAnios, cargarDiasFestivos]);
+
+    useEffect(() => {
+        if (
+            !cargandoFestivos &&
+            diasFestivos.size > 0 &&
+            vacacionesForm.FechaInicio &&
+            vacacionesForm.DiasTomar &&
+            vacacionesForm.DiasTomar > 0
+        ) {
+            recalcularTodo(
+                vacacionesForm.FechaInicio,
+                vacacionesForm.DiasTomar,
+                noContarDomingos
+            );
+        }
+    }, [diasFestivos, cargandoFestivos]);
 
     const solicitadasColumns: Column[] = useMemo(() => [
         { key: 'IdVacaciones', title: 'ID', sortable: true, searchable: false, width: '80px', align: 'center', headerAlign: 'center' },
@@ -2119,7 +2493,7 @@ export const Vacaciones: React.FC = () => {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
                 <MemoizedActionButtons row={row} openActionDropdown={openActionDropdown} setOpenActionDropdown={setOpenActionDropdown} onView={handleView} onEdit={handleEdit} onDelete={handleDeleteClick} onAuthorize={handleAuthorize} onValidate={handleValidate} onCancel={handleCancel} onReview={handleReview} onReauthorize={handleReauthorize} onReturnToReview={handleReturnToReview} idRolUsuario={idRolUsuario} canEditDelete={canEditDelete} activeTab={activeTab} />
                 {row.Estatus === 2 && (
-                    <VacacionesPDFButton 
+                    <VacacionesPDFButton
                         idVacaciones={row.IdVacaciones}
                         onSuccess={(fileName) => console.log('PDF generado:', fileName)}
                         onError={(error) => console.error('Error:', error)}
@@ -2136,19 +2510,19 @@ export const Vacaciones: React.FC = () => {
     };
 
     useEffect(() => {
-    const usuario = obtenerUsuarioSesion();
+        const usuario = obtenerUsuarioSesion();
 
-    setUsuarioSesion(usuario);
+        setUsuarioSesion(usuario);
 
-    if (usuario) {
-        cargarOpcionesCatalogos(usuario);
-    } else {
-        setEmpleados([]);
-        setDepartamentos([]);
-    }
+        if (usuario) {
+            cargarOpcionesCatalogos(usuario);
+        } else {
+            setEmpleados([]);
+            setDepartamentos([]);
+        }
 
-    fetchVacaciones();
-}, []);
+        fetchVacaciones();
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -2186,7 +2560,7 @@ export const Vacaciones: React.FC = () => {
 
     const isViewMode = tipoFormulario === 'Ver';
     const currentColumns = activeTab === 'solicitadas' ? solicitadasColumns : (activeTab === 'autorizadas' ? autorizadasColumns : validadasColumns);
-    
+
     const datosFiltrados = useMemo(() => {
         if (activeTab === 'solicitadas') {
             return vacaciones.filter(v => v.Estatus === 0);
@@ -2211,24 +2585,24 @@ export const Vacaciones: React.FC = () => {
 
             <div className="vacaciones-tabs">
                 <button className={`tab-button ${activeTab === 'solicitadas' ? 'active' : ''}`} onClick={() => handleTabChange('solicitadas')}>
-                    <FileText size={16} /> Solicitadas 
+                    <FileText size={16} /> Solicitadas
                     <span className="tab-count">{vacaciones.filter(v => v.Estatus === 0).length}</span>
                 </button>
                 <button className={`tab-button ${activeTab === 'autorizadas' ? 'active' : ''}`} onClick={() => handleTabChange('autorizadas')}>
-                    <CheckCircle size={16} /> Autorizadas 
+                    <CheckCircle size={16} /> Autorizadas
                     <span className="tab-count">{vacaciones.filter(v => v.Estatus === 1 || v.Estatus === 4).length}</span>
                 </button>
                 <button className={`tab-button ${activeTab === 'validadas' ? 'active' : ''}`} onClick={() => handleTabChange('validadas')}>
-                    <CheckCircle size={16} /> Validadas / Canceladas 
+                    <CheckCircle size={16} /> Validadas / Canceladas
                     <span className="tab-count">{vacaciones.filter(v => v.Estatus === 3 || v.Estatus === 2).length}</span>
                 </button>
             </div>
 
             {filtrosAplicados && (
-                <div className="filtros-activos-indicator" style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
+                <div className="filtros-activos-indicator" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                     marginBottom: '16px',
                     padding: '8px 12px',
                     backgroundColor: '#FFF3E0',
@@ -2239,12 +2613,12 @@ export const Vacaciones: React.FC = () => {
                         <Info size={14} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
                         Mostrando resultados con filtros aplicados
                     </span>
-                    <button 
+                    <button
                         onClick={limpiarFiltros}
-                        style={{ 
-                            background: 'none', 
-                            border: 'none', 
-                            color: '#F57C00', 
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#F57C00',
                             cursor: 'pointer',
                             textDecoration: 'underline',
                             fontSize: '12px'
@@ -2310,14 +2684,14 @@ export const Vacaciones: React.FC = () => {
 
             <div className="vacaciones-content">
                 {loadingOptions && (<div className="loading-options"><span>Cargando opciones...</span></div>)}
-                <Tabla 
-                    columns={currentColumns} 
-                    data={datosFiltrados} 
-                    pageSize={10} 
-                    pageSizeOptions={[5, 10, 25, 50]} 
-                    emptyMessage={activeTab === 'solicitadas' ? "No hay solicitudes pendientes" : (activeTab === 'autorizadas' ? "No hay solicitudes autorizadas o en revisión" : "No hay solicitudes validadas/canceladas")} 
-                    className="full-height-table" 
-                    loading={loading} 
+                <Tabla
+                    columns={currentColumns}
+                    data={datosFiltrados}
+                    pageSize={10}
+                    pageSizeOptions={[5, 10, 25, 50]}
+                    emptyMessage={activeTab === 'solicitadas' ? "No hay solicitudes pendientes" : (activeTab === 'autorizadas' ? "No hay solicitudes autorizadas o en revisión" : "No hay solicitudes validadas/canceladas")}
+                    className="full-height-table"
+                    loading={loading}
                 />
             </div>
 
@@ -2347,13 +2721,13 @@ export const Vacaciones: React.FC = () => {
                                     <div className="form-vacaciones-row">
                                         <div className="form-vacaciones-group">
                                             <label className="form-vacaciones-label required">No. Empleado</label>
-                                            <SelectConBusqueda 
-                                                options={empleados} 
-                                                value={selectedEmpleadoId} 
-                                                onChange={handleEmpleadoChange} 
-                                                placeholder="Seleccione un empleado..." 
-                                                disabled={isViewMode || tipoFormulario === 'Modificar' || !isHRorAdmin} 
-                                                required 
+                                            <SelectConBusqueda
+                                                options={empleados}
+                                                value={selectedEmpleadoId}
+                                                onChange={handleEmpleadoChange}
+                                                placeholder="Seleccione un empleado..."
+                                                disabled={isViewMode || tipoFormulario === 'Modificar' || !isHRorAdmin}
+                                                required
                                             />
                                             {tipoFormulario === 'Modificar' && (
                                                 <div style={{ fontSize: '12px', color: '#F57C00', marginTop: '4px' }}>
@@ -2374,13 +2748,13 @@ export const Vacaciones: React.FC = () => {
                                     <div className="form-vacaciones-row">
                                         <div className="form-vacaciones-group">
                                             <label className="form-vacaciones-label required">Fecha de Solicitud</label>
-                                            <input 
-                                                type="date" 
-                                                value={fechaSolicitudInput} 
-                                                onChange={handleFechaSolicitudChange} 
-                                                className="form-vacaciones-input" 
-                                                disabled={isViewMode || !isHRorAdmin} 
-                                                required 
+                                            <input
+                                                type="date"
+                                                value={fechaSolicitudInput}
+                                                onChange={handleFechaSolicitudChange}
+                                                className="form-vacaciones-input"
+                                                disabled={isViewMode || !isHRorAdmin}
+                                                required
                                             />
                                             {!isViewMode && isHRorAdmin && (
                                                 <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
@@ -2392,153 +2766,380 @@ export const Vacaciones: React.FC = () => {
                                 </div>
                                 <div className="form-section">
                                     <h3 className="form-section-title">Período de Vacaciones</h3>
+
                                     <div className="form-vacaciones-row">
                                         <div className="form-vacaciones-group">
-                                            <label className="form-vacaciones-label required">Año del Período</label>
-                                            <SelectConBusqueda 
-                                                options={aniosDisponibles} 
-                                                value={selectedAnio?.toString() || ''} 
-                                                onChange={handleAnioChange} 
-                                                placeholder="Seleccione el año del período..." 
-                                                disabled={isViewMode || !isHRorAdmin || cargandoPeriodos || aniosDisponibles.length === 0} 
-                                                required 
-                                            />
-                                            {aniosDisponibles.length === 0 && !cargandoPeriodos && selectedEmpleadoId && (<div className="info-message" style={{ marginTop: '8px', fontSize: '12px', color: '#DC3545', display: 'flex', alignItems: 'center', gap: '8px' }}><span>No hay períodos con días disponibles para este empleado</span></div>)}
-                                        </div>
-                                    </div>
-                                    {(tipoFormulario === 'Modificar' || tipoFormulario === 'Ver') && vacacionesForm.Anio && vacacionesForm.Anio > 0 && (
-                                        <div className="form-vacaciones-row" style={{ marginTop: '8px' }}>
-                                            <div className="form-vacaciones-group">
-                                                <label className="form-vacaciones-label">Año Original de la Solicitud</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={`${vacacionesForm.Anio}`} 
-                                                    className="form-vacaciones-input" 
-                                                    disabled={true} 
-                                                    style={{ backgroundColor: '#e9ecef', fontWeight: '500', color: '#F57C00' }}
-                                                />
-                                                {vacacionesForm.Anio !== selectedAnio && selectedAnio && (
-                                                    <div style={{ fontSize: '12px', color: '#F57C00', marginTop: '4px' }}>
-                                                        <strong>Nota:</strong> El período seleccionado ({selectedAnio}) es diferente al año original de la solicitud ({vacacionesForm.Anio})
+                                            <label className="form-vacaciones-label required">
+                                                Períodos a Utilizar
+                                            </label>
+
+                                            {cargandoPeriodos && (
+                                                <div style={{ padding: '12px 0', color: '#6c757d' }}>
+                                                    Cargando períodos disponibles...
+                                                </div>
+                                            )}
+
+                                            {!cargandoPeriodos && periodosVacaciones.length > 0 && (
+                                                <>
+                                                    <div
+                                                        style={{
+                                                            display: 'grid',
+                                                            gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                                                            gap: '12px',
+                                                            marginTop: '10px'
+                                                        }}
+                                                    >
+                                                        {periodosVacaciones.map(periodo => {
+                                                            const anio = Number(periodo.Año);
+                                                            const seleccionado = selectedAnios.includes(anio);
+
+                                                            return (
+                                                                <label
+                                                                    key={anio}
+                                                                    style={{
+                                                                        border: seleccionado
+                                                                            ? '2px solid #F57C00'
+                                                                            : '1px solid #DADCE0',
+                                                                        backgroundColor: seleccionado
+                                                                            ? '#FFF3E0'
+                                                                            : '#FFFFFF',
+                                                                        padding: '14px',
+                                                                        borderRadius: '10px',
+                                                                        cursor:
+                                                                            isViewMode || !isHRorAdmin
+                                                                                ? 'default'
+                                                                                : 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'flex-start',
+                                                                        gap: '10px',
+                                                                        transition: 'all .15s ease'
+                                                                    }}
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={seleccionado}
+                                                                        onChange={() => handleAnioToggle(anio)}
+                                                                        disabled={isViewMode || !isHRorAdmin}
+                                                                        style={{
+                                                                            width: '17px',
+                                                                            height: '17px',
+                                                                            marginTop: '2px',
+                                                                            cursor:
+                                                                                isViewMode || !isHRorAdmin
+                                                                                    ? 'default'
+                                                                                    : 'pointer'
+                                                                        }}
+                                                                    />
+
+                                                                    <div style={{ flex: 1 }}>
+                                                                        <div
+                                                                            style={{
+                                                                                display: 'flex',
+                                                                                justifyContent: 'space-between',
+                                                                                alignItems: 'center',
+                                                                                gap: '8px'
+                                                                            }}
+                                                                        >
+                                                                            <strong
+                                                                                style={{
+                                                                                    fontSize: '16px',
+                                                                                    color: seleccionado
+                                                                                        ? '#F57C00'
+                                                                                        : '#343A40'
+                                                                                }}
+                                                                            >
+                                                                                {anio}
+                                                                            </strong>
+
+                                                                            {seleccionado && (
+                                                                                <span
+                                                                                    style={{
+                                                                                        fontSize: '11px',
+                                                                                        color: '#F57C00',
+                                                                                        fontWeight: 600
+                                                                                    }}
+                                                                                >
+                                                                                    SELECCIONADO
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <div style={{ marginTop: '8px', fontSize: '13px' }}>
+                                                                            Disponible:{' '}
+                                                                            <strong>
+                                                                                {Number(periodo.DiasDisponibles || 0)} días
+                                                                            </strong>
+                                                                        </div>
+
+                                                                        <div
+                                                                            style={{
+                                                                                marginTop: '3px',
+                                                                                fontSize: '12px',
+                                                                                color: '#6c757d'
+                                                                            }}
+                                                                        >
+                                                                            Generados: {Number(periodo.DiasGenera || 0)} días
+                                                                        </div>
+
+                                                                        <div
+                                                                            style={{
+                                                                                marginTop: '3px',
+                                                                                fontSize: '12px',
+                                                                                color: '#6c757d'
+                                                                            }}
+                                                                        >
+                                                                            Disfrutados: {Number(periodo.DiasDisfrutados || 0)} días
+                                                                        </div>
+                                                                    </div>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    <div
+                                                        style={{
+                                                            marginTop: '8px',
+                                                            fontSize: '12px',
+                                                            color: '#6c757d'
+                                                        }}
+                                                    >
+                                                        Puede seleccionar uno o varios períodos. Solamente aparecen
+                                                        los años que las reglas actuales consideran disponibles.
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {aniosDisponibles.length === 0 &&
+                                                !cargandoPeriodos &&
+                                                selectedEmpleadoId && (
+                                                    <div
+                                                        className="info-message"
+                                                        style={{
+                                                            marginTop: '8px',
+                                                            fontSize: '12px',
+                                                            color: '#DC3545',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }}
+                                                    >
+                                                        <span>
+                                                            No hay períodos con días disponibles para este empleado
+                                                        </span>
                                                     </div>
                                                 )}
-                                            </div>
                                         </div>
-                                    )}
-                                    {periodoSeleccionado && (
-                                        <div className="form-vacaciones-row" style={{ marginTop: '16px' }}>
-                                            <div className="form-vacaciones-group">
-                                                <label className="form-vacaciones-label">Información del Período Seleccionado</label>
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '8px' }}>
-                                                    <div className="info-card-readonly"><label className="info-label-small">Días que Corresponden</label><input type="text" value={`${periodoSeleccionado.DiasGenera || 0} días`} className="form-vacaciones-input" disabled={true} readOnly style={{ backgroundColor: '#f5f5f5', fontWeight: 'bold', color: '#F57C00' }} /></div>
-                                                    <div className="info-card-readonly"><label className="info-label-small">Saldo de Días</label><input type="text" value={`${diasDisponiblesPeriodo} días`} className="form-vacaciones-input" disabled={true} readOnly style={{ backgroundColor: '#f5f5f5', fontWeight: 'bold', color: '#F57C00' }} /></div>
-                                                    <div className="info-card-readonly"><label className="info-label-small">Días Disfrutados</label><input type="text" value={`${periodoSeleccionado.DiasDisfrutados || 0} días`} className="form-vacaciones-input" disabled={true} readOnly style={{ backgroundColor: '#f5f5f5' }} /></div>
+                                    </div>
+
+                                    {selectedAnios.length > 0 && (
+                                        <div
+                                            style={{
+                                                marginTop: '16px',
+                                                padding: '14px',
+                                                backgroundColor: '#FFF8E1',
+                                                border: '1px solid #FFE0B2',
+                                                borderRadius: '10px'
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    marginBottom: '12px',
+                                                    fontSize: '14px',
+                                                    fontWeight: 600,
+                                                    color: '#5F4100'
+                                                }}
+                                            >
+                                                Períodos seleccionados: {selectedAnios.join(', ')}
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                                                    gap: '12px'
+                                                }}
+                                            >
+                                                <div className="info-card-readonly">
+                                                    <label className="info-label-small">
+                                                        Días que Corresponden
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={`${totalDiasGeneradosSeleccionados} días`}
+                                                        className="form-vacaciones-input"
+                                                        disabled
+                                                        readOnly
+                                                        style={{
+                                                            backgroundColor: '#f5f5f5',
+                                                            fontWeight: 'bold',
+                                                            color: '#F57C00'
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className="info-card-readonly">
+                                                    <label className="info-label-small">
+                                                        Total Disponible
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={`${totalDiasDisponiblesSeleccionados} días`}
+                                                        className="form-vacaciones-input"
+                                                        disabled
+                                                        readOnly
+                                                        style={{
+                                                            backgroundColor: '#f5f5f5',
+                                                            fontWeight: 'bold',
+                                                            color: '#F57C00'
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className="info-card-readonly">
+                                                    <label className="info-label-small">
+                                                        Días Disfrutados
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={`${totalDiasDisfrutadosSeleccionados} días`}
+                                                        className="form-vacaciones-input"
+                                                        disabled
+                                                        readOnly
+                                                        style={{ backgroundColor: '#f5f5f5' }}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
                                     )}
-                                    <div className="form-vacaciones-row three-columns" style={{ marginTop: '20px' }}>
-                                        <div className="form-vacaciones-group"><label className="form-vacaciones-label required">Días a Solicitar</label><input type="number" name="DiasTomar" value={vacacionesForm.DiasTomar || ''} onChange={handleDiasTomarChange} className="form-vacaciones-input" placeholder="Días a solicitar" disabled={isViewMode || !isHRorAdmin || !selectedAnio} required min="1" max={diasDisponiblesPeriodo || undefined} /></div>
-                                        <div className="form-vacaciones-group"><label className="form-vacaciones-label">Saldo Restante</label><input type="text" value={`${saldoRestante} días`} className="form-vacaciones-input" disabled={true} readOnly style={{ backgroundColor: '#f5f5f5' }} /></div>
+
+                                    <div
+                                        className="form-vacaciones-row three-columns"
+                                        style={{ marginTop: '20px' }}
+                                    >
+                                        <div className="form-vacaciones-group">
+                                            <label className="form-vacaciones-label required">
+                                                Días a Solicitar
+                                            </label>
+
+                                            <input
+                                                type="number"
+                                                name="DiasTomar"
+                                                value={vacacionesForm.DiasTomar || ''}
+                                                onChange={handleDiasTomarChange}
+                                                className="form-vacaciones-input"
+                                                placeholder="Días a solicitar"
+                                                disabled={
+                                                    isViewMode ||
+                                                    !isHRorAdmin ||
+                                                    selectedAnios.length === 0
+                                                }
+                                                required
+                                                min="1"
+                                                max={diasDisponiblesPeriodo || undefined}
+                                            />
+                                        </div>
+
+                                        <div className="form-vacaciones-group">
+                                            <label className="form-vacaciones-label">
+                                                Saldo Restante
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={`${saldoRestante} días`}
+                                                className="form-vacaciones-input"
+                                                disabled
+                                                readOnly
+                                                style={{ backgroundColor: '#f5f5f5' }}
+                                            />
+                                        </div>
                                     </div>
                                     <div className="form-vacaciones-row">
                                         <div className="form-vacaciones-group">
                                             <label className="form-vacaciones-label checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={noContarDomingos} 
+                                                <input
+                                                    type="checkbox"
+                                                    checked={noContarDomingos}
                                                     onChange={handleNoContarDomingosChange}
-                                                    disabled={isViewMode || !isHRorAdmin || !selectedAnio}
+                                                    disabled={isViewMode || !isHRorAdmin || selectedAnios.length === 0}
                                                     style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                                                 />
                                                 No contar domingos en los días de vacaciones
                                             </label>
                                             {noContarDomingos && (
                                                 <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
-                                                    Los domingos no se contarán como días de vacaciones. Días hábiles: {diasSinDomingos}
+                                                    Los domingos no se contarán como días de vacaciones.
                                                 </div>
                                             )}
+                                            <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                                                Nota: Los días festivos oficiales nunca se cuentan como días de vacaciones.
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="form-vacaciones-row three-columns">
                                         <div className="form-vacaciones-group">
                                             <label className="form-vacaciones-label required">Fecha de Inicio</label>
-                                            <input 
-                                                type="date" 
-                                                value={fechaInicioInput} 
-                                                onChange={handleFechaInicioChange} 
-                                                className="form-vacaciones-input" 
-                                                disabled={isViewMode || !isHRorAdmin || !selectedAnio} 
-                                                required 
+                                            <input
+                                                type="date"
+                                                value={fechaInicioInput}
+                                                onChange={handleFechaInicioChange}
+                                                className="form-vacaciones-input"
+                                                disabled={isViewMode || !isHRorAdmin || selectedAnios.length === 0}
+                                                required
                                             />
                                             {fechaInicioInput && (
                                                 <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
-                                                    {new Date(fechaInicioInput + 'T00:00:00').toLocaleDateString('es-MX', { 
-                                                        weekday: 'long', 
-                                                        year: 'numeric', 
-                                                        month: 'long', 
-                                                        day: 'numeric' 
+                                                    {new Date(fechaInicioInput + 'T00:00:00').toLocaleDateString('es-MX', {
+                                                        weekday: 'long',
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric'
                                                     })}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="form-vacaciones-group">
                                             <label className="form-vacaciones-label required">Fecha de Fin</label>
-                                            <input 
-                                                type="date" 
-                                                value={fechaFinInput} 
-                                                onChange={handleFechaFinChange} 
-                                                className="form-vacaciones-input" 
-                                                disabled={isViewMode || !isHRorAdmin || !selectedAnio} 
-                                                required 
+                                            <input
+                                                type="date"
+                                                value={fechaFinInput}
+                                                onChange={handleFechaFinChange}
+                                                className="form-vacaciones-input"
+                                                disabled={isViewMode || !isHRorAdmin || selectedAnios.length === 0}
+                                                required
                                             />
                                             {fechaFinInput && (
                                                 <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
-                                                    {new Date(fechaFinInput + 'T00:00:00').toLocaleDateString('es-MX', { 
-                                                        weekday: 'long', 
-                                                        year: 'numeric', 
-                                                        month: 'long', 
-                                                        day: 'numeric' 
+                                                    {new Date(fechaFinInput + 'T00:00:00').toLocaleDateString('es-MX', {
+                                                        weekday: 'long',
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric'
                                                     })}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="form-vacaciones-group">
                                             <label className="form-vacaciones-label">Fecha de Reintegración a Labores</label>
-                                            <input 
-                                                type="date" 
-                                                value={fechaRetornoInput} 
-                                                onChange={handleFechaRetornoChange} 
-                                                className="form-vacaciones-input" 
-                                                disabled={isViewMode || !isHRorAdmin || !selectedAnio} 
+                                            <input
+                                                type="date"
+                                                value={fechaRetornoInput}
+                                                onChange={handleFechaRetornoChange}
+                                                className="form-vacaciones-input"
+                                                disabled={isViewMode || !isHRorAdmin || selectedAnios.length === 0}
                                             />
                                             {fechaRetornoInput && (
                                                 <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
-                                                    {new Date(fechaRetornoInput + 'T00:00:00').toLocaleDateString('es-MX', { 
-                                                        weekday: 'long', 
-                                                        year: 'numeric', 
-                                                        month: 'long', 
-                                                        day: 'numeric' 
+                                                    {new Date(fechaRetornoInput + 'T00:00:00').toLocaleDateString('es-MX', {
+                                                        weekday: 'long',
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric'
                                                     })}
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    {fechaInicioInput && fechaFinInput && (
-                                        <div className="date-range-indicator" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#FFF8E1', borderRadius: '8px', border: '1px solid #FFE0B2', marginTop: '8px' }}>
-                                            <div className="date-pill" style={{ background: 'white', padding: '4px 12px', borderRadius: '16px', border: '1px solid #FFE0B2', fontSize: '13px', fontWeight: '500' }}>
-                                                <strong>Inicio:</strong> {new Date(fechaInicioInput + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                            </div>
-                                            <span className="range-arrow" style={{ color: '#F57C00', fontWeight: 'bold', fontSize: '18px' }}>→</span>
-                                            <div className="date-pill" style={{ background: 'white', padding: '4px 12px', borderRadius: '16px', border: '1px solid #FFE0B2', fontSize: '13px', fontWeight: '500' }}>
-                                                <strong>Fin:</strong> {new Date(fechaFinInput + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                            </div>
-                                            <div className="date-pill" style={{ background: '#F57C00', color: 'white', padding: '4px 12px', borderRadius: '16px', border: '1px solid #F57C00', fontSize: '13px', fontWeight: '500' }}>
-                                                <strong>Total:</strong> {noContarDomingos ? diasSinDomingos : vacacionesForm.DiasTomar} días
-                                                {noContarDomingos && <span style={{ marginLeft: '4px' }}>(sin domingos)</span>}
-                                            </div>
-                                        </div>
-                                    )}
+
                                     {isViewMode && vacacionesForm.UsuarioAutoriza && (
                                         <div className="form-vacaciones-row two-columns">
                                             <div className="form-vacaciones-group"><label className="form-vacaciones-label">Usuario que Autorizó</label><input type="text" value={vacacionesForm.UsuarioAutoriza} className="form-vacaciones-input" disabled /></div>
@@ -2560,10 +3161,10 @@ export const Vacaciones: React.FC = () => {
                                 <div className="form-vacaciones-actions">
                                     <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); setTipoFormulario('Agregar'); }}>{isViewMode ? 'Cerrar' : 'Cancelar'}</button>
                                     {!isViewMode && isHRorAdmin && (
-                                        <button 
-                                            type="submit" 
-                                            className="btn btn-primary orange-button" 
-                                            disabled={submitting || cargandoPeriodos || (!selectedAnio && !vacacionesForm.Anio)}
+                                        <button
+                                            type="submit"
+                                            className="btn btn-primary orange-button"
+                                            disabled={submitting || cargandoPeriodos || selectedAnios.length === 0}
                                         >
                                             {submitting ? 'Guardando...' : 'Guardar'}
                                         </button>

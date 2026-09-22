@@ -1,0 +1,93 @@
+.estado-cuenta-encabezado {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #dc2626;
+}
+
+.estado-cuenta-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px 20px;
+}
+
+.estado-cuenta-info > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.estado-cuenta-info span {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.estado-cuenta-info strong {
+    font-size: 14px;
+    color: #000;
+}
+
+.vacaciones-resumen-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+}
+
+.vacaciones-resumen-card span {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #000;
+}
+
+.vacaciones-resumen-card strong {
+    font-size: 24px;
+}
+
+.vacaciones-resumen-card.asignados strong { color: #2563eb; }
+.vacaciones-resumen-card.tomados strong    { color: #16a34a; }
+.vacaciones-resumen-card.vencidos strong   { color: #dc2626; }
+.vacaciones-resumen-card.vigentes strong   { color: #ea580c; }
+
+.vacaciones-dias-asignados  { color: #2563eb; font-weight: 700; }
+.vacaciones-dias-tomados    { color: #16a34a; font-weight: 700; }
+.vacaciones-dias-vencidos   { color: #dc2626; font-weight: 700; }
+.vacaciones-dias-pendientes { color: #ea580c; font-weight: 700; }
+.vacaciones-sin-pendientes  { color: #000; }
+
+.estado-cuenta-saldo-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ea580c;
+    color: #fff;
+    border-radius: 10px;
+    padding: 16px 24px;
+    margin-top: 16px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.estado-cuenta-saldo-total strong {
+    font-size: 22px;
+    color: #fff;
+}
+
+.estado-cuenta-vacio-general {
+    text-align: center;
+    padding: 60px 20px;
+    color: #000;
+    font-size: 15px;
+    background: #fff;
+    border-radius: 10px;
+    border: 2px dashed #dc2626;
+}

@@ -14,9 +14,16 @@ import { Vacaciones } from './pages/Vacaciones/Vacaciones';
 import { TablaVacaciones } from './pages/TablaVacaciones/TablaVacaciones';
 
 import { Departamento } from './pages/Departamento/Departamento';
-import { Ubicaciones } from './pages/Ubicaciones/Ubicaciones';
+import { DiasFestivos } from './pages/DiasFestivos/DiasFestivos';
+import { Ubicaciones } from './pages/Ubicaciones/Ubicaciones'; 
 import { Usuario } from './pages/Usuario/Usuario';
 import { Cargo } from './pages/Cargo/Cargo';
+
+//REPORTES  
+import { Aniversario } from './pages/Aniversario/Aniversario';
+import { VacacionesPendientes } from './pages/VacacionesPendientes/VacacionesPendientes';
+import { EstadoCuentaVacaciones } from './pages/EstadoCuentaVacaciones/EstadoCuentaVacaciones';
+
 import { RutaProtegida } from './components/RutaProtegida/RutaProtegida';
 import { Footer } from './components/Footer/Footer';
 
@@ -104,6 +111,62 @@ function App() {
               </RutaProtegida>
             } />
 
+            {/* Aniversarios -Reporte */}
+            <Route path="/Aniversario/Aniversario" element={
+              <RutaProtegida>
+                <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
+                  <Header onMenuToggle={toggleSidebar} />
+                  <div className="content-area">
+                    <Aniversario  />
+                  </div>
+                  <Footer />
+                </div>
+              </RutaProtegida>
+            } />
+
+              {/* Aniversarios -Reporte */}
+            <Route path="/VacacionesPendientes/VacacionesPendientes" element={
+              <RutaProtegida>
+                <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
+                  <Header onMenuToggle={toggleSidebar} />
+                  <div className="content-area">
+                    <VacacionesPendientes  />
+                  </div>
+                  <Footer />
+                </div>
+              </RutaProtegida>
+            } />
+
+              {/* Estado de Cuenta Vacaciones -Reporte */}
+            <Route path="/EstadoCuentaVacaciones/EstadoCuentaVacaciones" element={
+              <RutaProtegida>
+                <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
+                  <Header onMenuToggle={toggleSidebar} />
+                  <div className="content-area">
+                    <EstadoCuentaVacaciones  />
+                  </div>
+                  <Footer />
+                </div>
+              </RutaProtegida>
+            } />
+            
+            {/* DiasFestivos */}
+            <Route path="/DiasFestivos/DiasFestivos" element={
+              <RutaProtegida>
+                <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
+                  <Header onMenuToggle={toggleSidebar} />
+                  <div className="content-area">
+                    <DiasFestivos />
+                  </div>
+                  <Footer />
+                </div>
+              </RutaProtegida>
+            } />
+
             
             
               {/* Personal */}
@@ -167,6 +230,7 @@ function App() {
                 </div>
               </RutaProtegida>
             } />
+ 
 
 
             {/* Ruta No Encontrada */}

@@ -43,6 +43,33 @@ export const MENU_CONFIG: MenuSection[] = [
         ]
     },
     {
+        id: 'reportes',
+        title: 'REPORTES',
+        icon: 'Reporte',
+        rolesPermitidos: [1, 2, 3], 
+        subItems: [
+            {
+                path: '/Aniversario/Aniversario',
+                label: 'Aniversario',
+                icon: 'Documento',
+                rolesPermitidos: [1, 2, 3] 
+            },
+            {
+                path: '/VacacionesPendientes/VacacionesPendientes',
+                label: 'Vacaciones Pendientes',
+                icon: 'Documento',
+                rolesPermitidos: [1, 2, 3] 
+            },
+            {
+                path: '/EstadoCuentaVacaciones/EstadoCuentaVacaciones',
+                label: 'Estado de Cuenta Vacaciones',
+                icon: 'Documento',
+                rolesPermitidos: [1, 2, 3] 
+            }
+
+        ]
+    },
+    {
         id: 'catalogos',
         title: 'CATÁLOGOS',
         icon: 'LibraryBig',
@@ -70,6 +97,12 @@ export const MENU_CONFIG: MenuSection[] = [
                 path: '/Departamento/Departamento',
                 label: 'Departamento',
                 icon: 'FaBuilding',
+                rolesPermitidos: [1, 2]
+            },
+            {
+                path: '/DiasFestivos/DiasFestivos',
+                label: 'Dias Festivos',
+                icon: 'FaCalendarAlt',
                 rolesPermitidos: [1, 2]
             },
         ]

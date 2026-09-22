@@ -16,6 +16,7 @@ import {
     FaBuilding,
     FaShieldAlt,
     FaTable,
+    FaCalendarAlt,
     FaBriefcase
 } from "react-icons/fa";
 import { PiTruckTrailerDuotone } from "react-icons/pi";
@@ -47,8 +48,11 @@ const iconMap: { [key: string]: React.ElementType } = {
     ChevronDown: Icons.ChevronDown,
     ChevronRight: Icons.ChevronRight,
     HelpCircle: Icons.HelpCircle,
-    Process: Icons.Folder,
-    Calendar: Icons.Calendar, 
+    Reporte: Icons.Folder,
+    Documento: Icons.FileBadge,
+    Process: Icons.ActivitySquareIcon,
+    Calendar: Icons.Calendar,
+    FaCalendarAlt: FaCalendarAlt,
     FaMapMarkerAlt: FaMapMarkerAlt,
     FaBoxes: FaBoxes,
     FaTable: FaTable,

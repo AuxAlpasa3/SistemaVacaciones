@@ -1,0 +1,217 @@
+.pdf-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.pdf-modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.pdf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    background: #dc2626;
+    color: #fff;
+}
+
+.pdf-modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.pdf-modal-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pdf-btn-print {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    color: #dc2626;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pdf-btn-print:hover {
+    background: #fee2e2;
+}
+
+.pdf-btn-close {
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+.pdf-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    background: #f8fafc;
+}
+
+.pdf-contenido {
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    color: #000;
+}
+
+.pdf-titulo {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.pdf-titulo h1 {
+    margin: 0;
+    font-size: 20px;
+    color: #dc2626;
+}
+
+.pdf-titulo span {
+    font-size: 12px;
+    color: #000;
+}
+
+.pdf-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 20px;
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+.pdf-info > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.pdf-info span {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.pdf-info strong {
+    font-size: 13px;
+    color: #000;
+}
+
+.pdf-resumen {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.pdf-card {
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+}
+
+.pdf-card span {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #000;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.pdf-card strong {
+    font-size: 18px;
+}
+
+.pdf-card.habilitados strong { color: #2563eb; }
+.pdf-card.tomados strong     { color: #16a34a; }
+.pdf-card.vigentes strong    { color: #ea580c; }
+.pdf-card.vencidos strong    { color: #dc2626; }
+
+.pdf-contenido table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+
+.pdf-contenido th,
+.pdf-contenido td {
+    border: 1px solid #dc2626;
+    padding: 6px 8px;
+    font-size: 12px;
+    text-align: center;
+    color: #000;
+}
+
+.pdf-contenido th {
+    background: #dc2626;
+    color: #fff;
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+.pdf-contenido td.hab { color: #2563eb; font-weight: 700; }
+.pdf-contenido td.tom { color: #16a34a; font-weight: 700; }
+.pdf-contenido td.ven { color: #dc2626; font-weight: 700; }
+.pdf-contenido td.vig { color: #ea580c; font-weight: 700; }
+
+.pdf-contenido .saldo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ea580c;
+    color: #fff;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.pdf-contenido .saldo strong {
+    font-size: 20px;
+    color: #fff;
+}
+
+.pdf-contenido .firmas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 60px;
+}
+
+.pdf-contenido .firma {
+    border-top: 1px solid #000;
+    text-align: center;
+    padding-top: 6px;
+    font-size: 11px;
+    color: #000;
+}

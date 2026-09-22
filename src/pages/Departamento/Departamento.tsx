@@ -59,7 +59,7 @@ export const Departamento: React.FC = () => {
         NomDepto: ''
 
     });
-    const [usuarioSesion, setUsuarioSesion] = useState<Usuario | null>(null);
+    const [usuarioSesion, setUsuarioSesion] = useState<CatalogoUsuario | null>(null);
     const [departamento, setDepartamento] = useState<InterfaceDepartamento[]>([]);
 
     const [listadoDepartamento, setListadoDepartamento] = useState<InterfaceDepartamento[] | []>([]);
