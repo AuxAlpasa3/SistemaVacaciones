@@ -52,19 +52,19 @@ export const MENU_CONFIG: MenuSection[] = [
                 path: '/Aniversario/Aniversario',
                 label: 'Aniversario',
                 icon: 'Documento',
-                rolesPermitidos: [1, 2, 3] 
+                rolesPermitidos: [1, 2] 
             },
             {
                 path: '/VacacionesPendientes/VacacionesPendientes',
                 label: 'Vacaciones Pendientes',
                 icon: 'Documento',
-                rolesPermitidos: [1, 2, 3] 
+                rolesPermitidos: [1, 2] 
             },
             {
                 path: '/EstadoCuentaVacaciones/EstadoCuentaVacaciones',
                 label: 'Estado de Cuenta Vacaciones',
                 icon: 'Documento',
-                rolesPermitidos: [1, 2, 3] 
+                rolesPermitidos: [1, 2 ] 
             }
 
         ]

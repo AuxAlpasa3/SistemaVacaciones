@@ -311,9 +311,7 @@ function esRecursosHumanos($Conexion, $idUsuario) {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return ($row['total'] ?? 0) > 0;
 }
- 
- 
- 
+  
  
 function obtenerTextoEstatus($estatus) {
     return ESTATUS_MENSAJES[$estatus] ?? 'Desconocido';

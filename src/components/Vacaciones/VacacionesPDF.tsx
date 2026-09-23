@@ -1,60 +1,93 @@
 import React, { useState } from 'react';
 import { Page, Text, View, Document, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { apiService } from '../../api/apiService';
-import LOGO_ALPASA from '../../assets/LogoCredencial.png';
+import LOGO_ALPASA from '../../assets/LogoCredencial.png'; 
+
+interface DiaNoLaborable {
+    Fecha: string;
+    Descripcion: string;
+    Tipo: 'Festivo' | 'Domingo' | string;
+}
+
+interface DiaFestivo {
+    IdDiaFestivo: number;
+    Anio: number;
+    Fecha: string;
+    Nombre: string;
+    Descripcion: string;
+    Tipo: string;
+}
 
 interface VacacionData {
     IdVacaciones: number;
-    IdPersonal: number;
+    Anio: number;
+    FechaSolicitud: string;
+    UsuarioSolicitaId?: number;
+    UsuarioSolicita: string;
     NoEmpleado: string;
+    IdPersonal: number;
     NombreCompleto: string;
     Departamento: string;
+    departamento?: number;
     Cargo: string;
     FechaIngreso: string;
     FechaInicio: string;
     FechaFin: string;
     DiasTomar: number;
     FechaRetornoLabores: string;
-    FechaSolicitud: string;
-    UsuarioSolicita: string;
-    UsuarioAutoriza: string;
-    FechaAutoriza: string;
     Estatus: number;
-    UsuarioValida: string;
-    FechaValidado: string;
-    Anio: number;
+    UsuarioAutorizaId?: number;
     SaldoDias: number;
     DiasCorresponden: number;
-    Antiguedad: number;
-    DiasGenera?: number;
-    IdPeriodoVacaciones?: number;
-    PeriodoFechaInicio?: string;
-    PeriodoFechaFin?: string;
-    DiasDisponibles?: number;
-    PeriodoDiasTomados?: number;
-}
-
+    Antiguedad: string;
+    UsuarioAutoriza: string;
+    FechaAutoriza: string;
+    UsuarioValidaId?: number;
+    UsuarioValida: string;
+    FechaValidado: string;
+    Comentarios?: string;
+    // Días no laborables
+    DiasFestivos?: DiaFestivo[];
+    DiasNoLaborables?: DiaNoLaborable[];
+} 
 const ORANGE_COLOR = '#D97706';
+const ORANGE_DARK = '#B45309';
 const BORDER_COLOR = '#d1d5db';
 const TEXT_COLOR = '#1f2937';
 const LIGHT_ORANGE = '#FFF7ED';
-
-const formatFechaCompleta = (fechaStr: string): string => {
+ 
+const formatFechaCompleta = (fechaStr?: string | null): string => {
     if (!fechaStr) return 'No especificada';
-    
+
     const fecha = new Date(fechaStr);
     if (isNaN(fecha.getTime())) return 'Fecha inválida';
-    
+
     const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    
+
     const diaSemana = diasSemana[fecha.getDay()];
     const dia = fecha.getDate();
     const mes = meses[fecha.getMonth()];
     const anio = fecha.getFullYear();
-    
+
     return `${diaSemana} ${dia} de ${mes} de ${anio}`;
 };
+
+const formatFechaCorta = (fechaStr?: string | null): string => {
+    if (!fechaStr) return '-';
+    const fecha = new Date(fechaStr);
+    if (isNaN(fecha.getTime())) return '-';
+    const dia = fecha.getDate().toString().padStart(2, '0');
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+};
+
+const formatFechaSegura = (fecha: string | undefined | null, defaultValue = 'No especificada'): string => {
+    if (!fecha) return defaultValue;
+    return formatFechaCompleta(fecha);
+};
+ 
 
 const styles = StyleSheet.create({
     page: {
@@ -71,7 +104,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         borderBottom: `2px solid ${ORANGE_COLOR}`,
         paddingBottom: 10,
-        position: 'relative',
     },
     logoContainer: {
         width: 60,
@@ -79,8 +111,8 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     logoImage: {
-        width: '100%',
-        height: '100%',
+        width: '250%',
+        height: '250%',
         objectFit: 'contain',
     },
     titleSection: {
@@ -98,13 +130,6 @@ const styles = StyleSheet.create({
     titleSub: {
         fontSize: 10,
         color: '#666',
-    },
-    codeSection: {
-        alignItems: 'flex-end',
-    },
-    code: {
-        fontSize: 8,
-        fontWeight: 'bold',
     },
     infoSection: {
         marginBottom: 15,
@@ -202,7 +227,7 @@ const styles = StyleSheet.create({
         textAlign: 'left',
     },
     commentsBox: {
-        marginTop: 15,
+        marginTop: 10,
         marginBottom: 15,
         borderWidth: 1,
         borderColor: ORANGE_COLOR,
@@ -213,10 +238,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 5,
         color: ORANGE_COLOR,
+        fontSize: 9,
     },
     commentsText: {
         fontSize: 8,
-        color: '#666',
+        color: '#374151',
     },
     signatureSection: {
         marginTop: 40,
@@ -252,19 +278,6 @@ const styles = StyleSheet.create({
         color: '#666',
         textAlign: 'center',
     },
-    footer: {
-        marginTop: 40,
-        fontSize: 8,
-        borderTopWidth: 1,
-        borderTopColor: BORDER_COLOR,
-        paddingTop: 10,
-        backgroundColor: '#f9fafb',
-        padding: 10,
-    },
-    footerText: {
-        fontSize: 7,
-        marginBottom: 2,
-    },
     bold: {
         fontWeight: 'bold',
     },
@@ -276,7 +289,112 @@ const styles = StyleSheet.create({
         borderBottomColor: ORANGE_COLOR,
         marginVertical: 10,
     },
+
+    // ---------- Tabla días no laborables ----------
+    noLaborablesSection: {
+        marginTop: 15,
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: '#9CA3AF',
+        borderRadius: 4,
+    },
+    noLaborablesHeaderTitle: {
+        padding: 8,
+        backgroundColor: '#F3F4F6',
+        borderBottomWidth: 1,
+        borderBottomColor: '#D1D5DB',
+    },
+    noLaborablesTitle: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#374151',
+        textAlign: 'center',
+        textTransform: 'uppercase',
+    },
+    noLaborablesHeader: {
+        flexDirection: 'row',
+        backgroundColor: '#6B7280',
+        padding: 6,
+    },
+    noLaborablesHeaderCell: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 8,
+        textAlign: 'center',
+    },
+    noLaborablesRow: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+        padding: 5,
+        backgroundColor: '#F9FAFB',
+        alignItems: 'center',
+    },
+    noLaborablesRowAlt: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+        padding: 5,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+    },
+    noLaborablesCell: {
+        fontSize: 8,
+        textAlign: 'center',
+    },
+    noLaborablesCellLeft: {
+        fontSize: 8,
+        textAlign: 'left',
+        paddingLeft: 8,
+    },
+    badgeFestivo: {
+        backgroundColor: '#FEF3C7',
+        color: '#92400E',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        fontSize: 7,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    badgeDomingo: {
+        backgroundColor: '#DBEAFE',
+        color: '#1E40AF',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        fontSize: 7,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    noLaborablesSummary: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        padding: 6,
+        backgroundColor: '#F3F4F6',
+        borderTopWidth: 1,
+        borderTopColor: '#D1D5DB',
+    },
+    noLaborablesSummaryText: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: '#374151',
+    },
+    warningBox: {
+        backgroundColor: '#FEE2E2',
+        padding: 5,
+        marginTop: 5,
+        marginBottom: 10,
+    },
+    warningText: {
+        color: '#991B1B',
+        fontSize: 8,
+    },
 });
+
+// ============================================================
+//  Componente PDF
+// ============================================================
 
 interface VacacionesPDFContentProps {
     vacacion: VacacionData;
@@ -295,17 +413,7 @@ const VacacionesPDFContent: React.FC<VacacionesPDFContentProps> = ({ vacacion })
         );
     }
 
-    const formatFechaSegura = (fecha: string | undefined | null, defaultValue = 'No especificada'): string => {
-        if (!fecha) return defaultValue;
-        return formatFechaCompleta(fecha);
-    };
-    
-    const getNombreAutorizador = (usuario: string | undefined | null, tipo: string): string => {
-        if (!usuario || usuario === 'Pendiente') return `Pendiente de ${tipo}`;
-        if (usuario === 'Administrador') return 'Sistema';
-        return usuario;
-    };
-
+    // ----- Fechas -----
     const fechaSolicitud = formatFechaSegura(vacacion.FechaSolicitud, formatFechaCompleta(new Date().toISOString()));
     const fechaInicio = formatFechaSegura(vacacion.FechaInicio);
     const fechaFin = formatFechaSegura(vacacion.FechaFin);
@@ -313,20 +421,31 @@ const VacacionesPDFContent: React.FC<VacacionesPDFContentProps> = ({ vacacion })
     const fechaIngreso = formatFechaSegura(vacacion.FechaIngreso);
     const fechaAutorizacion = formatFechaSegura(vacacion.FechaAutoriza);
     const fechaValidacion = formatFechaSegura(vacacion.FechaValidado);
-    
+
+    // ----- Días -----
     const diasCorresponden = vacacion.DiasCorresponden || 0;
     const saldoDias = vacacion.SaldoDias || 0;
-    const antiguedad = vacacion.Antiguedad || 0;
     const diasTomar = vacacion.DiasTomar || 0;
     const saldoRestante = saldoDias - diasTomar;
 
-    const nombreJefeInmediato = getNombreAutorizador(vacacion.UsuarioAutoriza, 'autorización');
-    const nombreRecursosHumanos = getNombreAutorizador(vacacion.UsuarioValida, 'validación');
+    // ----- Antigüedad: ya viene formateada del SQL ("X Año(s) Y Mes(es)") -----
+    const antiguedadTexto = vacacion.Antiguedad || 'No especificada';
+
+    // ----- Nombres -----
+    const nombreJefeInmediato = vacacion.UsuarioAutoriza || 'Pendiente de autorización';
+    const nombreRecursosHumanos = vacacion.UsuarioValida || 'Pendiente de validación';
     const nombreSolicitante = vacacion.UsuarioSolicita || vacacion.NombreCompleto || 'No especificado';
+
+    // ----- Días no laborables -----
+    const diasNoLaborables: DiaNoLaborable[] = vacacion.DiasNoLaborables || [];
+    const hayDiasNoLaborables = diasNoLaborables.length > 0;
+    const totalFestivos = diasNoLaborables.filter(d => d.Tipo === 'Festivo').length;
+    const totalDomingos = diasNoLaborables.filter(d => d.Tipo === 'Domingo').length;
 
     return (
         <Document>
             <Page size="LETTER" orientation="portrait" style={styles.page}>
+                {/* ---------- Encabezado ---------- */}
                 <View style={styles.headerContainer}>
                     <View style={styles.logoContainer}>
                         <Image src={LOGO_ALPASA} style={styles.logoImage} />
@@ -337,6 +456,7 @@ const VacacionesPDFContent: React.FC<VacacionesPDFContentProps> = ({ vacacion })
                     </View>
                 </View>
 
+                {/* ---------- Información general ---------- */}
                 <View style={styles.infoSection}>
                     <View style={styles.infoRow}>
                         <Text style={styles.label}>Fecha de Solicitud:</Text>
@@ -368,13 +488,14 @@ const VacacionesPDFContent: React.FC<VacacionesPDFContentProps> = ({ vacacion })
                         </View>
                         <View style={styles.gridItem}>
                             <Text style={styles.label}>Antigüedad:</Text>
-                            <Text style={styles.value}>{antiguedad} años</Text>
+                            <Text style={styles.value}>{antiguedadTexto}</Text>
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.divider} />
 
+                {/* ---------- Periodo vacacional ---------- */}
                 <View style={styles.periodSection}>
                     <Text style={styles.periodTitle}>Información del Periodo Vacacional</Text>
                     <View style={styles.periodRow}>
@@ -393,6 +514,7 @@ const VacacionesPDFContent: React.FC<VacacionesPDFContentProps> = ({ vacacion })
 
                 <View style={styles.divider} />
 
+                {/* ---------- Tabla resumen ---------- */}
                 <View style={styles.summaryTable}>
                     <View style={styles.summaryHeader}>
                         <Text style={styles.summaryHeaderCell}>Detalle</Text>
@@ -424,14 +546,70 @@ const VacacionesPDFContent: React.FC<VacacionesPDFContentProps> = ({ vacacion })
                     </View>
                 </View>
 
+                {/* ---------- Tabla días no laborables (condicional) ---------- */}
+                {hayDiasNoLaborables && (
+                    <View style={styles.noLaborablesSection}>
+                        <View style={styles.noLaborablesHeaderTitle}>
+                            <Text style={styles.noLaborablesTitle}>
+                                Días No Laborables en el Periodo
+                            </Text>
+                        </View>
+
+                        <View style={styles.noLaborablesHeader}>
+                            <Text style={[styles.noLaborablesHeaderCell, { flex: 0.8 }]}>#</Text>
+                            <Text style={[styles.noLaborablesHeaderCell, { flex: 1.5 }]}>Fecha</Text>
+                            <Text style={[styles.noLaborablesHeaderCell, { flex: 2.5, textAlign: 'left', paddingLeft: 8 }]}>
+                                Descripción
+                            </Text>
+                            <Text style={[styles.noLaborablesHeaderCell, { flex: 1 }]}>Tipo</Text>
+                        </View>
+
+                        {diasNoLaborables.map((dia, index) => (
+                            <View
+                                key={`${dia.Fecha}-${index}`}
+                                style={index % 2 === 0 ? styles.noLaborablesRow : styles.noLaborablesRowAlt}
+                            >
+                                <Text style={[styles.noLaborablesCell, { flex: 0.8 }]}>{index + 1}</Text>
+                                <Text style={[styles.noLaborablesCell, { flex: 1.5 }]}>{formatFechaCorta(dia.Fecha)}</Text>
+                                <Text style={[styles.noLaborablesCellLeft, { flex: 2.5 }]}>
+                                    {dia.Descripcion || 'Día no laborable'}
+                                </Text>
+                                <View style={[styles.noLaborablesCell, { flex: 1, alignItems: 'center' }]}>
+                                    <Text style={dia.Tipo === 'Domingo' ? styles.badgeDomingo : styles.badgeFestivo}>
+                                        {dia.Tipo || 'Festivo'}
+                                    </Text>
+                                </View>
+                            </View>
+                        ))}
+
+                        <View style={styles.noLaborablesSummary}>
+                            <Text style={styles.noLaborablesSummaryText}>
+                                Total: {diasNoLaborables.length}
+                                {totalFestivos > 0 && `  |  Festivos: ${totalFestivos}`}
+                                {totalDomingos > 0 && `  |  Domingos: ${totalDomingos}`}
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* ---------- Advertencia saldo negativo ---------- */}
                 {saldoRestante < 0 && (
-                    <View style={{ backgroundColor: '#FEE2E2', padding: 5, marginTop: 5, marginBottom: 10 }}>
-                        <Text style={{ color: '#991B1B', fontSize: 8 }}>
+                    <View style={styles.warningBox}>
+                        <Text style={styles.warningText}>
                             ⚠️ Advertencia: El saldo resultante es negativo ({saldoRestante.toFixed(0)} días)
                         </Text>
                     </View>
                 )}
 
+                {/* ---------- Comentarios ---------- */}
+                {vacacion.Comentarios && vacacion.Comentarios.trim() !== '' && (
+                    <View style={styles.commentsBox}>
+                        <Text style={styles.commentsTitle}>Comentarios:</Text>
+                        <Text style={styles.commentsText}>{vacacion.Comentarios}</Text>
+                    </View>
+                )}
+
+                {/* ---------- Firmas ---------- */}
                 <View style={styles.signatureSection}>
                     <View style={styles.signatureBox}>
                         <View style={styles.signatureLine} />
@@ -460,6 +638,10 @@ const VacacionesPDFContent: React.FC<VacacionesPDFContentProps> = ({ vacacion })
     );
 };
 
+// ============================================================
+//  Botón que genera el PDF
+// ============================================================
+
 interface VacacionesPDFButtonProps {
     idVacaciones: number;
     onSuccess?: (fileName: string) => void;
@@ -472,8 +654,8 @@ export const VacacionesPDFButton: React.FC<VacacionesPDFButtonProps> = ({
     idVacaciones,
     onSuccess,
     onError,
-    buttonText = "PDF",
-    className = ""
+    buttonText = 'PDF',
+    className = '',
 }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -490,9 +672,11 @@ export const VacacionesPDFButton: React.FC<VacacionesPDFButtonProps> = ({
         setError(null);
 
         try {
-            const response = await apiService.get<{ status: boolean, data?: { vacacion: VacacionData }, message?: string }>(
-                `vacaciones/ObtenerVacacionPDF.php?IdVacaciones=${idVacaciones}`
-            );
+            const response = await apiService.get<{
+                status: boolean;
+                data?: { vacacion: VacacionData };
+                message?: string;
+            }>(`vacaciones/ObtenerVacacionPDF.php?IdVacaciones=${idVacaciones}`);
 
             if (!response.status || !response.data) {
                 throw new Error(response.message || 'Error al obtener los datos de la vacación');
@@ -504,10 +688,8 @@ export const VacacionesPDFButton: React.FC<VacacionesPDFButtonProps> = ({
                 throw new Error('No se encontró la solicitud de vacaciones');
             }
 
-            const blob = await pdf(
-                <VacacionesPDFContent vacacion={vacacion} />
-            ).toBlob();
-            
+            const blob = await pdf(<VacacionesPDFContent vacacion={vacacion} />).toBlob();
+
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -518,7 +700,6 @@ export const VacacionesPDFButton: React.FC<VacacionesPDFButtonProps> = ({
             URL.revokeObjectURL(url);
 
             onSuccess?.(`Solicitud_Vacaciones_${vacacion.NoEmpleado}_${idVacaciones}.pdf`);
-            
         } catch (err: any) {
             const errorMsg = err.message || 'Error al generar el PDF';
             setError(errorMsg);
@@ -550,14 +731,10 @@ export const VacacionesPDFButton: React.FC<VacacionesPDFButtonProps> = ({
                     transition: 'all 0.2s ease',
                 }}
                 onMouseEnter={(e) => {
-                    if (!loading) {
-                        e.currentTarget.style.backgroundColor = '#B45309';
-                    }
+                    if (!loading) e.currentTarget.style.backgroundColor = ORANGE_DARK;
                 }}
                 onMouseLeave={(e) => {
-                    if (!loading) {
-                        e.currentTarget.style.backgroundColor = ORANGE_COLOR;
-                    }
+                    if (!loading) e.currentTarget.style.backgroundColor = ORANGE_COLOR;
                 }}
             >
                 {loading ? (
@@ -570,16 +747,19 @@ export const VacacionesPDFButton: React.FC<VacacionesPDFButtonProps> = ({
                     </>
                 )}
             </button>
+
             {error && (
-                <div style={{
-                    marginTop: '8px',
-                    padding: '6px 12px',
-                    backgroundColor: '#FEE2E2',
-                    border: '1px solid #FCA5A5',
-                    borderRadius: '6px',
-                    color: '#991B1B',
-                    fontSize: '11px'
-                }}>
+                <div
+                    style={{
+                        marginTop: '8px',
+                        padding: '6px 12px',
+                        backgroundColor: '#FEE2E2',
+                        border: '1px solid #FCA5A5',
+                        borderRadius: '6px',
+                        color: '#991B1B',
+                        fontSize: '11px',
+                    }}
+                >
                     ❌ {error}
                 </div>
             )}
